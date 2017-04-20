@@ -5,6 +5,11 @@
     "prettier"
   ],
   "rules": {
-    "prettier/prettier": "error"
+    "arrow-body-style": ["error", "always"],
+    "comma-dangle": ["error", "never"],
+    "prettier/prettier": ["error", {"singleQuote": true}]
+  },
+  "env": {
+    "mocha": true
   }
 }

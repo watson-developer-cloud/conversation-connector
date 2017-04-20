@@ -1,85 +1,121 @@
-var assert = require('assert');
-var conversation = require('./../../../conversation/conversation');
+const assert = require('assert');
+const conversation = require('./../../../conversation/conversation');
 
-describe('conversation unit tests', function () {
-    var params = {};
+describe('conversation unit tests', () => {
+  let params = {};
 
-    beforeEach(function () {
-        params = {
-            event: {
-                text: 'How is the weather?'
-            },
-            conversation: {
-                username: '8d71b8fd-d5be-4845-b854-2256216d19fc',
-                password: 'VI1AFqNj8XU2',
-                workspace_id: 'aec72a70-8249-4e55-b56a-7541dcfd4dc9'
-            }
-        };
-    });
+  beforeEach(() => {
+    params = {
+      event: {
+        text: 'How is the weather?'
+      },
+      conversation: {
+        username: '8d71b8fd-d5be-4845-b854-2256216d19fc',
+        password: 'VI1AFqNj8XU2',
+        workspace_id: 'aec72a70-8249-4e55-b56a-7541dcfd4dc9'
+      }
+    };
+  });
 
-    it('validate no username', function () {
+  it('validate no username', () => {
+    delete params.conversation.username;
 
-        delete params.conversation.username;
+    return conversation(params).then(
+      (response) => {
+        assert(false, response);
+      },
+      (e) => {
+        assert.equal(
+          e,
+          'Conversation username not supplied or is not a string',
+          'Should fail complaining about missing username'
+        );
+      }
+    );
+  });
 
-        return conversation(params).then(function (response) {
-            assert(false, response);
-        }, function (e) {
-            assert.equal(e, 'Conversation username not supplied or is not a string', 'Should fail complaining about missing username');
-        });
-    });
+  it('validate no password', () => {
+    delete params.conversation.password;
 
-    it('validate no password', function () {
+    return conversation(params).then(
+      (response) => {
+        assert(false, response);
+      },
+      (e) => {
+        assert.equal(
+          e,
+          'Conversation password not supplied or is not a string',
+          'Should fail complaining about missing password'
+        );
+      }
+    );
+  });
 
-        delete params.conversation.password;
+  it('validate no workspace id', () => {
+    delete params.conversation.workspace_id;
 
-        return conversation(params).then(function (response) {
-            assert(false, response);
-        }, function (e) {
-            assert.equal(e, 'Conversation password not supplied or is not a string', 'Should fail complaining about missing password');
-        });
-    });
+    return conversation(params).then(
+      (response) => {
+        assert(false, response);
+      },
+      (e) => {
+        assert.equal(
+          e,
+          'Conversation workspace_id not supplied or is not a string',
+          'Should fail complaining about missing workspace id'
+        );
+      }
+    );
+  });
 
-    it('validate no workspace id', function () {
+  it('validate no user message', () => {
+    delete params.event.text;
 
-        delete params.conversation.workspace_id;
+    return conversation(params).then(
+      (response) => {
+        assert(false, response);
+      },
+      (e) => {
+        assert.equal(
+          e,
+          'No message supplied to send to the Conversation service.',
+          'Should fail complaining about missing user message'
+        );
+      }
+    );
+  });
 
-        return conversation(params).then(function (response) {
-            assert(false, response);
-        }, function (e) {
-            assert.equal(e, 'Conversation workspace_id not supplied or is not a string', 'Should fail complaining about missing workspace id');
-        });
-    });
+  it('validate no conversation object', () => {
+    delete params.conversation;
 
-    it('validate no user message', function () {
+    return conversation(params).then(
+      (response) => {
+        assert(false, response);
+      },
+      (e) => {
+        assert.equal(
+          e,
+          'Illegal Argument Exception: parameters to call Conversation are not supplied.',
+          'Should fail complaining about missing conversation object'
+        );
+      }
+    );
+  });
 
-        delete params.event.text;
+  it('validate wrong message type', () => {
+    params.event.text = true;
 
-        return conversation(params).then(function (response) {
-            assert(false, response);
-        }, function (e) {
-            assert.equal(e, 'No message supplied to send to the Conversation service.', 'Should fail complaining about missing user message');
-        });
-    });
-
-    it('validate no conversation object', function () {
-
-        delete params.conversation;
-
-        return conversation(params).then(function (response) {
-            assert(false, response);
-        }, function (e) {
-            assert.equal(e, 'Illegal Argument Exception: parameters to call Conversation are not supplied.', 'Should fail complaining about missing conversation object');
-        });
-    });
-
-    it('validate wrong message type', function () {
-
-        params.event.text = true;
-
-        return conversation(params).then(function (response) {
-            assert(false, response);
-        }, function (e) {
-            assert.equal(e, 'Message to send to Conversation must be of type string.', 'Should fail complaining about wrong message type');
-        });
-    });
+    return conversation(params).then(
+      (response) => {
+        assert(false, response);
+      },
+      (e) => {
+        assert.equal(
+          e,
+          'Message to send to Conversation must be of type string.',
+          'Should fail complaining about wrong message type'
+        );
+      }
+    );
+  });
 });
