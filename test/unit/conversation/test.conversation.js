@@ -1,3 +1,5 @@
+'use strict';
+
 const assert = require('assert');
 const conversation = require('./../../../conversation/conversation');
 
@@ -26,7 +28,7 @@ describe('conversation unit tests', () => {
       },
       (e) => {
         assert.equal(
-          e,
+          e.message,
           'Conversation username not supplied or is not a string',
           'Should fail complaining about missing username'
         );
@@ -43,7 +45,7 @@ describe('conversation unit tests', () => {
       },
       (e) => {
         assert.equal(
-          e,
+          e.message,
           'Conversation password not supplied or is not a string',
           'Should fail complaining about missing password'
         );
@@ -60,7 +62,7 @@ describe('conversation unit tests', () => {
       },
       (e) => {
         assert.equal(
-          e,
+          e.message,
           'Conversation workspace_id not supplied or is not a string',
           'Should fail complaining about missing workspace id'
         );
@@ -77,7 +79,7 @@ describe('conversation unit tests', () => {
       },
       (e) => {
         assert.equal(
-          e,
+          e.message,
           'No message supplied to send to the Conversation service.',
           'Should fail complaining about missing user message'
         );
@@ -94,7 +96,7 @@ describe('conversation unit tests', () => {
       },
       (e) => {
         assert.equal(
-          e,
+          e.message,
           'Illegal Argument Exception: parameters to call Conversation are not supplied.',
           'Should fail complaining about missing conversation object'
         );
@@ -111,7 +113,7 @@ describe('conversation unit tests', () => {
       },
       (e) => {
         assert.equal(
-          e,
+          e.message,
           'Message to send to Conversation must be of type string.',
           'Should fail complaining about wrong message type'
         );
