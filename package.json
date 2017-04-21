@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha test --recursive",
+    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive -R spec"
   },
   "repository": {
     "type": "git",
@@ -13,10 +14,17 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "assert": "^1.4.1",
     "eslint": "^3.18.0",
     "eslint-config-airbnb-base": "^11.1.2",
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-prettier": "^2.0.1",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.2.0",
     "prettier": "^0.22.0"
+  },
+  "dependencies": {
+    "merge": "^1.2.0",
+    "watson-developer-cloud": "^2.29.0"
   }
 }

@@ -5,3 +5,5 @@ install:
   - npm install
 script:
   - eslint .
+  - npm run coverage
+  - node ./node_modules/.bin/istanbul check-coverage --statements 90 --branches 90 --lines 90 --functions 90
