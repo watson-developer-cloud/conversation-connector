@@ -11,7 +11,7 @@ const ConversationV1 = require('watson-developer-cloud/conversation/v1');
  *
  * In this case, the params variable will look like:
  *    {
-          'event': {
+          'input': {
             'text': 'How is the weather?'
           },
           'conversation': {
@@ -43,7 +43,7 @@ module.exports = function main(params) {
     conversation.message(
       {
         workspace_id: params.conversation.workspace_id,
-        input: { text: params.event.text }
+        input: { text: params.input.text }
       },
       (err, response) => {
         if (err) {
@@ -63,11 +63,11 @@ module.exports = function main(params) {
  */
 function validateParams(params) {
   // Check if we have a message in the proper format from the user
-  if (!params.event || !params.event.text) {
+  if (!params.input || !params.input.text) {
     throw new Error('No message supplied to send to the Conversation service.');
   }
 
-  if (typeof params.event.text !== 'string') {
+  if (typeof params.input.text !== 'string') {
     throw new Error('Message to send to Conversation must be of type string.');
   }
 

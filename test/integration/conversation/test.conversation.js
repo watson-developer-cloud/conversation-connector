@@ -8,27 +8,40 @@ describe('conversation integration tests', () => {
 
   beforeEach(() => {
     params = {
-      event: {
-        text: 'How is the weather?'
+      input: {
+        text: 'Turn on lights'
       },
       conversation: {
-        username: '8d71b8fd-d5be-4845-b854-2256216d19fc',
-        password: 'VI1AFqNj8XU2',
-        workspace_id: 'aec72a70-8249-4e55-b56a-7541dcfd4dc9'
+        username: '1feae73c-1425-47b9-a808-a8f93b473075',
+        password: 'g2VFeY8bly6t',
+        workspace_id: '88c58211-3b88-4ebc-9a6a-f9328403ba12'
       }
     };
   });
 
   it(' real working call', () => {
-    return conversation(params).then(
-      (response) => {
-        assert.equal(
-          response.output.text,
-          'the weather is fine',
-          'response from conversation does not contain expected answer'
+    // call Conversation once to kick off the conversation. The car dashboard workspace we are using expects an initial
+    // prep call before returning real answers.
+    conversation(params).then(
+      response => {
+        params.context = response.context;
+
+        // Make the real test call to conversation
+        conversation(params).then(
+          response => {
+            console.log(response);
+            assert.equal(
+              response.output.text,
+              "I'll turn on the lights for you.",
+              'response from conversation does not contain expected answer'
+            );
+          },
+          e => {
+            assert(false, e);
+          }
         );
       },
-      (e) => {
+      e => {
         assert(false, e);
       }
     );
@@ -38,10 +51,10 @@ describe('conversation integration tests', () => {
     params.conversation.username = 'badusername';
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.code,
           '401',
@@ -55,10 +68,10 @@ describe('conversation integration tests', () => {
     params.conversation.workspace_id = 'badworkspace';
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.error,
           'URL workspaceid parameter is not a valid GUID.',

@@ -8,13 +8,13 @@ describe('conversation unit tests', () => {
 
   beforeEach(() => {
     params = {
-      event: {
-        text: 'How is the weather?'
+      input: {
+        text: 'Turn on lights'
       },
       conversation: {
-        username: '8d71b8fd-d5be-4845-b854-2256216d19fc',
-        password: 'VI1AFqNj8XU2',
-        workspace_id: 'aec72a70-8249-4e55-b56a-7541dcfd4dc9'
+        username: '1feae73c-1425-47b9-a808-a8f93b473075',
+        password: 'g2VFeY8bly6t',
+        workspace_id: '88c58211-3b88-4ebc-9a6a-f9328403ba12'
       }
     };
   });
@@ -71,7 +71,7 @@ describe('conversation unit tests', () => {
   });
 
   it('validate no user message', () => {
-    delete params.event.text;
+    delete params.input.text;
 
     return conversation(params).then(
       (response) => {
@@ -105,7 +105,7 @@ describe('conversation unit tests', () => {
   });
 
   it('validate wrong message type', () => {
-    params.event.text = true;
+    params.input.text = true;
 
     return conversation(params).then(
       (response) => {
