@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('assert');
-const conversation = require('./../../../conversation/conversation');
+const conversation = require('../../../conversation/call-conversation');
 
 describe('conversation unit tests', () => {
   let params = {};
@@ -23,10 +23,10 @@ describe('conversation unit tests', () => {
     delete params.conversation.username;
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.message,
           'Conversation username not supplied or is not a string',
@@ -40,10 +40,10 @@ describe('conversation unit tests', () => {
     delete params.conversation.password;
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.message,
           'Conversation password not supplied or is not a string',
@@ -57,10 +57,10 @@ describe('conversation unit tests', () => {
     delete params.conversation.workspace_id;
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.message,
           'Conversation workspace_id not supplied or is not a string',
@@ -74,10 +74,10 @@ describe('conversation unit tests', () => {
     delete params.input.text;
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.message,
           'No message supplied to send to the Conversation service.',
@@ -91,10 +91,10 @@ describe('conversation unit tests', () => {
     delete params.conversation;
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.message,
           'Illegal Argument Exception: parameters to call Conversation are not supplied.',
@@ -108,10 +108,10 @@ describe('conversation unit tests', () => {
     params.input.text = true;
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.message,
           'Message to send to Conversation must be of type string.',

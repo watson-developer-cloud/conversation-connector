@@ -25,7 +25,18 @@ const ConversationV1 = require('watson-developer-cloud/conversation/v1');
  *         It will be the output of this action.
  *
  */
-module.exports = function main(params) {
+function main(params) {
+  return callConversation(params);
+}
+
+/**
+ * This essentially is the main method of the file. It exists so that tests can be written.
+ * OpenWhisk complains if the main function is exported.
+ *
+ * @param params
+ * @returns {*}
+ */
+function callConversation(params) {
   try {
     validateParams(params);
   } catch (e) {
@@ -47,7 +58,6 @@ module.exports = function main(params) {
       },
       (err, response) => {
         if (err) {
-          console.log('error calling Conversation service', err);
           reject(err);
         } else {
           resolve(response);
@@ -55,7 +65,7 @@ module.exports = function main(params) {
       }
     );
   });
-};
+}
 
 /**
  * Verify the params required to call conversation exist and are in the appropriate format
@@ -95,3 +105,5 @@ function validateParams(params) {
     );
   }
 }
+
+module.exports = callConversation;
