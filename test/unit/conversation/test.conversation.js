@@ -97,7 +97,7 @@ describe('conversation unit tests', () => {
       e => {
         assert.equal(
           e.message,
-          'Illegal Argument Exception: parameters to call Conversation are not supplied.',
+          'Illegal Argument Exception: parameters to call Conversation are not supplied or are not bound to package.',
           'Should fail complaining about missing conversation object'
         );
       }

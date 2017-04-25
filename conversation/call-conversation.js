@@ -40,13 +40,12 @@ function callConversation(params) {
   try {
     validateParams(params);
   } catch (e) {
-    console.log(e);
     return Promise.reject(e);
   }
 
   const conversation = new ConversationV1({
-    username: params.conversation.username,
-    password: params.conversation.password,
+    username: params.username || params.conversation.username,
+    password: params.password || params.conversation.password,
     version: 'v1',
     version_date: '2017-04-21'
   });
@@ -54,9 +53,9 @@ function callConversation(params) {
   return new Promise((resolve, reject) => {
     conversation.message(
       {
-        workspace_id: params.conversation.workspace_id,
+        workspace_id: params.workspace_id || params.conversation.workspace_id,
         input: { text: params.input.text },
-          context: params.context || null,
+        context: params.context || null
       },
       (err, response) => {
         if (err) {
@@ -76,28 +75,20 @@ function callConversation(params) {
 function validateParams(params) {
   // Check if we have a message in the proper format from the user
   if (!params.input || !params.input.text) {
-    console.log('1');
     throw new Error('No message supplied to send to the Conversation service.');
   }
 
   if (typeof params.input.text !== 'string') {
-      console.log('2');
     throw new Error('Message to send to Conversation must be of type string.');
   }
 
   // validate credentials for accessing the service instance exist and are in the expected format
   if (!params.conversation) {
     // Conversation object not supplied, attempt to read from package bindings
-    if (params.username && params.password && params.workspace_id) {
-      params.conversation = {};
-      params.conversation.username = params.username;
-      params.conversation.password = params.password;
-      params.conversation.workspace_id = params.workspace_id;
-    } else {
-        console.log('3');
+    if (!params.username || !params.password || params.workspace_id) {
       throw new Error(
         'Illegal Argument Exception: parameters to call Conversation are not supplied or are not' +
-          'bound to package.'
+          ' bound to package.'
       );
     }
   }
@@ -107,19 +98,16 @@ function validateParams(params) {
     !params.conversation.username ||
     typeof params.conversation.username !== 'string'
   ) {
-      console.log('4');
     throw new Error('Conversation username not supplied or is not a string');
   } else if (
     !params.conversation.password ||
     typeof params.conversation.password !== 'string'
   ) {
-      console.log('5');
     throw new Error('Conversation password not supplied or is not a string');
   } else if (
     !params.conversation.workspace_id ||
     typeof params.conversation.workspace_id !== 'string'
   ) {
-      console.log('6');
     throw new Error(
       'Conversation workspace_id not supplied or is not a string'
     );
