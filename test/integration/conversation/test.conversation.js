@@ -2,11 +2,12 @@
 
 const assert = require('assert');
 const conversation = require('../../../conversation/call-conversation');
+const conversationSDK = require('watson-developer-cloud/conversation/v1');
 const openwhisk = require('openwhisk');
 
 const options = {
   apihost: 'openwhisk.ng.bluemix.net',
-  api_key: 'NWM1ODIwZmYtMWU3YS00NGFlLWIzOGEtN2I3MGIyMTVjYjhjOk41V0l1NDZSUXhqbWV4MUFtdFk0ZlZ5SVhCRXdSZ2pVMTdIWW4wUlZmTklWSGdnU1dWSE5LZ25abE9NcGFPWmc='
+  api_key: '5c5820ff-1e7a-44ae-b38a-7b70b215cb8c:N5WIu46RQxjmex1AmtY4fVyIXBEwRgjU17HYn0RVfNIVHggSWVHNKgnZlOMpaOZg',
 };
 const ow = openwhisk(options);
 
@@ -26,19 +27,23 @@ describe('conversation integration tests', () => {
     };
   });
 
-  it(' real call through OpenWhisk ', () => {
-    const name = 'call-conversation';
+  it(' call using OpenWhisk module ', () => {
+    const name = 'conversation/call-conversation';
     const blocking = true;
     const result = true;
 
     delete params.conversation;
 
-    ow.actions
+    // Have to call action twice since the first call really just setups the context
+    return ow.actions
       .invoke({ name, blocking, result, params })
-      .then(() => {
-        ow.actions.invoke({ name, blocking, result, params }).then(response => {
+      .then((response1) => {
+        params.context = response1.context;
+
+        return ow.actions.invoke({ name, blocking, result, params }).then(response2 => {
+          console.log(response2);
           assert.equal(
-            response.output.text,
+            response2.output.text,
             "I'll turn on the lights for you.",
             'response from conversation does not contain expected answer'
           );
@@ -49,15 +54,15 @@ describe('conversation integration tests', () => {
       });
   });
 
-  it(' real working call', () => {
+  it(' real working call similar to sequence approach', () => {
     // call Conversation once to kick off the conversation. The car dashboard workspace we are
     // using expects an initial prep call before returning real answers.
-    conversation(params).then(
+    return conversation(params).then(
       response => {
         params.context = response.context;
 
         // Make the real test call to conversation
-        conversation(params).then(
+       return conversation(params).then(
           responseInner => {
             assert.equal(
               responseInner.output.text,
@@ -75,6 +80,50 @@ describe('conversation integration tests', () => {
       }
     );
   });
+
+  it ('call through sdk using package bindings, no workspace_id provided', () => {
+      delete params.conversation.workspace_id;
+
+      const conversation = new conversationSDK({
+          username: params.conversation.username,
+          password: params.conversation.password,
+          version: 'v1',
+          version_date: '2017-04-21',
+          url: 'https://openwhisk.ng.bluemix.net/api/v1/namespaces/foropenwhisk_prod%2Fconversation/actions/call-conversation',
+      });
+
+      // call conversation twice, once to jump start conversation
+      conversation.message(
+          {
+              input: { text: params.input.text }
+          },
+          (err, response) => {
+              if (err) {
+                  assert(false, err);
+              } else {
+                  conversation.message(
+                      {
+                          input: { text: params.input.text }
+                      },
+                      (err, response) => {
+                          if (err) {
+                              assert(false, err);
+                          } else {
+                              console.log(responseInner);
+                              assert.equal(
+                                  responseInner.output.text,
+                                  "I'll turn on the lights for you.",
+                                  'response from conversation does not contain expected answer'
+                              );
+                          }
+                      });
+              }
+          });
+  });
+
+    it ('call through sdk using supplied credentials', () => {
+
+    });
 
   it('real failing authentication call', () => {
     params.conversation.username = 'badusername';
