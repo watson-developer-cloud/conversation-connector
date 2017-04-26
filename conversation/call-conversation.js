@@ -93,21 +93,16 @@ function validateParams(params) {
     }
   }
 
+  const username = params.username || params.conversation.username;
+  const password = params.password || params.conversation.password;
+  const workspaceId = params.workspace_id || params.conversation.workspace_id;
+
   // validate workspace id and creds regardless of if they came from JSON params or bindings
-  if (
-    !params.conversation.username ||
-    typeof params.conversation.username !== 'string'
-  ) {
+  if (!username || typeof username !== 'string') {
     throw new Error('Conversation username not supplied or is not a string');
-  } else if (
-    !params.conversation.password ||
-    typeof params.conversation.password !== 'string'
-  ) {
+  } else if (!password || typeof password !== 'string') {
     throw new Error('Conversation password not supplied or is not a string');
-  } else if (
-    !params.conversation.workspace_id ||
-    typeof params.conversation.workspace_id !== 'string'
-  ) {
+  } else if (!workspaceId || typeof workspaceId !== 'string') {
     throw new Error(
       'Conversation workspace_id not supplied or is not a string'
     );
