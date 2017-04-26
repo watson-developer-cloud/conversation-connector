@@ -2,7 +2,6 @@
 
 const assert = require('assert');
 const conversation = require('../../../conversation/call-conversation');
-const ConversationV1 = require('watson-developer-cloud/conversation/v1');
 const openwhisk = require('openwhisk');
 
 const options = {
@@ -81,50 +80,6 @@ describe('conversation integration tests', () => {
       }
     );
   });
-
-  it('call through sdk using package bindings, no workspace_id provided', () => {
-    delete params.conversation.workspace_id;
-
-    const conversationSDK = new ConversationV1({
-      username: params.conversation.username,
-      password: params.conversation.password,
-      version: 'v1',
-      version_date: '2017-04-21',
-      url: 'https://openwhisk.ng.bluemix.net/api/v1/namespaces/foropenwhisk_prod%2Fconversation/actions/call-conversation'
-    });
-
-    // call conversation twice, once to jump start conversation
-    conversationSDK.message(
-      {
-        input: { text: params.input.text }
-      },
-      (err1, response1) => {
-        if (err1) {
-          assert(false, err1);
-        } else {
-          conversationSDK.message(
-            {
-              input: { text: params.input.text },
-              context: response1.context
-            },
-            (err2, response2) => {
-              if (err2) {
-                assert(false, err2);
-              } else {
-                assert.equal(
-                  response2.output.text,
-                  "I'll turn on the lights for you.",
-                  'response from conversation does not contain expected answer'
-                );
-              }
-            }
-          );
-        }
-      }
-    );
-  });
-
-  it('call through sdk using supplied credentials', () => {});
 
   it('real failing authentication call', () => {
     params.conversation.username = 'badusername';
