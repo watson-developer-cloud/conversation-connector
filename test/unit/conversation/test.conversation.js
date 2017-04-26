@@ -2,21 +2,29 @@
 
 const assert = require('assert');
 const conversation = require('../../../conversation/call-conversation');
+const fs = require('fs');
+const path = require('path');
 
 describe('conversation unit tests', () => {
   let params = {};
+
+  const conversationObj = JSON.parse(
+    fs.readFileSync(
+      path.join(__dirname, '/../../resources/conversation-bindings.json'),
+      'utf8'
+    )
+  );
 
   beforeEach(() => {
     params = {
       input: {
         text: 'Turn on lights'
-      },
-      conversation: {
-        username: '1feae73c-1425-47b9-a808-a8f93b473075',
-        password: 'g2VFeY8bly6t',
-        workspace_id: '88c58211-3b88-4ebc-9a6a-f9328403ba12'
       }
     };
+
+    // merge the two objects, deep copying conversationObj so it doesn't get changed between tests
+    // and we only have to read it once
+    params = Object.assign(params, JSON.parse(JSON.stringify(conversationObj)));
   });
 
   it('validate no username', () => {
