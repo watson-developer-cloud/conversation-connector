@@ -8,7 +8,7 @@ const path = require('path');
 
 const options = {
   apihost: 'openwhisk.ng.bluemix.net',
-  api_key: '5c5820ff-1e7a-44ae-b38a-7b70b215cb8c:N5WIu46RQxjmex1AmtY4fVyIXBEwRgjU17HYn0RVfNIVHggSWVHNKgnZlOMpaOZg'
+  api_key: 'cb7e4f8a-6641-4b7e-a255-e3be9c6df3c8:jjyUAF9BXlkOwx1X0wBLQx4xf9rgVRgMgdM3hAfFtwZnlLsYoj2pAOqF5vdn1b1B'
 };
 const ow = openwhisk(options);
 

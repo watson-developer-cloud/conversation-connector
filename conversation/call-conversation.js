@@ -85,7 +85,7 @@ function validateParams(params) {
   // validate credentials for accessing the service instance exist and are in the expected format
   if (!params.conversation) {
     // Conversation object not supplied, attempt to read from package bindings
-    if (!params.username || !params.password || params.workspace_id) {
+    if (!params.username || !params.password || !params.workspace_id) {
       throw new Error(
         'Illegal Argument Exception: parameters to call Conversation are not supplied or are not' +
           ' bound to package.'
@@ -109,4 +109,4 @@ function validateParams(params) {
   }
 }
 
-module.exports = callConversation;
+module.exports = main;
