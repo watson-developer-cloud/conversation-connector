@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "merge": "^1.2.0",
+    "openwhisk": "^3.5.1",
     "watson-developer-cloud": "^2.29.0"
   }
 }

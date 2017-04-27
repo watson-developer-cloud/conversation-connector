@@ -6,7 +6,9 @@
   ],
   "rules": {
     "arrow-body-style": ["error", "always"],
-    "comma-dangle": ["error", "never"],
+    "arrow-parens": ["error", "as-needed"],
+    "comma-dangle": ["error", {"functions": "never"}],
+    "no-unused-vars": ["error", { "varsIgnorePattern": "main" }],
     "no-use-before-define": ["error", {"functions": false}],
     "prettier/prettier": ["warn", {"singleQuote": true}],
     "strict": ["off"]

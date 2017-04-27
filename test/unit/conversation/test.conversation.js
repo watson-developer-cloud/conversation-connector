@@ -1,32 +1,40 @@
 'use strict';
 
 const assert = require('assert');
-const conversation = require('./../../../conversation/conversation');
+const conversation = require('../../../conversation/call-conversation');
+const fs = require('fs');
+const path = require('path');
 
 describe('conversation unit tests', () => {
   let params = {};
 
+  const conversationObj = JSON.parse(
+    fs.readFileSync(
+      path.join(__dirname, '/../../resources/conversation-bindings.json'),
+      'utf8'
+    )
+  );
+
   beforeEach(() => {
     params = {
-      event: {
-        text: 'How is the weather?'
-      },
-      conversation: {
-        username: '8d71b8fd-d5be-4845-b854-2256216d19fc',
-        password: 'VI1AFqNj8XU2',
-        workspace_id: 'aec72a70-8249-4e55-b56a-7541dcfd4dc9'
+      input: {
+        text: 'Turn on lights'
       }
     };
+
+    // merge the two objects, deep copying conversationObj so it doesn't get changed between tests
+    // and we only have to read it once
+    params = Object.assign(params, JSON.parse(JSON.stringify(conversationObj)));
   });
 
   it('validate no username', () => {
     delete params.conversation.username;
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.message,
           'Conversation username not supplied or is not a string',
@@ -40,10 +48,10 @@ describe('conversation unit tests', () => {
     delete params.conversation.password;
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.message,
           'Conversation password not supplied or is not a string',
@@ -57,10 +65,10 @@ describe('conversation unit tests', () => {
     delete params.conversation.workspace_id;
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.message,
           'Conversation workspace_id not supplied or is not a string',
@@ -71,13 +79,13 @@ describe('conversation unit tests', () => {
   });
 
   it('validate no user message', () => {
-    delete params.event.text;
+    delete params.input.text;
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.message,
           'No message supplied to send to the Conversation service.',
@@ -91,13 +99,13 @@ describe('conversation unit tests', () => {
     delete params.conversation;
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.message,
-          'Illegal Argument Exception: parameters to call Conversation are not supplied.',
+          'Illegal Argument Exception: parameters to call Conversation are not supplied or are not bound to package.',
           'Should fail complaining about missing conversation object'
         );
       }
@@ -105,13 +113,13 @@ describe('conversation unit tests', () => {
   });
 
   it('validate wrong message type', () => {
-    params.event.text = true;
+    params.input.text = true;
 
     return conversation(params).then(
-      (response) => {
+      response => {
         assert(false, response);
       },
-      (e) => {
+      e => {
         assert.equal(
           e.message,
           'Message to send to Conversation must be of type string.',
