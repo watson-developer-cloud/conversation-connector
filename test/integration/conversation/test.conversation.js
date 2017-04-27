@@ -35,7 +35,7 @@ describe('conversation integration tests', () => {
   });
 
   it(' call using OpenWhisk module ', () => {
-    const name = 'conversation/call-conversation';
+    const name = '/foropenwhisk_prod/conversation/call-conversation';
     const blocking = true;
     const result = true;
 
