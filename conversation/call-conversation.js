@@ -4,7 +4,6 @@ const ConversationV1 = require('watson-developer-cloud/conversation/v1');
  *
  * This action takes a user query and runs it against the conversation
  * service specified in the conversation object.
- * TODO I need to move the conversation pieces to the package binding once I create that
  *
  * @param Whisk actions accept a single parameter,
  *        which must be a JSON object.
