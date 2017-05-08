@@ -25,7 +25,9 @@
   },
   "dependencies": {
     "merge": "^1.2.0",
+    "nock": "^9.0.13",
     "openwhisk": "^3.5.1",
+    "request": "^2.81.0",
     "watson-developer-cloud": "^2.29.0"
   }
 }

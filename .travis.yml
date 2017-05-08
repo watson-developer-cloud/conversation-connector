@@ -3,6 +3,8 @@ node_js:
   - "7"
 install:
   - npm install
+env:
+  - export __OW_API_HOST=openwhisk.ng.bluemix.net __OW_API_KEY=5c5820ff-1e7a-44ae-b38a-7b70b215cb8c:AqtqbYpavejPt4fjM5vlzSqpSmdU1QZ3I98hqEYykkbwcybPw4t4IcWpedVOzzFM
 script:
   - eslint .
   - npm run coverage
