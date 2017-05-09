@@ -135,7 +135,7 @@ describe('Slack Receive Unit Tests', () => {
         assert(false, error);
       }
     );
-  });
+  }).timeout(4000);
 
   it('validate error when no openwhisk credentials', () => {
     const processApiHost = process.env.__OW_API_HOST;

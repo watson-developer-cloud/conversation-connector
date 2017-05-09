@@ -76,7 +76,7 @@ describe('Slack Deploy Unit Tests', () => {
         assert(false, error);
       }
     );
-  });
+  }).timeout(4000);
 
   it('validate slack/deploy works with openwhisk credentails in env variables', () => {
     process.env.__OW_API_HOST = params.ow_api_host;
@@ -122,7 +122,7 @@ describe('Slack Deploy Unit Tests', () => {
         assert.equal(error, errorNoOpenwhiskCredentials);
       }
     );
-  });
+  }).timeout(4000);
 
   it('validate error when no verification token provided', () => {
     delete params.verification_token;
@@ -294,5 +294,5 @@ describe('Slack Deploy Unit Tests', () => {
         assert.equal(error, errorPackageUpdateFailure);
       }
     );
-  });
+  }).timeout(4000);
 });

@@ -64,7 +64,7 @@ describe('Slack Post Unit Tests', () => {
     );
   });
 
-  it('vlidate error when not 200 uri supplied', () => {
+  it('validate error when not 200 uri supplied', () => {
     options.url = movedUri;
 
     return slackPost(options).then(
@@ -75,7 +75,7 @@ describe('Slack Post Unit Tests', () => {
         assert.equal(error, errorMovedPermanently);
       }
     );
-  });
+  }).timeout(8000);
 
   it('validate error when no bot access token provided', () => {
     delete options.bot_access_token;

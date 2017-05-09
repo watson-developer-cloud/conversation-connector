@@ -73,5 +73,5 @@ describe('Slack channel integration tests', () => {
           return done(error);
         }
       );
-  });
+  }).timeout(4000);
 });
