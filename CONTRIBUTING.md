@@ -27,7 +27,7 @@ In an effort to have clear uniform code across a code base being developed by mu
 
 The above is provided primarily for reference and while it is encouraged reading, we will use eslint and the prettier formatter to automatically apply most of these rules.
 
-Travis will automatically run eslint and prettier when a PR is made. Descriptions on how to run eslint manually, perhaps for local testing, can be found [here](https://github.com/eslint/eslint#local-installation-and-usage). 
+Travis will automatically run eslint and prettier when a PR is made. However, it is a best practice to run both prettier and eslint locally to work out any issues before a PR is submitted. Descriptions on how to run these tools manually, as well as descriptions of other best practices the team has identified can be found [here](https://github.ibm.com/watson-engagement-advisor/convo-flexible-bot/wiki/Writing-code-for-convo-flexible-bot).
 
 ## Comments
 
@@ -41,9 +41,11 @@ Each code deliverable should come from the developer's fork of the master repo. 
 
 - It is highly encouraged that PRs be made for small, specific pieces of work. Attempts should be made to not bundle unrelated work into the same PR.
 
-- When making PRs please use the closes feature to reference and close the corresponding issue.  This helps ensure that we have an issue to track anything worth making code changes for.  You can read more about this feature [here](https://help.github.com/articles/closing-issues-via-commit-messages/)
+- Automated tests are required for all work being done on this repo. The Istanbul code coverage tool will fail PRs that drop the overall repo's code coverage below 90%. For suggested approaches for writing tests see [here](https://github.ibm.com/watson-engagement-advisor/convo-flexible-bot/wiki/Writing-Test-Code).
 
-- Assuming all checks pass, you have an associated issue for the work, and an automated test exists for the new changes; assign the PR to one of the project maintainers, Ashima Arora or David Terry. We will involve others to help with the review if necessary. For folks looking for tips on how to do a code review this is a [nice reference]  (https://ralbz001189.raleigh.ibm.com/qse/QSE.nsf/html/code_review_checklist.html)
+- When making PRs please use the closes feature to reference and close the corresponding issue.  This helps ensure that we have an issue to track anything worth making code changes for.  You can read more about this feature [here](https://help.github.com/articles/closing-issues-via-commit-messages/). This feature does work cross repo, simply use the full URL to the wea-backlog issue in your PR comment.
+
+- Assuming all checks pass, you have an associated issue for the work, and an automated test exists for the new changes; assign the PR to one of the project maintainers, Ashima Arora or David Terry. We will involve others to help with the review if necessary. For folks looking for tips on how to do a code review this is a [nice reference](https://ralbz001189.raleigh.ibm.com/qse/QSE.nsf/html/code_review_checklist.html).
 
 - The maintainer should review and merge the PR if it looks good. All merges should squash the commits into a single commit on the master branch.
 
