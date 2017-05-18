@@ -9,8 +9,8 @@ const openwhisk = require('openwhisk');
  * @returns {*}
  */
 function main(params) {
-  const openwhiskApiHost = process.env.__OW_API_HOST;
-  const openwhiskApiKey = process.env.__OW_API_KEY;
+  const openwhiskApiHost = params.ow_api_host;
+  const openwhiskApiKey = params.ow_api_key;
   if (!openwhiskApiHost || !openwhiskApiKey) {
     return Promise.reject('No openwhisk credentials provided.');
   }

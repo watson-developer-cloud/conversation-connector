@@ -27,8 +27,8 @@ function main(params) {
     return Promise.reject(e.message);
   }
 
-  const apiHost = params.ow_api_host || process.env.__OW_API_HOST;
-  const apiKey = params.ow_api_key || process.env.__OW_API_KEY;
+  const apiHost = params.ow_api_host;
+  const apiKey = params.ow_api_key;
   const state = params.state;
   const clientSecret = params.client_secret;
   const clientId = params.client_id.substring(1);
@@ -112,7 +112,7 @@ function main(params) {
                 })
                 .then(
                   () => {
-                    resolve('Slack bot is now authenticated.');
+                    resolve({ status: 'Slack bot is now authenticated.' });
                   },
                   err => {
                     reject(err.message);
@@ -176,8 +176,8 @@ function validateResponseBody(body) {
  */
 function validateParams(params) {
   // Required: OpenWhisk API host and key
-  const apiHost = params.ow_api_host || process.env.__OW_API_HOST;
-  const apiKey = params.ow_api_key || process.env.__OW_API_KEY;
+  const apiHost = params.ow_api_host;
+  const apiKey = params.ow_api_key;
   if (!apiHost || !apiKey) {
     throw new Error('No OpenWhisk API Host or Key provided.');
   }

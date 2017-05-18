@@ -6,6 +6,9 @@
     "verification_token": "BrfPhrGfNG5CS0jAqJkWjVcF",
     "channel": "C57T8R8FR",
     "bot_access_token": "xoxb-176457405255-k6zcfiUSXV3e2fGgTLEOt8fq",
-    "state": "7c6b1c2e5ddd6ad058736148e9875ead227f8c8f0bd63772e4beda62701f628a"
+    "state": "7c6b1c2e5ddd6ad058736148e9875ead227f8c8f0bd63772e4beda62701f628a",
+    "redirect_uri": "https://foropenwhisk-prod.mybluemix.net/slack/deploy.json",
+    "starter_code_action_name": "starter-code/normalize",
+    "bot_user_id": "U56DFBX7H"
   }
 }

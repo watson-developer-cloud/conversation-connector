@@ -1,0 +1,23 @@
+{
+  "channels": {
+    "slack": {
+      "client_id": "xxxx",
+      "client_secret": "xxxx",
+      "verification_token": "xxxx",
+      "redirect_uri": "xxxx"
+    }
+  },
+  "conversation": {
+    "username": "xxxx",
+    "password": "xxxx",
+    "workspace_id": "xxxx"
+  },
+  "openwhisk": {
+    "apihost": "${WSK_API_HOST}",
+    "api_key": "${WSK_API_KEY}",
+    "namespace": "${WSK_NAMESPACE}"
+  },
+  "starter_code": {
+    "action": "normalize"
+  }
+}

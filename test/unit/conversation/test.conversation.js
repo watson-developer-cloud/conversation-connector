@@ -2,7 +2,7 @@
 
 const assert = require('assert');
 const conversation = require('../../../conversation/call-conversation');
-const packageBindings = require('../../resources/conversation-bindings.json');
+const packageBindings = require('../../resources/conversation-bindings.json').conversation;
 
 describe('conversation unit tests', () => {
   let params = {};

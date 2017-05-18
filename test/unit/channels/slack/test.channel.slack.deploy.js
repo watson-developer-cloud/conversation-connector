@@ -69,7 +69,7 @@ describe('Slack Deploy Unit Tests', () => {
           assert(false, 'Mock server did not get called.');
         }
         nock.cleanAll();
-        assert.equal(result, resultMessage);
+        assert.equal(result.status, resultMessage);
       },
       error => {
         nock.cleanAll();
@@ -77,38 +77,6 @@ describe('Slack Deploy Unit Tests', () => {
       }
     );
   }).timeout(4000);
-
-  it('validate slack/deploy works with openwhisk credentails in env variables', () => {
-    process.env.__OW_API_HOST = params.ow_api_host;
-    process.env.__OW_API_KEY = params.ow_api_key;
-    delete params.ow_api_host;
-    delete params.ow_api_key;
-
-    mock = nock('https://slack.com')
-      .get('/api/oauth.access')
-      .query(() => {
-        return true;
-      })
-      .reply(200, returnedResult);
-
-    return slackDeploy(params).then(
-      result => {
-        delete process.env.__OW_API_HOST;
-        delete process.env.__OW_API_KEY;
-        if (!mock.isDone()) {
-          assert(false, 'Mock server did not get called.');
-        }
-        nock.cleanAll();
-        assert.equal(result, resultMessage);
-      },
-      error => {
-        delete process.env.__OW_API_HOST;
-        delete process.env.__OW_API_KEY;
-        nock.cleanAll();
-        assert(false, error);
-      }
-    );
-  });
 
   it('validate error when no OpenWhisk credentials provided', () => {
     delete params.ow_api_host;

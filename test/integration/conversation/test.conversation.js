@@ -4,7 +4,7 @@ const assert = require('assert');
 const conversation = require('../../../conversation/call-conversation');
 const openwhisk = require('openwhisk');
 const openWhiskAuthObj = require('../../resources/openwhisk-bindings.json').openwhisk;
-const packageBindings = require('../../resources/conversation-bindings.json');
+const packageBindings = require('../../resources/conversation-bindings.json').conversation;
 
 describe('conversation integration tests', () => {
   // Setup the ow module for the upcoming calls

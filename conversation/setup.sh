@@ -2,11 +2,11 @@
 
 export WSK=${WSK-wsk}
 
-BINDINGS=$1 
+BINDINGS=$1
 
-CONVO_USERNAME=`cat ${BINDINGS} | jq --raw-output '.username'`
-CONVO_PASSWORD=`cat ${BINDINGS} | jq --raw-output '.password'`
-CONVO_WORKSPACE_ID=`cat ${BINDINGS} | jq --raw-output '.workspace_id'`
+CONVO_USERNAME=`cat ${BINDINGS} | jq --raw-output '.conversation.username'`
+CONVO_PASSWORD=`cat ${BINDINGS} | jq --raw-output '.conversation.password'`
+CONVO_WORKSPACE_ID=`cat ${BINDINGS} | jq --raw-output '.conversation.workspace_id'`
 
 ${WSK} package update conversation \
     -p username ${CONVO_USERNAME} \

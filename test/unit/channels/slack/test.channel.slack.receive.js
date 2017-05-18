@@ -104,26 +104,6 @@ describe('Slack Receive Unit Tests', () => {
     );
   });
 
-  it('validate openwhisk passes with environment variables', () => {
-    process.env.__OW_API_HOST = messageParams.ow_api_host;
-    process.env.__OW_API_KEY = messageParams.ow_api_key;
-    delete messageParams.ow_api_host;
-    delete messageParams.ow_api_key;
-
-    return slackReceive(messageParams).then(
-      result => {
-        delete process.env.__OW_API_HOST;
-        delete process.env.__OW_API_KEY;
-        assert.deepEqual(result, messageResult);
-      },
-      error => {
-        delete process.env.__OW_API_HOST;
-        delete process.env.__OW_API_KEY;
-        assert(false, error);
-      }
-    );
-  });
-
   it('validate receive returns to action passed in params', () => {
     messageParams.starter_code_action_name = '/whisk.system/utils/echo';
 
@@ -138,22 +118,14 @@ describe('Slack Receive Unit Tests', () => {
   }).timeout(4000);
 
   it('validate error when no openwhisk credentials', () => {
-    const processApiHost = process.env.__OW_API_HOST;
-    const processApiKey = process.env.__OW_API_KEY;
-    delete process.env.__OW_API_HOST;
-    delete process.env.__OW_API_KEY;
     delete messageParams.ow_api_host;
     delete messageParams.ow_api_key;
 
     return slackReceive(messageParams).then(
       () => {
-        process.env.__OW_API_HOST = processApiHost;
-        process.env.__OW_API_KEY = processApiKey;
         assert(false, 'Action suceeded unexpectedly.');
       },
       error => {
-        process.env.__OW_API_HOST = processApiHost;
-        process.env.__OW_API_KEY = processApiKey;
         assert.equal(error, errorNoOwCredentials);
       }
     );

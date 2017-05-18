@@ -1,10 +1,15 @@
 'use strict';
 
 const assert = require('assert');
-const convoResponseJson = require('../../resources/test.unit.starter-code.json').convoResponseJson;
 const normalizeAction = require('../../../starter-code/normalize');
+const openwhiskBindings = require('./../../resources/openwhisk-bindings.json').openwhisk;
+
+const convoResponseJson = require('../../resources/test.unit.starter-code.json').convoResponseJson;
 const normalizedParamsJson = require('../../resources/test.unit.starter-code.json').normalizedParamsJson;
 const paramsJson = require('../../resources/test.unit.starter-code.json').paramsJson;
+
+const errorOwCredentials = 'No openwhisk credentials provided.';
+const errorUnknownProvider = 'non-supported channel';
 
 describe('starter code unit tests', () => {
   it('validateResponseFromConversation ', () => {
@@ -159,6 +164,39 @@ describe('starter code unit tests', () => {
       conversationPayload.conversation.input.text,
       'Turn on lights',
       'Expected payload to contain user input.'
+    );
+  });
+
+  it('validate error thrown when no OpenWhisk credentials', () => {
+    const paramsCopy = JSON.parse(JSON.stringify(paramsJson));
+    paramsCopy.ow_api_key = '';
+    paramsCopy.ow_api_host = '';
+
+    return normalizeAction.main(paramsCopy).then(
+      () => {
+        assert(false, 'Action suceeded unexpectedly.');
+      },
+      error => {
+        assert.equal(error, errorOwCredentials);
+      }
+    );
+  });
+
+  it('validate error when non-supported channel supplied', () => {
+    const paramsCopy = JSON.parse(JSON.stringify(paramsJson));
+    paramsCopy.ow_api_host = openwhiskBindings.apihost;
+    paramsCopy.ow_api_key = openwhiskBindings.api_key;
+    paramsCopy.provider = 'my_awesome_chat_bot';
+    paramsCopy.myawesomechatbot = paramsCopy.slack;
+    delete paramsCopy.slack;
+
+    return normalizeAction.main(paramsCopy).then(
+      () => {
+        assert(false, 'Action suceeeded unexpectedly.');
+      },
+      error => {
+        assert.equal(error, errorUnknownProvider);
+      }
     );
   });
 });

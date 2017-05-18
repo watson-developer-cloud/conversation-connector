@@ -8,30 +8,33 @@ const openWhiskAuthObj = require('../../resources/openwhisk-bindings.json').open
 describe('starter-code integration tests', () => {
   // Setup the ow module for the upcoming calls
   const options = {
-    apihost: 'openwhisk.ng.bluemix.net',
+    apihost: openWhiskAuthObj.apihost,
     api_key: openWhiskAuthObj.api_key
   };
   const ow = openwhisk(options);
+  let params;
 
-  const params = {
-    slack: {
-      token: 'XXYYZZ',
-      team_id: 'TXXXXXXXX',
-      api_app_id: 'AXXXXXXXXX',
-      event: {
-        type: 'message',
-        channel: 'D024BE91L',
-        user: 'U2147483697',
-        text: 'Turn on lights',
-        ts: '1355517523.000005'
+  beforeEach(() => {
+    params = {
+      slack: {
+        token: 'XXYYZZ',
+        team_id: 'TXXXXXXXX',
+        api_app_id: 'AXXXXXXXXX',
+        event: {
+          type: 'message',
+          channel: 'D024BE91L',
+          user: 'U2147483697',
+          text: 'Turn on lights',
+          ts: '1355517523.000005'
+        },
+        type: 'event_callback',
+        authed_users: ['UXXXXXXX1', 'UXXXXXXX2'],
+        event_id: 'Ev08MFMKH6',
+        event_time: 1234567890
       },
-      type: 'event_callback',
-      authed_users: ['UXXXXXXX1', 'UXXXXXXX2'],
-      event_id: 'Ev08MFMKH6',
-      event_time: 1234567890
-    },
-    provider: 'slack'
-  };
+      provider: 'slack'
+    };
+  });
 
   it('call starter-code using OpenWhisk module ', () => {
     const name = 'starter-code/normalize';
@@ -60,6 +63,9 @@ describe('starter-code integration tests', () => {
   }).timeout(16000);
 
   it('call starter-code using local sequence like approach', () => {
+    params.ow_api_host = openWhiskAuthObj.apihost;
+    params.ow_api_key = openWhiskAuthObj.api_key;
+
     return normalize
       .main(params)
       .then(response => {

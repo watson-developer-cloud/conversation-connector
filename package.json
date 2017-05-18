@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test --recursive",
-    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive -R spec"
+    "test": "./test/run_tests.sh test",
+    "coverage": "./test/run_tests.sh coverage"
   },
   "repository": {
     "type": "git",

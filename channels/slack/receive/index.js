@@ -47,8 +47,8 @@ function main(params) {
         return Promise.resolve({ bot_id: botId });
       }
 
-      const openwhiskApiHost = params.ow_api_host || process.env.__OW_API_HOST;
-      const openwhiskApiKey = params.ow_api_key || process.env.__OW_API_KEY;
+      const openwhiskApiHost = params.ow_api_host;
+      const openwhiskApiKey = params.ow_api_key;
       const ow = openwhisk({
         apihost: openwhiskApiHost,
         api_key: openwhiskApiKey
@@ -108,8 +108,8 @@ function extractSlackParams(params) {
  */
 function validateParams(params) {
   // Required: OpenWhisk API host and key
-  const apiHost = params.ow_api_host || process.env.__OW_API_HOST;
-  const apiKey = params.ow_api_key || process.env.__OW_API_KEY;
+  const apiHost = params.ow_api_host;
+  const apiKey = params.ow_api_key;
   if (!apiHost || !apiKey) {
     throw new Error('No openwhisk credentials provided.');
   }
