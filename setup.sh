@@ -22,7 +22,7 @@ cd starter-code; ./setup.sh ./../$PROVIDERS_REPLACED_FILE; cd ..
 cd conversation; ./setup.sh ./../$PROVIDERS_REPLACED_FILE; cd ..
 # channels
 cd channels
-cd slack; ./setup.sh ./../../$PROVIDERS_REPLACED_FILE; cd ..
+cd slack; ./setup_channel_slack.sh ./../../$PROVIDERS_REPLACED_FILE; cd ..
 cd ..
 
 # Conduct any browser-related OAuth from channels
