@@ -60,7 +60,7 @@ describe('Slack channel integration tests', () => {
       .then(
         result => {
           const responseMiddle = result.response.result;
-          const responsePost = responseMiddle.result.response.result;
+          const responsePost = responseMiddle.response.result;
 
           try {
             assert.deepEqual(responsePost, expectedPostResults);

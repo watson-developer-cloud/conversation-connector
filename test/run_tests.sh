@@ -89,6 +89,7 @@ ${WSK} package update conversation \
   -p workspace_id "$CONVERSATION_TEST_WORKSPACEID" \
   | grep -v 'updated package'
 
+${WSK} action update slack/middle test/integration/channels/slack/middle.js
 
 # Test script
 if [ "$1" == "test" ]; then
