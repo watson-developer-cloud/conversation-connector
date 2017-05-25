@@ -24,6 +24,9 @@ if [ ! -f $CONVERSATION_PARAM_FILE ]; then
   exit 1
 fi
 
+WSK_PROD_HOST=`wsk property get --apihost | tr "\t" "\n" | tail -n 1`
+WSK_PROD_KEY=`wsk property get --auth | tr "\t" "\n" | tail -n 1`
+
 # Store the prod credential bindings
 SLACK_PROD_BINDINGS=`wsk package get slack | grep -v 'got package' | jq '.parameters[]'`
 SLACK_PROD_ACCESS_TOKEN=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="access_token") | .value'`
@@ -64,6 +67,9 @@ CONVERSATION_TEST_USERNAME=`cat $CONVERSATION_PARAM_FILE | jq --raw-output '.con
 CONVERSATION_TEST_PASSWORD=`cat $CONVERSATION_PARAM_FILE | jq --raw-output '.conversation.password'`
 CONVERSATION_TEST_WORKSPACEID=`cat $CONVERSATION_PARAM_FILE | jq --raw-output '.conversation.workspace_id'`
 
+# Change OpenWhisk client credentials to use test space credentials
+${WSK} property set --apihost ${OPENWHISK_TEST_API_HOST} --auth ${OPENWHISK_TEST_API_KEY} | grep -v 'ok'
+
 # Update each package to bind test credentials parameters
 ${WSK} package update slack \
   -p access_token "$SLACK_TEST_ACCESS_TOKEN" \
@@ -89,16 +95,21 @@ ${WSK} package update conversation \
   -p workspace_id "$CONVERSATION_TEST_WORKSPACEID" \
   | grep -v 'updated package'
 
-${WSK} action update slack/middle test/integration/channels/slack/middle.js
+${WSK} action update slack/middle test/integration/channels/slack/middle.js | grep -v 'ok'
 
 # Test script
 if [ "$1" == "test" ]; then
   mocha test --recursive
 elif [ "$1" == "coverage" ]; then
   istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive -R spec
+elif [ "$1" ]; then
+  mocha $1
 fi
 RETCODE=$?
 
+
+# Revert to prod OpenWhisk space
+${WSK} property set --apihost ${WSK_PROD_HOST} --auth ${WSK_PROD_KEY} | grep -v 'ok'
 
 # Revert to prod credentials bindings
 ${WSK} package update slack \

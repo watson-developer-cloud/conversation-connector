@@ -52,7 +52,7 @@ describe('starter-code integration tests', () => {
 
         // response.response.result contains the full unaltered response from the action
         assert.equal(
-          response.response.result.params.text,
+          response.params.text,
           'Hi. It looks like a nice drive today. What would you like me to do?  ',
           'response posted to slack does not contain expected answer.'
         );

@@ -57,11 +57,22 @@ function main(params) {
 function callConversation(ow, normalizedParams) {
   const convoAction = 'conversation/call-conversation';
 
-  return ow.actions.invoke({
-    name: convoAction,
-    blocking: true,
-    result: false,
-    params: normalizedParams
+  return new Promise((resolve, reject) => {
+    ow.actions
+      .invoke({
+        name: convoAction,
+        blocking: true,
+        result: true,
+        params: normalizedParams
+      })
+      .then(
+        success => {
+          safeExtractResponseMessage(success, resolve, reject);
+        },
+        error => {
+          reject(error);
+        }
+      );
   });
 }
 
@@ -163,14 +174,25 @@ function postResponseToSlack(ow, convoResponse, normalizedParams) {
 
   const postParams = {
     channel: normalizedParams.slack.event.channel,
-    text: convoResponse.response.result.output.text[0]
+    text: convoResponse.output.text[0]
   };
 
-  return ow.actions.invoke({
-    name: slackPost,
-    blocking: true,
-    result: true,
-    params: postParams
+  return new Promise((resolve, reject) => {
+    ow.actions
+      .invoke({
+        name: slackPost,
+        blocking: true,
+        result: true,
+        params: postParams
+      })
+      .then(
+        success => {
+          safeExtractResponseMessage(success, resolve, reject);
+        },
+        error => {
+          reject(error);
+        }
+      );
   });
 }
 
@@ -181,33 +203,43 @@ function postResponseToSlack(ow, convoResponse, normalizedParams) {
  * @param convoResponse - response from the Conversation package's call-conversation action
  */
 function validateResponseFromConversation(convoResponse) {
-  // Validate the conversation response obtained something successfully
   if (
     !convoResponse ||
-    !convoResponse.response ||
-    convoResponse.response.success !== true
-  ) {
-    throw new Error(
-      'Error calling Conversation, unable to post result to Slack'
-    );
-  }
-
-  // Validate Conversation contains the expected fields
-  if (
-    !convoResponse.response.result ||
-    !convoResponse.response.result.output ||
-    !convoResponse.response.result.output.text[0]
+    !convoResponse.output ||
+    !convoResponse.output.text ||
+    !convoResponse.output.text[0]
   ) {
     throw new Error(
       'Conversation call succeeded but a response to the user was not provided'
     );
   }
 
-  if (typeof convoResponse.response.result.output.text[0] !== 'string') {
+  if (typeof convoResponse.output.text[0] !== 'string') {
     throw new Error(
       'Conversation response provided but is not of expected type'
     );
   }
+}
+
+/**
+ * Safety extracts the OpenWhisk message from the OpenWhisk metadata,
+ *   and returns resolved or rejected message.
+ *
+ * @param  {JSON} params - parameters of OpenWhisk response
+ * @param  {method} resolve - promise resolve method
+ * @param  {method} reject - promise reject method
+ * @return {promise} - promise resolve or reject of the OpenWhisk result
+ */
+function safeExtractResponseMessage(params, resolve, reject) {
+  if (params.response) {
+    if (params.response.result) {
+      return resolve(params.response.result);
+    }
+    if (params.response.error) {
+      return reject(params.response.error);
+    }
+  }
+  return resolve(params);
 }
 
 module.exports = {

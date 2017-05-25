@@ -59,11 +59,22 @@ function main(params) {
 
       //  if starter_code_action_name is specified, send the slack params to that action
       if (actionName) {
-        return ow.actions.invoke({
-          name: actionName,
-          blocking: true,
-          result: true,
-          params: slackParams
+        return new Promise((resolve, reject) => {
+          ow.actions
+            .invoke({
+              name: actionName,
+              blocking: true,
+              result: true,
+              params: slackParams
+            })
+            .then(
+              success => {
+                return safeExtractResponseMessage(success, resolve, reject);
+              },
+              error => {
+                reject(error);
+              }
+            );
         });
       }
       //  if no starter_code_action_name specified, return the params in a promise
@@ -125,6 +136,27 @@ function validateParams(params) {
   if (!params.type) {
     throw new Error('No subscription type specified.');
   }
+}
+
+/**
+ * Safety extracts the OpenWhisk message from the OpenWhisk metadata,
+ *   and returns resolved or rejected message.
+ *
+ * @param  {JSON} params - parameters of OpenWhisk response
+ * @param  {method} resolve - promise resolve method
+ * @param  {method} reject - promise reject method
+ * @return {promise} - promise resolve or reject of the OpenWhisk result
+ */
+function safeExtractResponseMessage(params, resolve, reject) {
+  if (params.response) {
+    if (params.response.result) {
+      return resolve(params.response.result);
+    }
+    if (params.response.error) {
+      return reject(params.response.error);
+    }
+  }
+  return resolve(params);
 }
 
 module.exports = main;

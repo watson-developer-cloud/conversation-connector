@@ -34,7 +34,7 @@ describe('Slack Deploy Unit Tests', () => {
       state: slackBindings.state,
       client_id: slackBindings.client_id,
       client_secret: slackBindings.client_secret,
-      redirect_uri: 'redirect_uri',
+      redirect_uri: slackBindings.redirect_uri,
       code: 'code'
     };
 
@@ -49,7 +49,7 @@ describe('Slack Deploy Unit Tests', () => {
         configuration_url: 'https://teamname.slack.com/services/BXXXX'
       },
       bot: {
-        bot_user_id: 'UTTTTTTTTTTR',
+        bot_user_id: slackBindings.bot_user_id,
         bot_access_token: slackBindings.bot_access_token
       }
     };

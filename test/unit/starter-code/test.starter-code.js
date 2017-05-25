@@ -13,7 +13,9 @@ const errorUnknownProvider = 'non-supported channel';
 
 describe('starter code unit tests', () => {
   it('validateResponseFromConversation ', () => {
-    let convoResponseCopy = JSON.parse(JSON.stringify(convoResponseJson));
+    let convoResponseCopy = JSON.parse(
+      JSON.stringify(convoResponseJson.response.result)
+    );
 
     try {
       normalizeAction.validateResponseFromConversation(convoResponseCopy);
@@ -24,21 +26,11 @@ describe('starter code unit tests', () => {
       );
     }
 
-    delete convoResponseCopy.response;
+    convoResponseCopy = JSON.parse(
+      JSON.stringify(convoResponseJson.response.result)
+    );
 
-    try {
-      normalizeAction.validateResponseFromConversation(convoResponseCopy);
-    } catch (e) {
-      assert.equal(
-        e.message,
-        'Error calling Conversation, unable to post result to Slack',
-        'Expected failure due to missing conversation object.'
-      );
-    }
-
-    convoResponseCopy = JSON.parse(JSON.stringify(convoResponseJson));
-
-    delete convoResponseCopy.response.result.output;
+    delete convoResponseCopy.output;
 
     try {
       normalizeAction.validateResponseFromConversation(convoResponseCopy);
@@ -50,9 +42,11 @@ describe('starter code unit tests', () => {
       );
     }
 
-    convoResponseCopy = JSON.parse(JSON.stringify(convoResponseJson));
+    convoResponseCopy = JSON.parse(
+      JSON.stringify(convoResponseJson.response.result)
+    );
 
-    convoResponseCopy.response.result.output = { text: 'Turn on lights' };
+    convoResponseCopy.output = { text: 'Turn on lights' };
 
     try {
       normalizeAction.validateResponseFromConversation(convoResponseCopy);

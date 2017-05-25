@@ -80,10 +80,7 @@ describe('End-to-End tests: Slack as channel package', () => {
       })
       .then(
         result => {
-          return assert.deepEqual(
-            result.response.result.response.result,
-            expectedResult
-          );
+          return assert.deepEqual(result, expectedResult);
         },
         error => {
           return assert(false, safeExtractErrorMessage(error));
