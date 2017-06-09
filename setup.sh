@@ -31,18 +31,32 @@ cd slack; ./engage_oauth.sh ./../../$PROVIDERS_REPLACED_FILE; cd ..
 cd ..
 
 # Setup demo pipeline if the pipeline JSON key is set in providers file
-jq -r '.pipeline' $PROVIDERS_REPLACED_FILE &> /dev/null
-ERR_CODE=$?
-jq -r '.pipeline.name' $PROVIDERS_REPLACED_FILE &> /dev/null
-ERR_CODE=$(($ERR_CODE + $?))
-jq -r '.pipeline.actions[]' $PROVIDERS_REPLACED_FILE &> /dev/null
-ERR_CODE=$(($ERR_CODE + $?))
-if [ $ERR_CODE != 0 ]; then
-  echo 'Providers/credentials file missing pipeline JSON key.'
+jq -r '.pipeline[]' $PROVIDERS_REPLACED_FILE &> /dev/null
+if [ $? != 0 ]; then
+  echo 'ERROR: Providers/credentials file missing pipeline JSON key.'
 else
-  sequence_name=`jq -r '.pipeline.name' $PROVIDERS_REPLACED_FILE`
-  sequence_actions=`jq -r '.pipeline.actions[]' $PROVIDERS_REPLACED_FILE | tr "\n" ","`
-  ${WSK} action update ${sequence_name} --sequence ${sequence_actions%?} -a web-export true
+  for pipeline in `jq -c '.pipeline[]' $PROVIDERS_REPLACED_FILE`; do
+    # Verify pipeline has a name
+    pipeline_name=`echo $pipeline | jq -r '.name'`
+    if [ $? != 0 -o -z $pipeline_name -o $pipeline_name == 'null' ]; then
+      echo 'ERROR: Pipeline does not have a name.'
+      continue
+    fi
+    # Verify pipeline has an actions array
+    pipeline_actions=`echo $pipeline | jq -r '.actions[]' | tr "\n" ","`
+    if [ $? != 0 -o -z $pipeline_actions -o $pipeline_actions == 'null' ]; then
+      echo 'ERROR: Pipeline missing actions in the sequence.'
+    fi
+    # Verify pipeline contains at least one action
+    pipeline_actions=${pipeline_actions%?}
+    if [ -z pipeline_actions ]; then
+      echo 'ERROR: Sequence must contain at least one action.'
+    fi
+
+    ${WSK} action update ${pipeline_name} --sequence ${pipeline_actions} \
+      -p conversation_workspace_id 'dummy_workspace_id' \
+      -a web-export true
+  done
 fi
 
 # Cleanup
