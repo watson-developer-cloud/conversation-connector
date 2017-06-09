@@ -10,8 +10,10 @@ describe('End-to-End tests: Conversation & Starter-code prerequisites', () => {
   const ow = openwhisk(openwhiskBindings);
 
   const requiredActions = [
-    'starter-code/normalize',
-    'conversation/call-conversation'
+    'starter-code/pre-conversation',
+    'starter-code/post-conversation',
+    'conversation/call-conversation',
+    'test-pipeline'
   ];
 
   requiredActions.forEach(action => {

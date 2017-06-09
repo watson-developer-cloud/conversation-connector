@@ -8,7 +8,6 @@ const safeExtractErrorMessage = require('./../resources/helper-methods.js').safe
 const slackBindings = require('./../resources/slack-bindings.json').slack;
 
 const carDashboardMsg = 'Hi. It looks like a nice drive today. What would you like me to do?  ';
-const errorNoOwCredentials = 'No openwhisk credentials provided.';
 
 /**
  * Slack prerequisites test suite verifies the Slack package is properly deployed in OpenWhisk
@@ -16,7 +15,13 @@ const errorNoOwCredentials = 'No openwhisk credentials provided.';
 describe('End-to-End tests: Slack prerequisites', () => {
   const ow = openwhisk(openwhiskBindings);
 
-  const requiredActions = ['slack/post', 'slack/receive'];
+  const requiredActions = [
+    'slack/post',
+    'slack/receive',
+    'slack/deploy',
+    'starter-code/normalize-conversation-for-slack',
+    'starter-code/normalize-slack-for-conversation'
+  ];
 
   requiredActions.forEach(action => {
     it(`${action} action is deployed in OpenWhisk namespace`, () => {
@@ -35,6 +40,7 @@ describe('End-to-End tests: Slack prerequisites', () => {
 
 describe('End-to-End tests: Slack as channel package', () => {
   const ow = openwhisk(openwhiskBindings);
+  const actionSlackPipeline = 'test-pipeline';
   let params = {};
 
   const expectedResult = {
@@ -73,7 +79,7 @@ describe('End-to-End tests: Slack as channel package', () => {
   it('system works under validated circumstances', () => {
     return ow.actions
       .invoke({
-        name: 'slack/receive',
+        name: actionSlackPipeline,
         result: true,
         blocking: true,
         params
@@ -87,58 +93,4 @@ describe('End-to-End tests: Slack as channel package', () => {
         }
       );
   }).retries(5);
-
-  it('system will not work without OpenWhisk credentials', () => {
-    params.ow_api_host = '';
-    params.ow_api_key = '';
-
-    return ow.actions
-      .invoke({
-        name: 'slack/receive',
-        result: true,
-        blocking: true,
-        params
-      })
-      .then(
-        () => {
-          return assert(false, 'Action suceeded unexpectedly.');
-        },
-        error => {
-          return assert.equal(
-            safeExtractErrorMessage(error),
-            errorNoOwCredentials
-          );
-        }
-      );
-  }).retries(5);
-
-  it('system returns received parameters from channel when starter-code not linked', () => {
-    params.starter_code_action_name = '';
-
-    return ow.actions
-      .invoke({
-        name: 'slack/receive',
-        blocking: true,
-        result: true,
-        params
-      })
-      .then(
-        result => {
-          delete params.starter_code_action_name;
-          params.access_token = slackBindings.access_token;
-          params.bot_access_token = slackBindings.bot_access_token;
-          params.bot_user_id = slackBindings.bot_user_id;
-
-          const expectedParams = {
-            slack: params,
-            provider: 'slack'
-          };
-
-          assert.deepEqual(result, expectedParams);
-        },
-        error => {
-          assert(false, safeExtractErrorMessage(error));
-        }
-      );
-  });
 });

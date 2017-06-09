@@ -2,5 +2,6 @@
 
 WSK=${WSK-wsk}
 
-${WSK} action update slack/middle middle.js -a web-export true \
-  -p endpoint "https://foropenwhisk-prod.mybluemix.net/slack/post.json"
+${WSK} action update slack/middle ./test/integration/channels/slack/middle.js | grep -v 'ok'
+
+${WSK} action update slack/integration-pipeline --sequence slack/receive,slack/middle,slack/post | grep -v 'ok'

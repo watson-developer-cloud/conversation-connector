@@ -1,37 +1,36 @@
 'use strict';
 
-const openwhisk = require('openwhisk');
-
 /**
- *  Receives a subscription message from Slack
- *    and sends the appropriate information to a starter-code action name.
+ * Receives a subscription message from Slack
+ *   and returns the appropriate information depending of subscription event received.
  *
- *  @params Slack Events API parameters as outlined by https://api.slack.com/events-api
- *
- *  @return Result of invocation of starter-code action if the action was specified;
- *    otherwise, a JSON object of the event subscription received
+ * @param  {JSON} params - Slack Events API parameters as outlined by
+ *                       https://api.slack.com/events-api
+ * @return {Promise} - Result of the Slack subscription event specified by Slack API
  */
 function main(params) {
   try {
-    validateParams(params);
+    validateParameters(params);
   } catch (e) {
     return Promise.reject(e.message);
   }
 
   const type = params.type;
 
-  //  url verification is for validation this action with slack during the setup
-  //    this action simply passes the challenge passed by slack used for verification
+  // url_verification is for validating this action with slack during slack's setup phase
+  //  this action simply passes the challenge passed by slack during verification
   if (type === 'url_verification') {
     const challenge = params.challenge || '';
 
-    return Promise.resolve({
+    // Promise reject is used here to break the Openwhisk sequence-action.
+    // Breaking the sequence-action here means sending the challenge directly to the Slack server.
+    return Promise.reject({
       code: 200,
       challenge
     });
   }
 
-  //  event_callback is sent by slack for most major subscription events such as message sent
+  // event_callback is sent by slack for most major subscription events such as message sent
   if (type === 'event_callback') {
     const eventType = params.event && params.event.type;
     if (!eventType) {
@@ -44,60 +43,35 @@ function main(params) {
       const botId = params.event.bot_id;
 
       if (botId) {
-        return Promise.resolve({ bot_id: botId });
+        // Promise reject is used here to break the Openwhisk sequence-action.
+        // Breaking the sequence-action here means the pipeline shouldn't handle bot messages.
+        return Promise.reject({ bot_id: botId });
       }
 
-      const openwhiskApiHost = params.ow_api_host;
-      const openwhiskApiKey = params.ow_api_key;
-      const ow = openwhisk({
-        apihost: openwhiskApiHost,
-        api_key: openwhiskApiKey
-      });
-
-      const actionName = params.starter_code_action_name;
-      const slackParams = extractSlackParams(params);
-
-      //  if starter_code_action_name is specified, send the slack params to that action
-      if (actionName) {
-        return new Promise((resolve, reject) => {
-          ow.actions
-            .invoke({
-              name: actionName,
-              blocking: true,
-              result: true,
-              params: slackParams
-            })
-            .then(
-              success => {
-                return safeExtractResponseMessage(success, resolve, reject);
-              },
-              error => {
-                reject(error);
-              }
-            );
-        });
-      }
-      //  if no starter_code_action_name specified, return the params in a promise
-      return Promise.resolve(slackParams);
+      return Promise.resolve(extractSlackParameters(params));
     }
+
     return Promise.reject('Message type not understood.');
   }
+
   return Promise.reject('Event type not understood.');
 }
 
 /**
- *  Extracts and converts the input parameters to JSON that starter-code understands.
+ * Extracts and converts the input parametrs to only parameters that were passed by Slack.
  *
- *  @params - the parameters passed into the action
- *
- *  @return - JSON containing all and only the parameter that starter-code needs
+ * @param  {JSON} params - Parameters passed into the action,
+ *                       including Slack parameters and package bindings
+ * @return {JSON} - JSON containing all and only Slack parameters
+ *                    and indicators that the JSON is coming from Slack channel package
  */
-function extractSlackParams(params) {
+function extractSlackParameters(params) {
   const slackParams = params;
 
-  delete slackParams.__ow_meta_path;
-  delete slackParams.__ow_meta_verb;
-  delete slackParams.__ow_meta_headers;
+  delete slackParams.__ow_headers;
+  delete slackParams.__ow_method;
+  delete slackParams.__ow_path;
+  delete slackParams.__ow_verb;
   delete slackParams.ow_api_host;
   delete slackParams.ow_api_key;
   delete slackParams.client_id;
@@ -113,18 +87,12 @@ function extractSlackParams(params) {
 }
 
 /**
- *  Validates the required parameters for running this action.
+ * Validates the required parameters for running this action.
  *
- *  @params - the parameters passed into the action
+ * @param  {JSON} params - the parameters passed into the action
  */
-function validateParams(params) {
-  // Required: OpenWhisk API host and key
-  const apiHost = params.ow_api_host;
-  const apiKey = params.ow_api_key;
-  if (!apiHost || !apiKey) {
-    throw new Error('No openwhisk credentials provided.');
-  }
-  // Required: Both the expected and actual verification tokens, and they must be equal
+function validateParameters(params) {
+  // Required: Both expected and actuals verification tokens, and they must be equal
   if (
     !params.token ||
     !params.verification_token ||
@@ -132,31 +100,11 @@ function validateParams(params) {
   ) {
     throw new Error('Verification token is incorrect.');
   }
+
   // Required: The type of Slack subscription event received
   if (!params.type) {
     throw new Error('No subscription type specified.');
   }
-}
-
-/**
- * Safety extracts the OpenWhisk message from the OpenWhisk metadata,
- *   and returns resolved or rejected message.
- *
- * @param  {JSON} params - parameters of OpenWhisk response
- * @param  {method} resolve - promise resolve method
- * @param  {method} reject - promise reject method
- * @return {promise} - promise resolve or reject of the OpenWhisk result
- */
-function safeExtractResponseMessage(params, resolve, reject) {
-  if (params.response) {
-    if (params.response.result) {
-      return resolve(params.response.result);
-    }
-    if (params.response.error) {
-      return reject(params.response.error);
-    }
-  }
-  return resolve(params);
 }
 
 module.exports = main;

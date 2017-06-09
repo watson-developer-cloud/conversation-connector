@@ -1,7 +1,10 @@
 'use strict';
 
+/**
+ * Starter Code Integration Tests (pre-conversation and post-conversation)
+ */
+
 const assert = require('assert');
-const normalize = require('../../../starter-code/normalize');
 const openwhisk = require('openwhisk');
 const openWhiskAuthObj = require('../../resources/openwhisk-bindings.json').openwhisk;
 
@@ -12,7 +15,9 @@ describe('starter-code integration tests', () => {
     api_key: openWhiskAuthObj.api_key
   };
   const ow = openwhisk(options);
+
   let params;
+  let expectedResult;
 
   beforeEach(() => {
     params = {
@@ -32,51 +37,34 @@ describe('starter-code integration tests', () => {
         event_id: 'Ev08MFMKH6',
         event_time: 1234567890
       },
-      provider: 'slack'
+      provider: 'slack',
+      channel_id: 'D024BE91L',
+      message: 'Turn on lights'
+    };
+
+    expectedResult = {
+      channel: 'D024BE91L',
+      text: 'Output text from mock-convo.'
     };
   });
 
-  it('call starter-code using OpenWhisk module ', () => {
-    const name = 'starter-code/normalize';
-    const blocking = true;
-    const result = true;
+  it('validate starter-code actions work', () => {
+    const actionName = 'starter-code/integration-pipeline';
 
     return ow.actions
-      .invoke({ name, blocking, result, params })
-      .then(response => {
-        // response contains the raw JSON from the normalize action. It contains
-        // OW information, such as what action was called, what namespace it was in
-
-        // response.response contains the result of the action invocation, if it succeeded
-        // or not.
-
-        // response.response.result contains the full unaltered response from the action
-        assert.equal(
-          response.params.text,
-          'Hi. It looks like a nice drive today. What would you like me to do?  ',
-          'response posted to slack does not contain expected answer.'
-        );
+      .invoke({
+        name: actionName,
+        blocking: true,
+        result: true,
+        params
       })
-      .catch(e => {
-        assert(false, e);
-      });
-  }).timeout(16000);
-
-  it('call starter-code using local sequence like approach', () => {
-    params.ow_api_host = openWhiskAuthObj.apihost;
-    params.ow_api_key = openWhiskAuthObj.api_key;
-
-    return normalize
-      .main(params)
-      .then(response => {
-        assert.equal(
-          response.params.text,
-          'Hi. It looks like a nice drive today. What would you like me to do?  ',
-          'response posted to slack does not contain expected answer.'
-        );
-      })
-      .catch(e => {
-        assert(false, e);
-      });
-  }).timeout(8000);
+      .then(
+        success => {
+          assert.deepEqual(success, expectedResult);
+        },
+        error => {
+          assert(false, error);
+        }
+      );
+  }).retries(5);
 });

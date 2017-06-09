@@ -47,7 +47,10 @@ function main(params) {
       if (err) {
         reject(err);
       } else {
-        resolve(response);
+        resolve({
+          conversation: response,
+          raw_data: params.raw_data || {}
+        });
       }
     });
   });

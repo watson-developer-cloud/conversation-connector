@@ -1,12 +1,12 @@
 {
   "slack": {
     "access_token": "xoxp-176389621495-176389622103-175070850417-2f7cc0d313a575e9b9cb1c991aab85a3",
-    "client_id": "a176389621495.175016645969",
+    "client_id": "176389621495.175016645969",
     "client_secret": "8e1075aed3444f6657695ef99114a1c1",
     "verification_token": "BrfPhrGfNG5CS0jAqJkWjVcF",
     "channel": "C57T8R8FR",
     "bot_access_token": "xoxb-176457405255-k6zcfiUSXV3e2fGgTLEOt8fq",
-    "state": "7c6b1c2e5ddd6ad058736148e9875ead227f8c8f0bd63772e4beda62701f628a",
+    "state": "b34e43e11b0f9a6d8cd11d8ebb4a9fe29bcadc00446ef4c063c54181490c0f34",
     "redirect_uri": "https://foropenwhisk-prod.mybluemix.net/slack/deploy.json",
     "starter_code_action_name": "starter-code/normalize",
     "bot_user_id": "U56DFBX7H"

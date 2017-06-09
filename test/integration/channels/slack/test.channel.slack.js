@@ -8,12 +8,11 @@ const openwhisk = require('openwhisk');
 const openwhiskBindings = require('./../../../resources/openwhisk-bindings.json').openwhisk;
 const slackBindings = require('./../../../resources/slack-bindings.json').slack;
 
-const actionSlackMiddle = 'slack/middle';
-const actionSlackReceive = 'slack/receive';
+const actionSlackPipeline = 'slack/integration-pipeline';
 
 describe('Slack channel integration tests', () => {
   let ow;
-  let slackReceiveParams = {};
+  let slackParams = {};
   const expectedPostResults = {
     status: 'OK',
     url: 'https://slack.com/api/chat.postMessage',
@@ -28,7 +27,7 @@ describe('Slack channel integration tests', () => {
   beforeEach(done => {
     ow = openwhisk(openwhiskBindings);
 
-    slackReceiveParams = {
+    slackParams = {
       token: slackBindings.verification_token,
       team_id: 'TXXXXXXXX',
       api_app_id: 'AXXXXXXXX',
@@ -42,8 +41,7 @@ describe('Slack channel integration tests', () => {
       type: 'event_callback',
       authed_users: ['UXXXXXXX1', 'UXXXXXXX2'],
       event_id: 'EvXXXXXXXX',
-      event_time: 'XXXXXXXXXX',
-      starter_code_action_name: actionSlackMiddle
+      event_time: 'XXXXXXXXXX'
     };
 
     return done();
@@ -52,17 +50,15 @@ describe('Slack channel integration tests', () => {
   it('validate slack channel package works', done => {
     ow.actions
       .invoke({
-        name: actionSlackReceive,
-        params: slackReceiveParams,
+        name: actionSlackPipeline,
+        params: slackParams,
         blocking: true,
         result: true
       })
       .then(
         success => {
-          const responsePost = success.response.result;
-
           try {
-            assert.deepEqual(responsePost, expectedPostResults);
+            assert.deepEqual(success, expectedPostResults);
             return done();
           } catch (e) {
             return done(e);

@@ -43,8 +43,8 @@ describe('conversation integration tests', () => {
           .invoke({ name, blocking, result, params })
           .then(response2 => {
             assert.equal(
-              response2.output.text[0],
-              "I'll turn on the lights for you.",
+              response2.conversation.output.text[0],
+              'Hi. It looks like a nice drive today. What would you like me to do?  ',
               'response from conversation does not contain expected answer'
             );
           });
@@ -65,8 +65,8 @@ describe('conversation integration tests', () => {
         return conversation(params).then(
           responseInner => {
             assert.equal(
-              responseInner.output.text[0],
-              "I'll turn on the lights for you.",
+              responseInner.conversation.output.text[0],
+              'Hi. It looks like a nice drive today. What would you like me to do?  ',
               'response from conversation does not contain expected answer'
             );
           },

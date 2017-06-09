@@ -66,6 +66,7 @@ describe('Slack Deploy Unit Tests', () => {
     return slackDeploy(params).then(
       result => {
         if (!mock.isDone()) {
+          nock.cleanAll();
           assert(false, 'Mock server did not get called.');
         }
         nock.cleanAll();
@@ -148,6 +149,7 @@ describe('Slack Deploy Unit Tests', () => {
       },
       error => {
         if (!mock.isDone()) {
+          nock.cleanAll();
           assert(false, 'Mock server did not get called.');
         }
         nock.cleanAll();
@@ -172,6 +174,7 @@ describe('Slack Deploy Unit Tests', () => {
       },
       error => {
         if (!mock.isDone()) {
+          nock.cleanAll();
           assert(false, 'Mock server did not get called.');
         }
         nock.cleanAll();
@@ -196,6 +199,7 @@ describe('Slack Deploy Unit Tests', () => {
       },
       error => {
         if (!mock.isDone()) {
+          nock.cleanAll();
           assert(false, 'Mock server did not get called.');
         }
         nock.cleanAll();
@@ -232,6 +236,7 @@ describe('Slack Deploy Unit Tests', () => {
       },
       error => {
         if (!mock.isDone()) {
+          nock.cleanAll();
           assert(false, 'Mock server did not get called.');
         }
         nock.cleanAll();
@@ -256,6 +261,7 @@ describe('Slack Deploy Unit Tests', () => {
       },
       error => {
         if (!mock.isDone()) {
+          nock.cleanAll();
           assert(false, 'Mock server did not get called.');
         }
         nock.cleanAll();

@@ -1,19 +1,19 @@
 'use strict';
 
-const openwhisk = require('openwhisk');
-
 /**
  *  An action representing a "black box" from and to the channel specified.
  *
  *  @params Paramters sent to this action by channel/receive:
  *    {
- *      channel_name: {
+ *      slack: {
  *        ...
  *      },
- *      provider: 'channel_name'
+ *      provider: 'slack',
+ *      channel_id: 'CXXXXXXXXXX',
+ *      text: 'Hello World'
  *    }
  *
- *  @return Return parameters required by channel/post
+ *  @return Return parameters required by slack/post
  */
 function main(params) {
   try {
@@ -22,41 +22,10 @@ function main(params) {
     return Promise.reject(e.message);
   }
 
-  const provider = params.provider;
-
-  if (provider === 'slack') {
-    const apiHost = params.ow_api_host;
-    const apiKey = params.ow_api_key;
-
-    const ow = openwhisk({
-      apihost: apiHost,
-      api_key: apiKey
-    });
-
-    const slackParams = params.slack;
-
-    return new Promise((resolve, reject) => {
-      ow.actions
-        .invoke({
-          name: 'slack/post',
-          blocking: true,
-          result: true,
-          params: {
-            channel: slackParams.event.channel,
-            text: slackParams.event.text
-          }
-        })
-        .then(
-          result => {
-            resolve(result);
-          },
-          error => {
-            reject(error);
-          }
-        );
-    });
-  }
-  return Promise.reject(`Provider ${provider} not supported.`);
+  return {
+    channel: params.slack.event.channel,
+    text: params.slack.event.text
+  };
 }
 
 /**
@@ -65,19 +34,13 @@ function main(params) {
  *  @params - the parameters passed into the action
  */
 function validateParams(params) {
-  // Required: OpenWhisk API host and key
-  const apiHost = params.ow_api_host;
-  const apiKey = params.ow_api_key;
-  if (!apiHost || !apiKey) {
-    throw new Error('No OpenWhisk credentials provided.');
-  }
   // Required: The channel provider communicating with this action
-  if (!params.provider) {
-    throw new Error('No channel provider supplied.');
+  if (!params.provider || params.provider !== 'slack') {
+    throw new Error('No slack channel provider supplied.');
   }
   // Required: The parameters of the channel provider
-  if (!params[params.provider]) {
-    throw new Error(`No ${params.provider} parameters provided.`);
+  if (!params.slack) {
+    throw new Error('No slack data or event parameters provided.');
   }
 }
 

@@ -2,10 +2,17 @@
 
 export WSK=${WSK-wsk}
 
+TEST_PIPELINE='test-pipeline'
+
 echo "Running Convo-Flexible-Bot test suite."
 echo "!!!Do NOT kill this process halfway as this will break the OpenWhisk parameter bindings!!!"
 echo "   ...but if you do, simply run './setup.sh' from the root directory again."
 echo -e "\n"
+
+# When running the test manually, return to the root directory first
+if [ `pwd | tr "/" "\n" | tail -n 1` == "test" ]; then
+  cd ..
+fi
 
 # Check the test system credential files exist
 SLACK_PARAM_FILE='./test/resources/slack-bindings.json'
@@ -74,7 +81,6 @@ ${WSK} property set --apihost ${OPENWHISK_TEST_API_HOST} --auth ${OPENWHISK_TEST
 ${WSK} package update slack \
   -p access_token "$SLACK_TEST_ACCESS_TOKEN" \
   -p bot_access_token "$SLACK_TEST_BOT_ACCESS_TOKEN" \
-  -p starter_code_action_name "$SLACK_TEST_STARTER_CODE_ACTION_NAME" \
   -p redirect_uri "$SLACK_TEST_REDIRECT_URI" \
   -p bot_user_id "$SLACK_TEST_BOT_USER_ID" \
   -p client_id "a$SLACK_TEST_CLIENT_ID" \
@@ -95,7 +101,37 @@ ${WSK} package update conversation \
   -p workspace_id "$CONVERSATION_TEST_WORKSPACEID" \
   | grep -v 'updated package'
 
-${WSK} action update slack/middle test/integration/channels/slack/middle.js | grep -v 'ok'
+# Update all actions specified by tests
+${WSK} action update slack/receive ./channels/slack/receive/index.js | grep -v 'ok'
+${WSK} action update slack/post ./channels/slack/post/index.js | grep -v 'ok'
+${WSK} action update slack/deploy ./channels/slack/deploy/index.js | grep -v 'ok'
+
+${WSK} action update starter-code/pre-conversation ./starter-code/pre-conversation.js | grep -v 'ok'
+${WSK} action update starter-code/post-conversation ./starter-code/post-conversation.js | grep -v 'ok'
+${WSK} action update starter-code/normalize-slack-for-conversation ./starter-code/normalize-for-conversation/normalize-slack-for-conversation.js | grep -v 'ok'
+${WSK} action update starter-code/normalize-conversation-for-slack ./starter-code/normalize-for-channel/normalize-conversation-for-slack.js | grep -v 'ok'
+
+${WSK} action update conversation/call-conversation ./conversation/call-conversation.js | grep -v 'ok'
+
+${WSK} action update ${TEST_PIPELINE} --sequence slack/receive,starter-code/pre-conversation,starter-code/normalize-slack-for-conversation,conversation/call-conversation,starter-code/post-conversation,starter-code/normalize-conversation-for-slack,slack/post -a web-export true | grep -v 'ok'
+
+# Run setup scripts needed to build "mock" actions for integration tests
+SETUP_SCRIPT='./test/integration/conversation/setup.sh'
+if [ -f $SETUP_SCRIPT ]; then
+  bash $SETUP_SCRIPT
+fi
+SETUP_SCRIPT='./test/integration/starter-code/setup.sh'
+if [ -f $SETUP_SCRIPT ]; then
+  bash $SETUP_SCRIPT
+fi
+for folder in './test/integration/channels'/*; do
+  if [ -d $folder ]; then
+    SETUP_SCRIPT="$folder/setup.sh"
+    if [ -f $SETUP_SCRIPT ]; then
+      bash $SETUP_SCRIPT
+    fi
+  fi
+done
 
 # Test script
 if [ "$1" == "test" ]; then
@@ -107,6 +143,26 @@ elif [ "$1" ]; then
 fi
 RETCODE=$?
 
+# Run breakdown scripts that deletes the "mock" actions for integration tests
+BREAKDOWN_SCRIPT='./test/integration/conversation/breakdown.sh'
+if [ -f $BREAKDOWN_SCRIPT ]; then
+  bash $BREAKDOWN_SCRIPT
+fi
+BREAKDOWN_SCRIPT='./test/integration/starter-code/breakdown.sh'
+if [ -f $BREAKDOWN_SCRIPT ]; then
+  bash $BREAKDOWN_SCRIPT
+fi
+for folder in './test/integration/channels'/*; do
+  if [ -d $folder ]; then
+    BREAKDOWN_SCRIPT="$folder/breakdown.sh"
+    if [ -f $BREAKDOWN_SCRIPT ]; then
+      bash $BREAKDOWN_SCRIPT
+    fi
+  fi
+done
+
+# Delete pipeline used in test
+${WSK} action delete ${TEST_PIPELINE} | grep -v 'ok'
 
 # Revert to prod OpenWhisk space
 ${WSK} property set --apihost ${WSK_PROD_HOST} --auth ${WSK_PROD_KEY} | grep -v 'ok'
@@ -115,7 +171,6 @@ ${WSK} property set --apihost ${WSK_PROD_HOST} --auth ${WSK_PROD_KEY} | grep -v 
 ${WSK} package update slack \
   -p access_token "$SLACK_PROD_ACCESS_TOKEN" \
   -p bot_access_token "$SLACK_PROD_BOT_ACCESS_TOKEN" \
-  -p starter_code_action_name "$SLACK_PROD_STARTER_CODE_ACTION_NAME" \
   -p redirect_uri "$SLACK_PROD_REDIRECT_URI" \
   -p bot_user_id "$SLACK_PROD_BOT_USER_ID" \
   -p client_id "$SLACK_PROD_CLIENT_ID" \

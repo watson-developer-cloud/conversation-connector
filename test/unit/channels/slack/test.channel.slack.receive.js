@@ -12,13 +12,13 @@ const slackReceive = require('./../../../../channels/slack/receive/index.js');
 const errorBadVerificationTokens = 'Verification token is incorrect.';
 const errorEventNotUnderstood = 'Event type not understood.';
 const errorMessageNotUnderstood = 'Message type not understood.';
-const errorNoOwCredentials = 'No openwhisk credentials provided.';
 const errorSubscriptionType = 'No subscription type specified.';
 const errorSubWithNoEvent = 'No event type specified in event callback slack subscription.';
 
 describe('Slack Receive Unit Tests', () => {
-  let messageParams = {};
   let challengeParams = {};
+  let challengeResult = {};
+  let messageParams = {};
   let messageResult = {};
   const incorrectToken = 'incorrect_token';
 
@@ -45,6 +45,11 @@ describe('Slack Receive Unit Tests', () => {
       challenge: 'challenge_token'
     };
 
+    challengeResult = {
+      code: 200,
+      challenge: 'challenge_token'
+    };
+
     messageResult = {
       slack: {
         token: slackBindings.verification_token,
@@ -61,12 +66,11 @@ describe('Slack Receive Unit Tests', () => {
 
   it('validate slack/receive passes on challenge', () => {
     return slackReceive(challengeParams).then(
-      result => {
-        assert.equal(result.code, 200);
-        assert.equal(result.challenge, 'challenge_token');
+      () => {
+        assert(false, 'Action succeeded unexpectedly.');
       },
-      error => {
-        assert(false, error);
+      challengeMessage => {
+        assert.deepEqual(challengeMessage, challengeResult);
       }
     );
   });
@@ -85,26 +89,21 @@ describe('Slack Receive Unit Tests', () => {
   it('validate slack/receive receives slack bot message', () => {
     messageParams.event.bot_id = 'bot_id';
 
+    const botResponse = {
+      bot_id: 'bot_id'
+    };
+
     return slackReceive(messageParams).then(
-      botParams => {
-        if (!botParams) {
-          assert(false, 'Expected bot message, received human message.');
-        } else if (botParams.bot_id !== 'bot_id') {
-          assert(
-            false,
-            `Wrong bot id; expected bot_id, got ${botParams.bot_id}`
-          );
-        } else {
-          assert(true);
-        }
+      () => {
+        assert(false, 'Action succeeded unexpectedly.');
       },
-      error => {
-        assert(false, error);
+      botMessage => {
+        assert.deepEqual(botMessage, botResponse);
       }
     );
   });
 
-  it('validate receive returns to action passed in params', () => {
+  it('validate slack/receive returns to action passed in params', () => {
     messageParams.starter_code_action_name = '/whisk.system/utils/echo';
 
     return slackReceive(messageParams).then(
@@ -116,20 +115,6 @@ describe('Slack Receive Unit Tests', () => {
       }
     );
   }).timeout(4000);
-
-  it('validate error when no openwhisk credentials', () => {
-    delete messageParams.ow_api_host;
-    delete messageParams.ow_api_key;
-
-    return slackReceive(messageParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error, errorNoOwCredentials);
-      }
-    );
-  });
 
   it('validate error when no token', () => {
     delete messageParams.token;
@@ -159,13 +144,14 @@ describe('Slack Receive Unit Tests', () => {
 
   it('validate no challenge okay', () => {
     delete challengeParams.challenge;
+    challengeResult.challenge = '';
 
     return slackReceive(challengeParams).then(
-      result => {
-        assert.equal(result.code, 200);
+      () => {
+        assert(false, 'Action succeeded unexpectedly.');
       },
-      error => {
-        assert(false, error);
+      challengeMessage => {
+        assert.deepEqual(challengeMessage, challengeResult);
       }
     );
   });
@@ -227,7 +213,7 @@ describe('Slack Receive Unit Tests', () => {
 
     return slackReceive(messageParams).then(
       () => {
-        assert(true, 'Action suceeded unexpectedly.');
+        assert(false, 'Action suceeded unexpectedly.');
       },
       error => {
         assert.equal(error, errorSubWithNoEvent);

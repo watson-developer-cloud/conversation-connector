@@ -97,10 +97,6 @@ function main(params) {
                   {
                     key: 'client_secret',
                     value: params.client_secret
-                  },
-                  {
-                    key: 'starter_code_action_name',
-                    value: params.starter_code_action_name || ''
                   }
                 ]
               };
