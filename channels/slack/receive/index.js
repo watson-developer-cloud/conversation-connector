@@ -46,6 +46,18 @@ function main(params) {
         // Promise reject is used here to break the Openwhisk sequence-action.
         // Breaking the sequence-action here means the pipeline shouldn't handle bot messages.
         return Promise.reject({ bot_id: botId });
+      } else if (
+        params.__ow_headers &&
+        params.__ow_headers['x-slack-retry-reason'] &&
+        params.__ow_headers['x-slack-retry-num'] &&
+        params.__ow_headers['x-slack-retry-reason'] === 'http_timeout' &&
+        params.__ow_headers['x-slack-retry-num'] > 0
+      ) {
+        // OpenWhisk timed out on Slack, and so Slack resent this event subscription as a duplicate
+        //  For now, this duplicate message is ignored,
+        //  but in the future, we need to check if this event was handled by the previous event
+        //  with a database.
+        return Promise.reject(extractSlackParameters(params));
       }
 
       return Promise.resolve(extractSlackParameters(params));

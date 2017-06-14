@@ -220,4 +220,20 @@ describe('Slack Receive Unit Tests', () => {
       }
     );
   });
+
+  it('validate error when subscription event was timed out and resent', () => {
+    messageParams.__ow_headers = {
+      'x-slack-retry-reason': 'http_timeout',
+      'x-slack-retry-num': 1
+    };
+
+    return slackReceive(messageParams).then(
+      () => {
+        assert(false, 'Action succeeded unexpectedly.');
+      },
+      error => {
+        assert.deepEqual(error, messageResult);
+      }
+    );
+  });
 });
