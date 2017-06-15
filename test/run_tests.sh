@@ -113,7 +113,7 @@ ${WSK} action update starter-code/normalize-conversation-for-slack ./starter-cod
 
 ${WSK} action update conversation/call-conversation ./conversation/call-conversation.js | grep -v 'ok'
 
-${WSK} action update ${TEST_PIPELINE} --sequence slack/receive,starter-code/pre-conversation,starter-code/normalize-slack-for-conversation,conversation/call-conversation,starter-code/post-conversation,starter-code/normalize-conversation-for-slack,slack/post -a web-export true | grep -v 'ok'
+${WSK} action update ${TEST_PIPELINE} --sequence slack/receive,starter-code/normalize-slack-for-conversation,starter-code/pre-conversation,conversation/call-conversation,starter-code/normalize-conversation-for-slack,starter-code/post-conversation,slack/post -a web-export true | grep -v 'ok'
 
 # Run setup scripts needed to build "mock" actions for integration tests
 SETUP_SCRIPT='./test/integration/conversation/setup.sh'

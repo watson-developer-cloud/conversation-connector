@@ -22,11 +22,11 @@
       "name": "flexible-pipeline",
       "actions": [
         "slack/receive",
-        "starter-code/pre-conversation",
         "starter-code/normalize-slack-for-conversation",
+        "starter-code/pre-conversation",
         "conversation/call-conversation",
-        "starter-code/post-conversation",
         "starter-code/normalize-conversation-for-slack",
+        "starter-code/post-conversation",
         "slack/post"
       ]
     }

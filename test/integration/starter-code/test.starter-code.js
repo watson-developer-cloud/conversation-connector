@@ -44,7 +44,9 @@ describe('starter-code integration tests', () => {
 
     expectedResult = {
       channel: 'D024BE91L',
-      text: 'Output text from mock-convo.'
+      text: 'Output text from mock-convo.',
+      ow_api_host: options.apihost,
+      ow_api_key: options.api_key
     };
   });
 
