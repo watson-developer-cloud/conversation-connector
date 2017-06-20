@@ -73,6 +73,9 @@ function extractSlackParams(params) {
   delete slackParams.bot_user_id;
   delete slackParams.bot_access_token;
 
+  delete slackParams.raw_input_data;
+  delete slackParams.raw_output_data;
+
   return slackParams;
 }
 

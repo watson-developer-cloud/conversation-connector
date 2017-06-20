@@ -19,8 +19,9 @@ function main(params) {
         text: params.slack.event.text
       }
     },
-    raw_data: {
-      slack: params.slack
+    raw_input_data: {
+      slack: params.slack,
+      provider: 'slack'
     }
   };
 

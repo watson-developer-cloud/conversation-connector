@@ -10,6 +10,21 @@ describe('conversation unit tests', () => {
   beforeEach(() => {
     params.conversation = {};
     params.conversation.input = { text: 'Turn on lights' };
+    params = {
+      conversation: {
+        input: {
+          text: 'Turn on lights'
+        }
+      },
+      raw_input_data: {
+        slack: {
+          event: {
+            text: 'Turn on lights'
+          }
+        },
+        provider: 'slack'
+      }
+    };
 
     // merge the two objects, deep copying packageBindings so it doesn't get changed between tests
     // and we only have to read it once
@@ -99,6 +114,23 @@ describe('conversation unit tests', () => {
           e,
           'No message supplied to send to the Conversation service.',
           'Should fail complaining about missing conversation object'
+        );
+      }
+    );
+  });
+
+  it('validate no channel input data', () => {
+    delete params.raw_input_data;
+
+    return conversation(params).then(
+      response => {
+        assert(false, response);
+      },
+      e => {
+        assert.equal(
+          e,
+          'No channel raw input data found.',
+          'Should fail complaining about missing raw channel input data'
         );
       }
     );

@@ -47,10 +47,12 @@ function main(params) {
       if (err) {
         reject(err);
       } else {
-        resolve({
+        const conversationOutput = {
           conversation: response,
-          raw_data: params.raw_data || {}
-        });
+          raw_input_data: params.raw_input_data
+        };
+        conversationOutput.raw_input_data.conversation = params.conversation;
+        resolve(conversationOutput);
       }
     });
   });
@@ -69,7 +71,6 @@ function validateParams(params) {
   ) {
     throw new Error('No message supplied to send to the Conversation service.');
   }
-
   // validate credentials for accessing the service instance exist and are in the expected format
   // Conversation object not supplied, attempt to read from package bindings
   if (!params.username || !params.password || !params.workspace_id) {
@@ -77,6 +78,14 @@ function validateParams(params) {
       'Illegal Argument Exception: parameters to call Conversation are not supplied or are not' +
         ' bound to package.'
     );
+  }
+  // Required: channel raw input data
+  if (
+    !params.raw_input_data ||
+    !params.raw_input_data.provider ||
+    !params.raw_input_data[params.raw_input_data.provider]
+  ) {
+    throw new Error('No channel raw input data found.');
   }
 }
 

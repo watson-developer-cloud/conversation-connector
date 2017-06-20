@@ -13,12 +13,16 @@ function main(params) {
     return Promise.reject(e.message);
   }
 
-  const slackJson = {
-    channel: params.raw_data.slack.event.channel,
-    text: params.conversation.output.text[0]
+  const normalizedJson = {
+    channel: params.raw_input_data.slack.event.channel,
+    text: params.conversation.output.text[0],
+    raw_input_data: params.raw_input_data,
+    raw_output_data: {
+      conversation: params.conversation
+    }
   };
 
-  return Promise.resolve(slackJson);
+  return Promise.resolve(normalizedJson);
 }
 
 /**
@@ -39,12 +43,23 @@ function validateParameters(params) {
   ) {
     throw new Error('No conversation output message.');
   }
-  // Required: raw data from Slack channel
-  if (!params.raw_data || !params.raw_data.slack) {
-    throw new Error('No raw Slack data found.');
+  // Required: raw input data
+  if (!params.raw_input_data) {
+    throw new Error('No raw input data found.');
+  }
+  // Required: Slack input data
+  if (!params.raw_input_data.slack) {
+    throw new Error('No Slack input data found.');
+  }
+  // Required: Conversation input data
+  if (!params.raw_input_data.conversation) {
+    throw new Error('No Conversation input data found.');
   }
   // Required: Slack event and channel
-  if (!params.raw_data.slack.event || !params.raw_data.slack.event.channel) {
+  if (
+    !params.raw_input_data.slack.event ||
+    !params.raw_input_data.slack.event.channel
+  ) {
     throw new Error('No Slack channel found in raw data.');
   }
 }

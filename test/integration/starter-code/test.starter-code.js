@@ -46,7 +46,23 @@ describe('starter-code integration tests', () => {
       channel: 'D024BE91L',
       text: 'Output text from mock-convo.',
       ow_api_host: options.apihost,
-      ow_api_key: options.api_key
+      ow_api_key: options.api_key,
+      raw_input_data: {
+        conversation: {
+          input: {
+            text: 'Turn on lights'
+          }
+        },
+        slack: params.slack,
+        provider: 'slack'
+      },
+      raw_output_data: {
+        conversation: {
+          output: {
+            text: ['Output text from mock-convo.']
+          }
+        }
+      }
     };
   });
 

@@ -12,12 +12,47 @@ const text = 'Message coming from starter-code/normalize_for_slack unit test.';
 
 const errorNoConversation = 'No conversation output.';
 const errorNoOutputMessage = 'No conversation output message.';
-const errorNoRawData = 'No raw Slack data found.';
-const errorNoChannel = 'No Slack channel found in raw data.';
+const errorNoRawInputData = 'No raw input data found.';
+const errorNoSlackInputData = 'No Slack input data found.';
+const errorNoConvInputData = 'No Conversation input data found.';
+const errorNoSlackChannel = 'No Slack channel found in raw data.';
 
 describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
   let params;
+  const slackParams = {
+    token: 'XXYYZZ',
+    team_id: 'TXXXXXXXX',
+    api_app_id: 'AXXXXXXXXX',
+    event: {
+      type: 'message',
+      user: 'U2147483697',
+      ts: '1355517523.000005',
+      channel,
+      text
+    },
+    type: 'event_callback',
+    authed_users: ['UXXXXXXX1', 'UXXXXXXX2'],
+    event_id: 'Ev08MFMKH6',
+    event_time: 1234567890
+  };
+
   const expectedResult = {
+    raw_input_data: {
+      conversation: {
+        input: {
+          text
+        }
+      },
+      slack: slackParams,
+      provider: 'slack'
+    },
+    raw_output_data: {
+      conversation: {
+        output: {
+          text: [text]
+        }
+      }
+    },
     channel,
     text
   };
@@ -29,23 +64,14 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
           text: [text]
         }
       },
-      raw_data: {
-        slack: {
-          token: 'XXYYZZ',
-          team_id: 'TXXXXXXXX',
-          api_app_id: 'AXXXXXXXXX',
-          event: {
-            type: 'message',
-            user: 'U2147483697',
-            ts: '1355517523.000005',
-            channel,
+      raw_input_data: {
+        conversation: {
+          input: {
             text
-          },
-          type: 'event_callback',
-          authed_users: ['UXXXXXXX1', 'UXXXXXXX2'],
-          event_id: 'Ev08MFMKH6',
-          event_time: 1234567890
-        }
+          }
+        },
+        slack: slackParams,
+        provider: 'slack'
       }
     };
   });
@@ -74,7 +100,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
     );
   });
 
-  it('validate error when no output text', () => {
+  it('validate error when no conversation output', () => {
     delete params.conversation.output;
 
     return scNormForSlack(params).then(
@@ -87,28 +113,54 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
     );
   });
 
-  it('validate error when no slack raw data', () => {
-    delete params.raw_data;
+  it('validate error when no slack input data', () => {
+    delete params.raw_input_data;
 
     return scNormForSlack(params).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
       error => {
-        assert.equal(error, errorNoRawData);
+        assert.equal(error, errorNoRawInputData);
       }
     );
   });
 
-  it('validate error when no channel', () => {
-    delete params.raw_data.slack.event.channel;
+  it('validate error when no slack input data', () => {
+    delete params.raw_input_data.slack;
 
     return scNormForSlack(params).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
       error => {
-        assert.equal(error, errorNoChannel);
+        assert.equal(error, errorNoSlackInputData);
+      }
+    );
+  });
+
+  it('validate error when no conversation input data', () => {
+    delete params.raw_input_data.conversation;
+
+    return scNormForSlack(params).then(
+      () => {
+        assert(false, 'Action succeeded unexpectedly.');
+      },
+      error => {
+        assert.equal(error, errorNoConvInputData);
+      }
+    );
+  });
+
+  it('validate error when no slack channel', () => {
+    delete params.raw_input_data.slack.event;
+
+    return scNormForSlack(params).then(
+      () => {
+        assert(false, 'Action succeeded unexpectedly.');
+      },
+      error => {
+        assert.equal(error, errorNoSlackChannel);
       }
     );
   });

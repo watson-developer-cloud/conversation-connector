@@ -17,8 +17,21 @@ describe('conversation integration tests', () => {
   let params = {};
 
   beforeEach(() => {
-    params.conversation = {};
-    params.conversation.input = { text: 'Turn on lights' };
+    params = {
+      conversation: {
+        input: {
+          text: 'Turn on lights'
+        }
+      },
+      raw_input_data: {
+        slack: {
+          event: {
+            text: 'Turn on lights'
+          }
+        },
+        provider: 'slack'
+      }
+    };
 
     // merge the two objects, deep copying packageBindings so it doesn't get changed between tests
     // and we only have to read it once

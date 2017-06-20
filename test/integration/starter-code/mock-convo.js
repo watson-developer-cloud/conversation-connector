@@ -13,17 +13,17 @@ function main(params) {
     return Promise.reject(e.message);
   }
 
-  return {
+  const returnParameters = {
     conversation: {
-      input: {
-        text: params.conversation.input.text
-      },
       output: {
         text: ['Output text from mock-convo.']
       }
     },
-    raw_data: params.raw_data
+    raw_input_data: params.raw_input_data
   };
+  returnParameters.raw_input_data.conversation = params.conversation;
+
+  return Promise.resolve(returnParameters);
 }
 
 /**
@@ -41,8 +41,12 @@ function validateParams(params) {
     throw new Error('Input text not provided.');
   }
   // Required: channel raw data
-  if (!params.raw_data) {
-    throw new Error('No channel raw data provided.');
+  if (
+    !params.raw_input_data ||
+    !params.raw_input_data.provider ||
+    !params.raw_input_data[params.raw_input_data.provider]
+  ) {
+    throw new Error('No channel raw input data provided.');
   }
 }
 
