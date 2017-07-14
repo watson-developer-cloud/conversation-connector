@@ -12,6 +12,7 @@ const text = 'Message coming from starter-code/normalize_slack_for_conversation 
 
 const errorBadSupplier = "Provider not supplied or isn't Slack.";
 const errorNoSlackData = 'Slack JSON data is missing.';
+const errorNoWorkspaceId = 'workspace_id not present as a package binding.';
 
 describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
   let params;
@@ -35,7 +36,9 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
         event_id: 'Ev08MFMKH6',
         event_time: 1234567890
       },
-      provider: 'slack'
+      provider: 'slack',
+      workspace_id: 'abcd-123',
+      context: {}
     };
 
     expectedResult = {
@@ -46,7 +49,8 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
       },
       raw_input_data: {
         slack: params.slack,
-        provider: 'slack'
+        provider: 'slack',
+        cloudant_key: 'slack_TXXXXXXXX_abcd-123_U2147483697_CXXXXXXXXX'
       }
     };
   });
@@ -84,6 +88,19 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
       },
       error => {
         assert.equal(error, errorNoSlackData);
+      }
+    );
+  });
+
+  it('validate error when workspace_id not bound to package', () => {
+    delete params.workspace_id;
+
+    return scNormSlackForConvo(params).then(
+      () => {
+        assert(false, 'Action succeeded unexpectedly.');
+      },
+      error => {
+        assert.equal(error, errorNoWorkspaceId);
       }
     );
   });

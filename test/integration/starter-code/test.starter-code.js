@@ -39,7 +39,8 @@ describe('starter-code integration tests', () => {
       },
       provider: 'slack',
       channel_id: 'D024BE91L',
-      message: 'Turn on lights'
+      message: 'Turn on lights',
+      context: {}
     };
 
     expectedResult = {
@@ -47,6 +48,7 @@ describe('starter-code integration tests', () => {
       text: 'Output text from mock-convo.',
       ow_api_host: options.apihost,
       ow_api_key: options.api_key,
+      workspace_id: 'e808d814-9143-4dce-aec7-68af02e650a8',
       raw_input_data: {
         conversation: {
           input: {
@@ -54,12 +56,30 @@ describe('starter-code integration tests', () => {
           }
         },
         slack: params.slack,
-        provider: 'slack'
+        provider: 'slack',
+        cloudant_key: 'slack_TXXXXXXXX_e808d814-9143-4dce-aec7-68af02e650a8_U2147483697_D024BE91L'
       },
       raw_output_data: {
         conversation: {
           output: {
             text: ['Output text from mock-convo.']
+          },
+          context: {
+            conversation_id: '06aae48c-a5a9-4bbc-95eb-2ddd26db9a7b',
+            system: {
+              branch_exited_reason: 'completed',
+              dialog_request_counter: 1,
+              branch_exited: true,
+              dialog_turn_counter: 1,
+              dialog_stack: [
+                {
+                  dialog_node: 'root'
+                }
+              ],
+              _node_output_map: {
+                'Anything else': [0]
+              }
+            }
           }
         }
       }

@@ -3,6 +3,7 @@
 export WSK=${WSK-wsk}
 
 TEST_PIPELINE='test-pipeline'
+TEST_PIPELINE_CONTEXT='test-pipeline-context'
 
 echo "Running Convo-Flexible-Bot test suite."
 echo "!!!Do NOT kill this process halfway as this will break the OpenWhisk parameter bindings!!!"
@@ -31,6 +32,12 @@ if [ ! -f $CONVERSATION_PARAM_FILE ]; then
   exit 1
 fi
 
+CLOUDANT_PARAM_FILE='./test/resources/cloudant-bindings.json'
+if [ ! -f $CLOUDANT_PARAM_FILE ]; then
+  echo "Cloudant test parameters file $CLOUDANT_PARAM_FILE not found."
+  exit 1
+fi
+
 WSK_PROD_HOST=`wsk property get --apihost | tr "\t" "\n" | tail -n 1`
 WSK_PROD_KEY=`wsk property get --auth | tr "\t" "\n" | tail -n 1`
 
@@ -50,11 +57,16 @@ SLACK_PROD_OW_API_KEY=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=
 STARTERCODE_PROD_BINDINGS=`wsk package get starter-code | grep -v 'got package' | jq '.parameters[]'`
 STARTERCODE_PROD_OW_API_HOST=`echo $STARTERCODE_PROD_BINDINGS | jq --raw-output 'select(.key=="ow_api_host") | .value'`
 STARTERCODE_PROD_OW_API_KEY=`echo $STARTERCODE_PROD_BINDINGS | jq --raw-output 'select(.key=="ow_api_key") | .value'`
+STARTERCODE_PROD_WORKSPACEID=`echo $STARTERCODE_PROD_BINDINGS | jq --raw-output 'select(.key=="workspace_id") | .value'`
 
 CONVERSATION_PROD_BINDINGS=`wsk package get conversation | grep -v 'got package' | jq '.parameters[]'`
 CONVERSATION_PROD_USERNAME=`echo $CONVERSATION_PROD_BINDINGS | jq --raw-output 'select(.key=="username") | .value'`
 CONVERSATION_PROD_PASSWORD=`echo $CONVERSATION_PROD_BINDINGS | jq --raw-output 'select(.key=="password") | .value'`
 CONVERSATION_PROD_WORKSPACEID=`echo $CONVERSATION_PROD_BINDINGS | jq --raw-output 'select(.key=="workspace_id") | .value'`
+
+CLOUDANT_PROD_BINDINGS=`wsk package get context | grep -v 'got package' | jq '.parameters[]'`
+CLOUDANT_PROD_URL=`echo $CLOUDANT_PROD_BINDINGS | jq --raw-output 'select(.key=="cloudant_url") | .value'`
+CLOUDANT_PROD_DBNAME=`echo $CLOUDANT_PROD_BINDINGS | jq --raw-output 'select(.key=="dbname") | .value'`
 
 # Grab test credential parameters
 SLACK_TEST_ACCESS_TOKEN=`cat $SLACK_PARAM_FILE | jq --raw-output '.slack.access_token'`
@@ -73,6 +85,11 @@ OPENWHISK_TEST_NAMESPACE=`cat $OPENWHISK_PARAM_FILE | jq --raw-output '.openwhis
 CONVERSATION_TEST_USERNAME=`cat $CONVERSATION_PARAM_FILE | jq --raw-output '.conversation.username'`
 CONVERSATION_TEST_PASSWORD=`cat $CONVERSATION_PARAM_FILE | jq --raw-output '.conversation.password'`
 CONVERSATION_TEST_WORKSPACEID=`cat $CONVERSATION_PARAM_FILE | jq --raw-output '.conversation.workspace_id'`
+
+CLOUDANT_TEST_URL=`cat $CLOUDANT_PARAM_FILE | jq --raw-output '.database.cloudant_url'`
+CLOUDANT_TEST_DBNAME=`cat $CLOUDANT_PARAM_FILE | jq --raw-output '.database.dbname'`
+
+STARTERCODE_TEST_WORKSPACEID=`cat $CONVERSATION_PARAM_FILE | jq --raw-output '.conversation.workspace_id'`
 
 # Change OpenWhisk client credentials to use test space credentials
 ${WSK} property set --apihost ${OPENWHISK_TEST_API_HOST} --auth ${OPENWHISK_TEST_API_KEY} | grep -v 'ok'
@@ -93,12 +110,18 @@ ${WSK} package update slack \
 ${WSK} package update starter-code \
   -p ow_api_host "$OPENWHISK_TEST_API_HOST" \
   -p ow_api_key "$OPENWHISK_TEST_API_KEY" \
+  -p workspace_id "$STARTERCODE_TEST_WORKSPACEID" \
   | grep -v 'updated package'
 
 ${WSK} package update conversation \
   -p username "$CONVERSATION_TEST_USERNAME" \
   -p password "$CONVERSATION_TEST_PASSWORD" \
   -p workspace_id "$CONVERSATION_TEST_WORKSPACEID" \
+  | grep -v 'updated package'
+
+${WSK} package update context \
+  -p cloudant_url "$CLOUDANT_TEST_URL" \
+  -p dbname "$CLOUDANT_TEST_DBNAME" \
   | grep -v 'updated package'
 
 # Update all actions specified by tests
@@ -113,7 +136,12 @@ ${WSK} action update starter-code/normalize-conversation-for-slack ./starter-cod
 
 ${WSK} action update conversation/call-conversation ./conversation/call-conversation.js | grep -v 'ok'
 
+${WSK} action update context/load-context ./context/load-context.js | grep -v 'ok'
+${WSK} action update context/save-context ./context/save-context.js | grep -v 'ok'
+
 ${WSK} action update ${TEST_PIPELINE} --sequence slack/receive,starter-code/normalize-slack-for-conversation,starter-code/pre-conversation,conversation/call-conversation,starter-code/normalize-conversation-for-slack,starter-code/post-conversation,slack/post -a web-export true | grep -v 'ok'
+
+${WSK} action update ${TEST_PIPELINE_CONTEXT} --sequence slack/receive,starter-code/normalize-slack-for-conversation,context/load-context,starter-code/pre-conversation,conversation/call-conversation,starter-code/normalize-conversation-for-slack,starter-code/post-conversation,context/save-context,slack/post -a web-export true | grep -v 'ok'
 
 # Run setup scripts needed to build "mock" actions for integration tests
 SETUP_SCRIPT='./test/integration/conversation/setup.sh'
@@ -132,14 +160,18 @@ for folder in './test/integration/channels'/*; do
     fi
   fi
 done
+SETUP_SCRIPT='./test/integration/context/setup.sh'
+if [ -f $SETUP_SCRIPT ]; then
+  bash $SETUP_SCRIPT
+fi
 
 # Test script
 if [ "$1" == "test" ]; then
-  mocha test --recursive
+  ./node_modules/.bin/mocha test --recursive
 elif [ "$1" == "coverage" ]; then
   istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive -R spec
 elif [ "$1" ]; then
-  mocha $1
+  ./node_modules/.bin/mocha $1
 fi
 RETCODE=$?
 
@@ -160,9 +192,14 @@ for folder in './test/integration/channels'/*; do
     fi
   fi
 done
+BREAKDOWN_SCRIPT='./test/integration/context/breakdown.sh'
+if [ -f $BREAKDOWN_SCRIPT ]; then
+  bash $BREAKDOWN_SCRIPT
+fi
 
 # Delete pipeline used in test
 ${WSK} action delete ${TEST_PIPELINE} | grep -v 'ok'
+${WSK} action delete ${TEST_PIPELINE_CONTEXT} | grep -v 'ok'
 
 # Revert to prod OpenWhisk space
 ${WSK} property set --apihost ${WSK_PROD_HOST} --auth ${WSK_PROD_KEY} | grep -v 'ok'
@@ -183,12 +220,18 @@ ${WSK} package update slack \
 ${WSK} package update starter-code \
   -p ow_api_host "$STARTERCODE_PROD_OW_API_HOST" \
   -p ow_api_key "$STARTERCODE_PROD_OW_API_KEY" \
+  -p workspace_id "$STARTERCODE_PROD_WORKSPACEID" \
   | grep -v 'updated package'
 
 ${WSK} package update conversation \
   -p username "$CONVERSATION_PROD_USERNAME" \
   -p password "$CONVERSATION_PROD_PASSWORD" \
   -p workspace_id "$CONVERSATION_PROD_WORKSPACEID" \
+  | grep -v 'updated package'
+
+${WSK} package update context \
+  -p cloudant_url "$CLOUDANT_PROD_URL" \
+  -p dbname "$CLOUDANT_PROD_DBNAME" \
   | grep -v 'updated package'
 
 exit $RETCODE

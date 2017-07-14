@@ -4,7 +4,10 @@ export WSK=${WSK-wsk}
 
 BINDINGS=$1
 
-${WSK} package update starter-code
+CONVO_WORKSPACE_ID=`cat ${BINDINGS} | jq --raw-output '.conversation.workspace_id'`
+
+${WSK} package update starter-code \
+    -p workspace_id ${CONVO_WORKSPACE_ID}
 
 for file in `find . -type f -name '*.js'`; do
   file_basename=`basename ${file}`

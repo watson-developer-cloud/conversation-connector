@@ -21,7 +21,13 @@ function main(params) {
     },
     raw_input_data: {
       slack: params.slack,
-      provider: 'slack'
+      provider: 'slack',
+      // TODO: Discuss with Rob/Stephen.
+      // This cloudant_key lives till context/saveContext so the action can perform
+      // operations in the Cloudant db.
+      // Other channels must add a similar parameter
+      // which uniquely identifies a conversation for a user.
+      cloudant_key: `slack_${params.slack.team_id}_${params.workspace_id}_${params.slack.event.user}_${params.slack.event.channel}`
     }
   };
 
@@ -34,6 +40,10 @@ function main(params) {
  * @param  {JSON} params - the parameters passed into the action
  */
 function validateParameters(params) {
+  // Required: the workspace_id must be present as a package binding
+  if (!params.workspace_id) {
+    throw new Error('workspace_id not present as a package binding.');
+  }
   // Required: the provider must be known and supplied
   if (!params.provider || params.provider !== 'slack') {
     throw new Error("Provider not supplied or isn't Slack.");

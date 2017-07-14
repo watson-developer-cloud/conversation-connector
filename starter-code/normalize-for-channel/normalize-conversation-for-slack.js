@@ -15,7 +15,8 @@ function main(params) {
 
   const normalizedJson = {
     channel: params.raw_input_data.slack.event.channel,
-    text: params.conversation.output.text[0],
+    text: params.conversation.output.text.join(' '), // Combine multiple text responses from Conversation(if any)
+    // TODO: Decide how to add @mentions
     raw_input_data: params.raw_input_data,
     raw_output_data: {
       conversation: params.conversation
@@ -36,11 +37,7 @@ function validateParameters(params) {
     throw new Error('No conversation output.');
   }
   // Required: Conversation output text
-  if (
-    !params.conversation.output ||
-    !params.conversation.output.text ||
-    !params.conversation.output.text[0]
-  ) {
+  if (!params.conversation.output || !params.conversation.output.text) {
     throw new Error('No conversation output message.');
   }
   // Required: raw input data

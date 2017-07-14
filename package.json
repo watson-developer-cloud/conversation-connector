@@ -25,6 +25,7 @@
     "prettier": "^0.22.0"
   },
   "dependencies": {
+    "cloudant": "^1.8.0",
     "merge": "^1.2.0",
     "openwhisk": "^3.5.1",
     "request": "^2.81.0",

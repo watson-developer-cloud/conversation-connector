@@ -13,7 +13,8 @@ describe('End-to-End tests: Conversation & Starter-code prerequisites', () => {
     'starter-code/pre-conversation',
     'starter-code/post-conversation',
     'conversation/call-conversation',
-    'test-pipeline'
+    'context/load-context',
+    'context/save-context'
   ];
 
   requiredActions.forEach(action => {

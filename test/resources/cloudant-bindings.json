@@ -1,0 +1,6 @@
+{
+     "database": {
+         "cloudant_url": "https://1bcd74ee-9960-4e58-8f76-b64cae912904-bluemix:c175dd449d03d600c33e2c9a2c8db1fb2a115d44fffa2248340e82268e83e4b3@1bcd74ee-9960-4e58-8f76-b64cae912904-bluemix.cloudant.com",
+         "dbname": "contextdb"
+     }
+ }

@@ -20,6 +20,8 @@ sed "s/\${WSK_API_HOST}/${WSK_API_HOST}/g;s/\${WSK_API_KEY}/${WSK_API_KEY}/g;s/\
 # Setup and deploy actions onto OpenWhisk
 cd conversation; ./setup.sh ./../$PROVIDERS_REPLACED_FILE; cd ..
 cd starter-code; ./setup.sh ./../$PROVIDERS_REPLACED_FILE; cd ..
+cd context; ./setup.sh ./../$PROVIDERS_REPLACED_FILE; cd ..
+
 # channels
 cd channels
 cd slack; ./setup_channel_slack.sh ./../../$PROVIDERS_REPLACED_FILE; cd ..
