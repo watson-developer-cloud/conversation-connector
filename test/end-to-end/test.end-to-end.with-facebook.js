@@ -5,26 +5,26 @@ const openwhisk = require('openwhisk');
 
 const openwhiskBindings = require('./../resources/openwhisk-bindings.json').openwhisk;
 const safeExtractErrorMessage = require('./../resources/helper-methods.js').safeExtractErrorMessage;
-const clearContextDb = require('./../utils/cloudant-utils.js').clearContextDb;
-
-const slackBindings = require('./../resources/slack-bindings.json').slack;
+const facebookBindings = require('./../resources/facebook-bindings.json').facebook;
+const conversationBindings = require('./../resources/conversation-bindings.json').conversation;
 const cloudantBindings = require('./../resources/cloudant-bindings.json');
+
+const clearContextDb = require('./../utils/cloudant-utils.js').clearContextDb;
 
 const carDashboardReplyWelcome = 'Hi. It looks like a nice drive today. What would you like me to do?  ';
 const carDashboardReplyLights = "I'll turn on the lights for you.";
-
 /**
- * Slack prerequisites test suite verifies the Slack package is properly deployed in OpenWhisk
+ * Facebook prerequisites test suite verifies the Facebook package is properly deployed in OpenWhisk
  */
-describe('End-to-End tests: Slack prerequisites', () => {
+describe('End-to-End tests: Facebook prerequisites', () => {
   const ow = openwhisk(openwhiskBindings);
 
   const requiredActions = [
-    'slack/post',
-    'slack/receive',
-    'slack/deploy',
-    'starter-code/normalize-conversation-for-slack',
-    'starter-code/normalize-slack-for-conversation'
+    'facebook/post',
+    'facebook/receive',
+    'facebook/deploy',
+    'starter-code/normalize-conversation-for-facebook',
+    'starter-code/normalize-facebook-for-conversation'
   ];
 
   requiredActions.forEach(action => {
@@ -42,49 +42,57 @@ describe('End-to-End tests: Slack prerequisites', () => {
   });
 });
 
-describe('End-to-End tests: Slack as channel package', () => {
+describe('End-to-End tests: Facebook as channel package', () => {
   const ow = openwhisk(openwhiskBindings);
-  const actionSlackPipeline = 'test-pipeline-slack';
+  const actionFacebookPipeline = 'test-pipeline-facebook';
   let params = {};
 
   const expectedResult = {
-    status: 'OK',
+    text: 200,
+    url: 'https://graph.facebook.com/v2.6/me/messages',
     params: {
-      channel: slackBindings.channel,
-      text: carDashboardReplyWelcome,
-      as_user: 'true',
-      token: slackBindings.bot_access_token,
-      workspace_id: 'e808d814-9143-4dce-aec7-68af02e650a8'
-    },
-    url: 'https://slack.com/api/chat.postMessage'
+      access_token: facebookBindings.page_access_token,
+      message: {
+        text: carDashboardReplyWelcome
+      },
+      recipient: facebookBindings.recipient,
+      workspace_id: conversationBindings.workspace_id
+    }
   };
 
   beforeEach(() => {
     params = {
-      token: slackBindings.verification_token,
-      team_id: 'TXXXXXXXX',
-      api_app_id: 'AXXXXXXXX',
-      event: {
-        type: 'message',
-        channel: slackBindings.channel,
-        user: 'UXXXXXXXXXX',
-        text: 'Message coming from end to end test.',
-        ts: 'XXXXXXXXX.XXXXXX'
+      __ow_headers: {
+        'x-hub-signature': facebookBindings['x-hub-signature']
       },
-      type: 'event_callback',
-      authed_users: ['UXXXXXXX1', 'UXXXXXXX2'],
-      event_id: 'EvXXXXXXXX',
-      event_time: 'XXXXXXXXXX'
+      verification_token: facebookBindings.verification_token,
+      app_secret: facebookBindings.app_secret,
+      object: 'page',
+      entry: [
+        {
+          id: facebookBindings.sender.id,
+          time: 1458692752478,
+          messaging: [
+            {
+              sender: facebookBindings.recipient,
+              recipient: facebookBindings.sender,
+              message: {
+                text: 'hello, world!'
+              }
+            }
+          ]
+        }
+      ]
     };
   });
 
   // Under validated circumstances, the channel (mocked parameters here) will send parameters
-  // to slack/receive. The architecture will flow the response to slack/post, and slack/post will
-  // send its response to this ow.action invocation.
+  // to facebook/receive. The architecture will flow the response to facebook/post, and
+  // facebook/post will send its response to this ow.action invocation.
   it('system works under validated circumstances', () => {
     return ow.actions
       .invoke({
-        name: actionSlackPipeline,
+        name: actionFacebookPipeline,
         result: true,
         blocking: true,
         params
@@ -97,54 +105,65 @@ describe('End-to-End tests: Slack as channel package', () => {
           return assert(false, safeExtractErrorMessage(error));
         }
       );
-  }).timeout(4000);
+  })
+    .timeout(4000)
+    .retries(4);
 });
 
-describe('End-to-End tests: Slack context package works', () => {
+describe('End-to-End tests: Facebook context package works', () => {
   const ow = openwhisk(openwhiskBindings);
-  const contextPipeline = 'test-pipeline-context-slack';
+  const contextPipeline = 'test-pipeline-context-facebook';
   let params = {};
 
   const expAfterTurn1 = {
-    status: 'OK',
+    text: 200,
+    url: 'https://graph.facebook.com/v2.6/me/messages',
     params: {
-      channel: slackBindings.channel,
-      text: carDashboardReplyWelcome,
-      as_user: 'true',
-      token: slackBindings.bot_access_token,
-      workspace_id: 'e808d814-9143-4dce-aec7-68af02e650a8'
-    },
-    url: 'https://slack.com/api/chat.postMessage'
+      access_token: facebookBindings.page_access_token,
+      message: {
+        text: carDashboardReplyWelcome
+      },
+      recipient: facebookBindings.recipient,
+      workspace_id: conversationBindings.workspace_id
+    }
   };
 
   const expAfterTurn2 = {
-    status: 'OK',
+    text: 200,
+    url: 'https://graph.facebook.com/v2.6/me/messages',
     params: {
-      channel: slackBindings.channel,
-      text: carDashboardReplyLights,
-      as_user: 'true',
-      token: slackBindings.bot_access_token,
-      workspace_id: 'e808d814-9143-4dce-aec7-68af02e650a8'
-    },
-    url: 'https://slack.com/api/chat.postMessage'
+      access_token: facebookBindings.page_access_token,
+      message: {
+        text: carDashboardReplyLights
+      },
+      recipient: facebookBindings.recipient,
+      workspace_id: conversationBindings.workspace_id
+    }
   };
 
   beforeEach(() => {
     params = {
-      token: slackBindings.verification_token,
-      team_id: 'TXXXXXXXX',
-      api_app_id: 'AXXXXXXXX',
-      event: {
-        type: 'message',
-        channel: slackBindings.channel,
-        user: 'UXXXXXXXXXX',
-        text: 'Hello',
-        ts: 'XXXXXXXXX.XXXXXX'
+      __ow_headers: {
+        'x-hub-signature': facebookBindings['x-hub-signature']
       },
-      type: 'event_callback',
-      authed_users: ['UXXXXXXX1', 'UXXXXXXX2'],
-      event_id: 'EvXXXXXXXX',
-      event_time: 'XXXXXXXXXX'
+      verification_token: facebookBindings.verification_token,
+      app_secret: facebookBindings.app_secret,
+      object: 'page',
+      entry: [
+        {
+          id: facebookBindings.sender.id,
+          time: 1458692752478,
+          messaging: [
+            {
+              sender: facebookBindings.recipient,
+              recipient: facebookBindings.sender,
+              message: {
+                text: 'hello, world!'
+              }
+            }
+          ]
+        }
+      ]
     };
   });
 
@@ -193,8 +212,11 @@ describe('End-to-End tests: Slack context package works', () => {
           assert.deepEqual(result, expAfterTurn1);
 
           // Change the input text for the second turn.
-          params.event.text = 'Turn on the lights';
-
+          params.entry[0].messaging[0].message.text = 'Turn on the lights';
+          // Change the signature header value for the second turn.
+          params.__ow_headers[
+            'x-hub-signature'
+          ] = 'sha1=b64a5b4775828d69b5bcdd2bb580967dad9b0268';
           // Invoke the context pipeline sequence again.
           // The context package should read the updated context from the previous turn.
           return ow.actions.invoke({

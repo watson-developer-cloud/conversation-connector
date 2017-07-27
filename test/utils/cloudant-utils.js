@@ -3,7 +3,7 @@
 const Cloudant = require('cloudant');
 /**
  * Utility functions for Cloudant
- **/
+ */
 
 /**
  * Clears the context database by deleting and re-creating the db.
@@ -19,20 +19,51 @@ function clearContextDb(dbName, cloudantUrl) {
     retryTimeout: 1000
   });
   if (typeof cloudant !== 'object') {
-    console.error(
+    throw new Error(
       `CloudantAccount returned an unexpected object type: ${typeof cloudant}`
     );
   }
-  cloudant.db.destroy(dbName, (err, data) => {
-    if (data) {
-      cloudant.db.create(dbName, (error, body) => {
-        if (!error) {
-          return body;
-        }
-        return error;
+  return new Promise((resolve, reject) => {
+    return destroyDb(cloudant, dbName)
+      .then(() => {
+        createDb(cloudant, dbName);
+      })
+      .then(data => {
+        resolve(data);
+      })
+      .catch(err => {
+        reject(err);
       });
-    }
-    return err;
+  }).catch(e => {
+    return e;
+  });
+}
+
+function destroyDb(cloudant, dbName) {
+  return new Promise((resolve, reject) => {
+    cloudant.db.destroy(dbName, (err, data) => {
+      if (data) {
+        resolve();
+      } else {
+        reject(err);
+      }
+    });
+  }).catch(e => {
+    return e;
+  });
+}
+
+function createDb(cloudant, dbName) {
+  return new Promise((resolve, reject) => {
+    cloudant.db.create(dbName, (err, body) => {
+      if (!err) {
+        resolve(body);
+      } else {
+        reject(err);
+      }
+    });
+  }).catch(e => {
+    return e;
   });
 }
 

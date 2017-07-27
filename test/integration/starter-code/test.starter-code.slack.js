@@ -8,7 +8,7 @@ const assert = require('assert');
 const openwhisk = require('openwhisk');
 const openWhiskAuthObj = require('../../resources/openwhisk-bindings.json').openwhisk;
 
-describe('starter-code integration tests', () => {
+describe('starter-code integration tests for slack', () => {
   // Setup the ow module for the upcoming calls
   const options = {
     apihost: openWhiskAuthObj.apihost,
@@ -46,8 +46,6 @@ describe('starter-code integration tests', () => {
     expectedResult = {
       channel: 'D024BE91L',
       text: 'Output text from mock-convo.',
-      ow_api_host: options.apihost,
-      ow_api_key: options.api_key,
       workspace_id: 'e808d814-9143-4dce-aec7-68af02e650a8',
       raw_input_data: {
         conversation: {
@@ -86,8 +84,8 @@ describe('starter-code integration tests', () => {
     };
   });
 
-  it('validate starter-code actions work', () => {
-    const actionName = 'starter-code/integration-pipeline';
+  it('validate starter-code-slack actions work', () => {
+    const actionName = 'starter-code/integration-pipeline-slack';
 
     return ow.actions
       .invoke({

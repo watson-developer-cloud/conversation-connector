@@ -2,8 +2,10 @@
 
 export WSK=${WSK-wsk}
 
-TEST_PIPELINE='test-pipeline'
-TEST_PIPELINE_CONTEXT='test-pipeline-context'
+TEST_PIPELINE_CONTEXT_SLACK='test-pipeline-context-slack'
+TEST_PIPELINE_CONTEXT_FACEBOOK='test-pipeline-context-facebook'
+TEST_PIPELINE_SLACK='test-pipeline-slack'
+TEST_PIPELINE_FACEBOOK='test-pipeline-facebook'
 
 echo "Running Convo-Flexible-Bot test suite."
 echo "!!!Do NOT kill this process halfway as this will break the OpenWhisk parameter bindings!!!"
@@ -19,6 +21,11 @@ fi
 SLACK_PARAM_FILE='./test/resources/slack-bindings.json'
 if [ ! -f $SLACK_PARAM_FILE ]; then
   echo "Slack test parameters file $SLACK_PARAM_FILE not found."
+  exit 1
+fi
+FACEBOOK_PARAM_FILE='./test/resources/facebook-bindings.json'
+if [ ! -f $FACEBOOK_PARAM_FILE ]; then
+  echo "Slack test parameters file $FACEBOOK_PARAM_FILE not found."
   exit 1
 fi
 OPENWHISK_PARAM_FILE='./test/resources/openwhisk-bindings.json'
@@ -54,9 +61,12 @@ SLACK_PROD_VERIFICATION_TOKEN=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'sele
 SLACK_PROD_OW_API_HOST=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="ow_api_host") | .value'`
 SLACK_PROD_OW_API_KEY=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="ow_api_key") | .value'`
 
+FACEBOOK_PROD_BINDINGS=`wsk package get facebook | grep -v 'got package' | jq '.parameters[]'`
+FACEBOOK_PROD_PAGE_ACCESS_TOKEN=`echo $FACEBOOK_PROD_BINDINGS | jq --raw-output 'select(.key=="page_access_token") | .value'`
+FACEBOOK_PROD_APP_SECRET=`echo $FACEBOOK_PROD_BINDINGS | jq --raw-output 'select(.key=="app_secret") | .value'`
+FACEBOOK_PROD_VERIFICATION_TOKEN=`echo $FACEBOOK_PROD_BINDINGS | jq --raw-output 'select(.key=="verification_token") | .value'`
+
 STARTERCODE_PROD_BINDINGS=`wsk package get starter-code | grep -v 'got package' | jq '.parameters[]'`
-STARTERCODE_PROD_OW_API_HOST=`echo $STARTERCODE_PROD_BINDINGS | jq --raw-output 'select(.key=="ow_api_host") | .value'`
-STARTERCODE_PROD_OW_API_KEY=`echo $STARTERCODE_PROD_BINDINGS | jq --raw-output 'select(.key=="ow_api_key") | .value'`
 STARTERCODE_PROD_WORKSPACEID=`echo $STARTERCODE_PROD_BINDINGS | jq --raw-output 'select(.key=="workspace_id") | .value'`
 
 CONVERSATION_PROD_BINDINGS=`wsk package get conversation | grep -v 'got package' | jq '.parameters[]'`
@@ -77,6 +87,10 @@ SLACK_TEST_BOT_USER_ID=`cat $SLACK_PARAM_FILE | jq --raw-output '.slack.bot_user
 SLACK_TEST_CLIENT_ID=`cat $SLACK_PARAM_FILE | jq --raw-output '.slack.client_id'`
 SLACK_TEST_CLIENT_SECRET=`cat $SLACK_PARAM_FILE | jq --raw-output '.slack.client_secret'`
 SLACK_TEST_VERIFICATION_TOKEN=`cat $SLACK_PARAM_FILE | jq --raw-output '.slack.verification_token'`
+
+FACEBOOK_TEST_PAGE_ACCESS_TOKEN=`cat $FACEBOOK_PARAM_FILE | jq --raw-output '.facebook.page_access_token'`
+FACEBOOK_TEST_APP_SECRET=`cat $FACEBOOK_PARAM_FILE | jq --raw-output '.facebook.app_secret'`
+FACEBOOK_TEST_VERIFICATION_TOKEN=`cat $FACEBOOK_PARAM_FILE | jq --raw-output '.facebook.verification_token'`
 
 OPENWHISK_TEST_API_HOST=`cat $OPENWHISK_PARAM_FILE | jq --raw-output '.openwhisk.apihost'`
 OPENWHISK_TEST_API_KEY=`cat $OPENWHISK_PARAM_FILE | jq --raw-output '.openwhisk.api_key'`
@@ -107,9 +121,13 @@ ${WSK} package update slack \
   -p ow_api_key "$OPENWHISK_TEST_API_KEY" \
   | grep -v 'updated package'
 
+${WSK} package update facebook \
+  -p page_access_token "$FACEBOOK_TEST_PAGE_ACCESS_TOKEN" \
+  -p app_secret "$FACEBOOK_TEST_APP_SECRET" \
+  -p verification_token "$FACEBOOK_TEST_VERIFICATION_TOKEN" \
+  | grep -v 'updated package'
+
 ${WSK} package update starter-code \
-  -p ow_api_host "$OPENWHISK_TEST_API_HOST" \
-  -p ow_api_key "$OPENWHISK_TEST_API_KEY" \
   -p workspace_id "$STARTERCODE_TEST_WORKSPACEID" \
   | grep -v 'updated package'
 
@@ -129,19 +147,26 @@ ${WSK} action update slack/receive ./channels/slack/receive/index.js | grep -v '
 ${WSK} action update slack/post ./channels/slack/post/index.js | grep -v 'ok'
 ${WSK} action update slack/deploy ./channels/slack/deploy/index.js | grep -v 'ok'
 
+${WSK} action update facebook/receive ./channels/facebook/receive/index.js | grep -v 'ok'
+${WSK} action update facebook/post ./channels/facebook/post/index.js | grep -v 'ok'
+
 ${WSK} action update starter-code/pre-conversation ./starter-code/pre-conversation.js | grep -v 'ok'
 ${WSK} action update starter-code/post-conversation ./starter-code/post-conversation.js | grep -v 'ok'
 ${WSK} action update starter-code/normalize-slack-for-conversation ./starter-code/normalize-for-conversation/normalize-slack-for-conversation.js | grep -v 'ok'
 ${WSK} action update starter-code/normalize-conversation-for-slack ./starter-code/normalize-for-channel/normalize-conversation-for-slack.js | grep -v 'ok'
+${WSK} action update starter-code/normalize-facebook-for-conversation ./starter-code/normalize-for-conversation/normalize-facebook-for-conversation.js | grep -v 'ok'
+${WSK} action update starter-code/normalize-conversation-for-facebook ./starter-code/normalize-for-channel/normalize-conversation-for-facebook.js | grep -v 'ok'
 
 ${WSK} action update conversation/call-conversation ./conversation/call-conversation.js | grep -v 'ok'
 
 ${WSK} action update context/load-context ./context/load-context.js | grep -v 'ok'
 ${WSK} action update context/save-context ./context/save-context.js | grep -v 'ok'
 
-${WSK} action update ${TEST_PIPELINE} --sequence slack/receive,starter-code/normalize-slack-for-conversation,starter-code/pre-conversation,conversation/call-conversation,starter-code/normalize-conversation-for-slack,starter-code/post-conversation,slack/post -a web-export true | grep -v 'ok'
+${WSK} action update ${TEST_PIPELINE_SLACK} --sequence slack/receive,starter-code/normalize-slack-for-conversation,starter-code/pre-conversation,conversation/call-conversation,starter-code/normalize-conversation-for-slack,starter-code/post-conversation,slack/post -a web-export true | grep -v 'ok'
+${WSK} action update ${TEST_PIPELINE_FACEBOOK} --sequence facebook/receive,starter-code/normalize-facebook-for-conversation,starter-code/pre-conversation,conversation/call-conversation,starter-code/normalize-conversation-for-facebook,starter-code/post-conversation,facebook/post -a web-export true | grep -v 'ok'
 
-${WSK} action update ${TEST_PIPELINE_CONTEXT} --sequence slack/receive,starter-code/normalize-slack-for-conversation,context/load-context,starter-code/pre-conversation,conversation/call-conversation,starter-code/normalize-conversation-for-slack,starter-code/post-conversation,context/save-context,slack/post -a web-export true | grep -v 'ok'
+${WSK} action update ${TEST_PIPELINE_CONTEXT_SLACK} --sequence slack/receive,starter-code/normalize-slack-for-conversation,context/load-context,starter-code/pre-conversation,conversation/call-conversation,starter-code/normalize-conversation-for-slack,starter-code/post-conversation,context/save-context,slack/post -a web-export true | grep -v 'ok'
+${WSK} action update ${TEST_PIPELINE_CONTEXT_FACEBOOK} --sequence facebook/receive,starter-code/normalize-facebook-for-conversation,context/load-context,starter-code/pre-conversation,conversation/call-conversation,starter-code/normalize-conversation-for-facebook,starter-code/post-conversation,context/save-context,facebook/post -a web-export true | grep -v 'ok'
 
 # Run setup scripts needed to build "mock" actions for integration tests
 SETUP_SCRIPT='./test/integration/conversation/setup.sh'
@@ -198,8 +223,10 @@ if [ -f $BREAKDOWN_SCRIPT ]; then
 fi
 
 # Delete pipeline used in test
-${WSK} action delete ${TEST_PIPELINE} | grep -v 'ok'
-${WSK} action delete ${TEST_PIPELINE_CONTEXT} | grep -v 'ok'
+${WSK} action delete ${TEST_PIPELINE_CONTEXT_SLACK} | grep -v 'ok'
+${WSK} action delete ${TEST_PIPELINE_CONTEXT_FACEBOOK} | grep -v 'ok'
+${WSK} action delete ${TEST_PIPELINE_SLACK} | grep -v 'ok'
+${WSK} action delete ${TEST_PIPELINE_FACEBOOK} | grep -v 'ok'
 
 # Revert to prod OpenWhisk space
 ${WSK} property set --apihost ${WSK_PROD_HOST} --auth ${WSK_PROD_KEY} | grep -v 'ok'
@@ -215,6 +242,12 @@ ${WSK} package update slack \
   -p verification_token "$SLACK_PROD_VERIFICATION_TOKEN" \
   -p ow_api_host "$SLACK_PROD_OW_API_HOST" \
   -p ow_api_key "$SLACK_PROD_OW_API_KEY" \
+  | grep -v 'updated package'
+
+${WSK} package update facebook \
+  -p page_access_token "$FACEBOOK_PROD_PAGE_ACCESS_TOKEN" \
+  -p app_secret "$FACEBOOK_PROD_APP_SECRET" \
+  -p verification_token "$FACEBOOK_PROD_VERIFICATION_TOKEN" \
   | grep -v 'updated package'
 
 ${WSK} package update starter-code \
