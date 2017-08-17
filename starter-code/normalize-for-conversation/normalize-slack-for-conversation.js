@@ -1,5 +1,7 @@
 'use strict';
 
+const assert = require('assert');
+
 /**
  * Converts Slack channel-formatted JSON data into Conversation SDK formatted JSON input.
  *
@@ -7,31 +9,87 @@
  * @return {JSON}        - JSON data formatted as input for Conversation SDK
  */
 function main(params) {
-  try {
+  return new Promise(resolve => {
     validateParameters(params);
-  } catch (e) {
-    return Promise.reject(e.message);
+
+    resolve({
+      conversation: {
+        input: {
+          text: getSlackInputMessage(params)
+        }
+      },
+      raw_input_data: {
+        slack: params.slack,
+        provider: 'slack',
+        cloudant_key: getCloudantKey(params)
+      }
+    });
+  });
+}
+
+/**
+ * Gets and extracts the Slack input message from either a text or interactive message.
+ *
+ * @param  {JSON} params - The parameters passed into the action
+ * @return {string}      - Slack input message
+ */
+function getSlackInputMessage(params) {
+  const slackEvent = params.slack.event;
+  const slackEventMessage = slackEvent && slackEvent.message;
+
+  const textMessage = slackEvent && (slackEvent.text || slackEventMessage.text);
+  if (textMessage) {
+    return textMessage;
   }
 
-  const conversationJson = {
-    conversation: {
-      input: {
-        text: params.slack.event.text
-      }
-    },
-    raw_input_data: {
-      slack: params.slack,
-      provider: 'slack',
-      // TODO: Discuss with Rob/Stephen.
-      // This cloudant_key lives till context/saveContext so the action can perform
-      // operations in the Cloudant db.
-      // Other channels must add a similar parameter
-      // which uniquely identifies a conversation for a user.
-      cloudant_key: `slack_${params.slack.team_id}_${params.workspace_id}_${params.slack.event.user}_${params.slack.event.channel}`
-    }
-  };
+  const payloadAction = params.slack.payload &&
+    JSON.parse(params.slack.payload) &&
+    JSON.parse(params.slack.payload).actions &&
+    JSON.parse(params.slack.payload).actions[0];
+  const buttonMessage = payloadAction && payloadAction.value;
+  if (buttonMessage) {
+    return buttonMessage;
+  }
 
-  return Promise.resolve(conversationJson);
+  const menuMessage = payloadAction &&
+    payloadAction.selected_options &&
+    payloadAction.selected_options
+      .reduce(
+        (array, x) => {
+          if (x.value) {
+            return array.concat(x.value);
+          }
+          return array;
+        },
+        []
+      )
+      .join(' ');
+  return menuMessage;
+}
+
+/**
+ * Builds and returns a Cloudant database key from Slack input parameters.
+ *
+ * @param  {JSON} params - The parameters passed into the action
+ * @return {string}      - cloudant database key
+ */
+function getCloudantKey(params) {
+  const slackEvent = params.slack.event;
+  const slackPayload = params.slack.payload && JSON.parse(params.slack.payload);
+
+  const slackTeamId = slackPayload
+    ? slackPayload.team && slackPayload.team.id
+    : params.slack.team_id;
+  const slackUserId = slackPayload
+    ? slackPayload.user && slackPayload.user.id
+    : slackEvent &&
+        (slackEvent.user || (slackEvent.message && slackEvent.message.user));
+  const slackChannelId = slackPayload
+    ? slackPayload.channel && slackPayload.channel.id
+    : slackEvent && slackEvent.channel;
+  const slackWorkspaceId = params.workspace_id;
+
+  return `slack_${slackTeamId}_${slackWorkspaceId}_${slackUserId}_${slackChannelId}`;
 }
 
 /**
@@ -40,18 +98,64 @@ function main(params) {
  * @param  {JSON} params - the parameters passed into the action
  */
 function validateParameters(params) {
-  // Required: the workspace_id must be present as a package binding
-  if (!params.workspace_id) {
-    throw new Error('workspace_id not present as a package binding.');
+  // Required: channel provider must be slack
+  assert(params.provider, "Provider not supplied or isn't Slack.");
+  assert.equal(
+    params.provider,
+    'slack',
+    "Provider not supplied or isn't Slack."
+  );
+
+  // Required: JSON data for the channel provider
+  assert(params.slack, 'Slack JSON data is missing.');
+
+  // Required: Conversation workspace ID
+  assert(params.workspace_id, 'workspace_id not present as a package binding.');
+
+  // Required: either the Slack event subscription (text message)
+  //  or the callback ID (interactive message)
+  const messageType = params.slack.type ||
+    (params.slack.payload &&
+      JSON.parse(params.slack.payload) &&
+      JSON.parse(params.slack.payload).callback_id);
+  assert(messageType, 'No Slack message type specified.');
+
+  const slackPayload = params.slack.payload && JSON.parse(params.slack.payload);
+
+  // Required: Slack team ID
+  const slackTeamId = params.slack.team_id ||
+    (slackPayload.team && slackPayload.team.id);
+  assert(slackTeamId, 'Slack team ID not found.');
+
+  const slackEvent = params.slack.event;
+  const slackEventMessage = slackEvent && slackEvent.message;
+
+  // Required: Slack user ID
+  const slackUserId = slackEvent
+    ? slackEvent.user || slackEventMessage.user
+    : slackPayload && slackPayload.user && slackPayload.user.id;
+  assert(slackUserId, 'Slack user ID not found.');
+
+  // Required: Slack channel
+  const slackChannel = slackEvent
+    ? slackEvent.channel
+    : slackPayload && slackPayload.channel && slackPayload.channel.id;
+  assert(slackChannel, 'Slack channel not found.');
+
+  // Required: Slack message
+  let slackMessage = slackEvent && (slackEvent.text || slackEventMessage.text);
+  if (!slackMessage) {
+    const payloadAction = slackPayload &&
+      slackPayload.actions &&
+      slackPayload.actions[0];
+
+    slackMessage = payloadAction &&
+      (payloadAction.value ||
+        (payloadAction.selected_options &&
+          payloadAction.selected_options[0] &&
+          payloadAction.selected_options[0].value));
   }
-  // Required: the provider must be known and supplied
-  if (!params.provider || params.provider !== 'slack') {
-    throw new Error("Provider not supplied or isn't Slack.");
-  }
-  // Required: JSON data for the channel provider must be supplied
-  if (!params.slack) {
-    throw new Error('Slack JSON data is missing.');
-  }
+  assert(slackMessage, 'No Slack message text provided.');
 }
 
 module.exports = main;

@@ -2,11 +2,6 @@
 
 export WSK=${WSK-wsk}
 
-TEST_PIPELINE_CONTEXT_SLACK='test-pipeline-context-slack'
-TEST_PIPELINE_CONTEXT_FACEBOOK='test-pipeline-context-facebook'
-TEST_PIPELINE_SLACK='test-pipeline-slack'
-TEST_PIPELINE_FACEBOOK='test-pipeline-facebook'
-
 echo "Running Convo-Flexible-Bot test suite."
 echo "!!!Do NOT kill this process halfway as this will break the OpenWhisk parameter bindings!!!"
 echo "   ...but if you do, simply run './setup.sh' from the root directory again."
@@ -58,8 +53,6 @@ SLACK_PROD_CLIENT_SECRET=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.k
 SLACK_PROD_REDIRECT_URI=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="redirect_uri") | .value'`
 SLACK_PROD_STARTER_CODE_ACTION_NAME=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="starter_code_action_name") | .value'`
 SLACK_PROD_VERIFICATION_TOKEN=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="verification_token") | .value'`
-SLACK_PROD_OW_API_HOST=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="ow_api_host") | .value'`
-SLACK_PROD_OW_API_KEY=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="ow_api_key") | .value'`
 
 FACEBOOK_PROD_BINDINGS=`wsk package get facebook | grep -v 'got package' | jq '.parameters[]'`
 FACEBOOK_PROD_PAGE_ACCESS_TOKEN=`echo $FACEBOOK_PROD_BINDINGS | jq --raw-output 'select(.key=="page_access_token") | .value'`
@@ -108,6 +101,11 @@ STARTERCODE_TEST_WORKSPACEID=`cat $CONVERSATION_PARAM_FILE | jq --raw-output '.c
 # Change OpenWhisk client credentials to use test space credentials
 ${WSK} property set --apihost ${OPENWHISK_TEST_API_HOST} --auth ${OPENWHISK_TEST_API_KEY} | grep -v 'ok'
 
+# Upload OpenWhisk credentials into user's env-variables so npm can be used without credentials
+export __OW_API_HOST="${OPENWHISK_TEST_API_HOST}"
+export __OW_API_KEY="${OPENWHISK_TEST_API_KEY}"
+export __OW_NAMESPACE="${OPENWHISK_TEST_NAMESPACE}"
+
 # Update each package to bind test credentials parameters
 ${WSK} package update slack \
   -p access_token "$SLACK_TEST_ACCESS_TOKEN" \
@@ -117,8 +115,6 @@ ${WSK} package update slack \
   -p client_id "a$SLACK_TEST_CLIENT_ID" \
   -p client_secret "$SLACK_TEST_CLIENT_SECRET" \
   -p verification_token "$SLACK_TEST_VERIFICATION_TOKEN" \
-  -p ow_api_host "$OPENWHISK_TEST_API_HOST" \
-  -p ow_api_key "$OPENWHISK_TEST_API_KEY" \
   | grep -v 'updated package'
 
 ${WSK} package update facebook \
@@ -162,12 +158,6 @@ ${WSK} action update conversation/call-conversation ./conversation/call-conversa
 ${WSK} action update context/load-context ./context/load-context.js | grep -v 'ok'
 ${WSK} action update context/save-context ./context/save-context.js | grep -v 'ok'
 
-${WSK} action update ${TEST_PIPELINE_SLACK} --sequence slack/receive,starter-code/normalize-slack-for-conversation,starter-code/pre-conversation,conversation/call-conversation,starter-code/normalize-conversation-for-slack,starter-code/post-conversation,slack/post -a web-export true | grep -v 'ok'
-${WSK} action update ${TEST_PIPELINE_FACEBOOK} --sequence facebook/receive,starter-code/normalize-facebook-for-conversation,starter-code/pre-conversation,conversation/call-conversation,starter-code/normalize-conversation-for-facebook,starter-code/post-conversation,facebook/post -a web-export true | grep -v 'ok'
-
-${WSK} action update ${TEST_PIPELINE_CONTEXT_SLACK} --sequence slack/receive,starter-code/normalize-slack-for-conversation,context/load-context,starter-code/pre-conversation,conversation/call-conversation,starter-code/normalize-conversation-for-slack,starter-code/post-conversation,context/save-context,slack/post -a web-export true | grep -v 'ok'
-${WSK} action update ${TEST_PIPELINE_CONTEXT_FACEBOOK} --sequence facebook/receive,starter-code/normalize-facebook-for-conversation,context/load-context,starter-code/pre-conversation,conversation/call-conversation,starter-code/normalize-conversation-for-facebook,starter-code/post-conversation,context/save-context,facebook/post -a web-export true | grep -v 'ok'
-
 # Run setup scripts needed to build "mock" actions for integration tests
 SETUP_SCRIPT='./test/integration/conversation/setup.sh'
 if [ -f $SETUP_SCRIPT ]; then
@@ -186,6 +176,10 @@ for folder in './test/integration/channels'/*; do
   fi
 done
 SETUP_SCRIPT='./test/integration/context/setup.sh'
+if [ -f $SETUP_SCRIPT ]; then
+  bash $SETUP_SCRIPT
+fi
+SETUP_SCRIPT='./test/end-to-end/setup.sh'
 if [ -f $SETUP_SCRIPT ]; then
   bash $SETUP_SCRIPT
 fi
@@ -221,12 +215,10 @@ BREAKDOWN_SCRIPT='./test/integration/context/breakdown.sh'
 if [ -f $BREAKDOWN_SCRIPT ]; then
   bash $BREAKDOWN_SCRIPT
 fi
-
-# Delete pipeline used in test
-${WSK} action delete ${TEST_PIPELINE_CONTEXT_SLACK} | grep -v 'ok'
-${WSK} action delete ${TEST_PIPELINE_CONTEXT_FACEBOOK} | grep -v 'ok'
-${WSK} action delete ${TEST_PIPELINE_SLACK} | grep -v 'ok'
-${WSK} action delete ${TEST_PIPELINE_FACEBOOK} | grep -v 'ok'
+BREAKDOWN_SCRIPT='./test/end-to-end/breakdown.sh'
+if [ -f $BREAKDOWN_SCRIPT ]; then
+  bash $BREAKDOWN_SCRIPT
+fi
 
 # Revert to prod OpenWhisk space
 ${WSK} property set --apihost ${WSK_PROD_HOST} --auth ${WSK_PROD_KEY} | grep -v 'ok'
@@ -240,8 +232,6 @@ ${WSK} package update slack \
   -p client_id "$SLACK_PROD_CLIENT_ID" \
   -p client_secret "$SLACK_PROD_CLIENT_SECRET" \
   -p verification_token "$SLACK_PROD_VERIFICATION_TOKEN" \
-  -p ow_api_host "$SLACK_PROD_OW_API_HOST" \
-  -p ow_api_key "$SLACK_PROD_OW_API_KEY" \
   | grep -v 'updated package'
 
 ${WSK} package update facebook \
@@ -251,8 +241,6 @@ ${WSK} package update facebook \
   | grep -v 'updated package'
 
 ${WSK} package update starter-code \
-  -p ow_api_host "$STARTERCODE_PROD_OW_API_HOST" \
-  -p ow_api_key "$STARTERCODE_PROD_OW_API_KEY" \
   -p workspace_id "$STARTERCODE_PROD_WORKSPACEID" \
   | grep -v 'updated package'
 

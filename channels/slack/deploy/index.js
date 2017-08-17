@@ -1,3 +1,4 @@
+const assert = require('assert');
 const crypto = require('crypto');
 const request = require('request');
 const openwhisk = require('openwhisk');
@@ -19,110 +20,92 @@ const openwhisk = require('openwhisk');
  *  @return Status of the request to the Slack authorization server,
  *    as well as overall status of the Slack OAuth process
  */
-
 function main(params) {
-  try {
-    validateParams(params);
-  } catch (e) {
-    return Promise.reject(e.message);
-  }
-
-  const apiHost = params.ow_api_host;
-  const apiKey = params.ow_api_key;
-  const state = params.state;
-  const clientSecret = params.client_secret;
-  const clientId = params.client_id.substring(1);
-
-  const promisedHash = createHmacKey(clientId, clientSecret);
-
   return new Promise((resolve, reject) => {
-    promisedHash.then(hashJson => {
-      const hash = hashJson.hash;
-      if (hash !== state) {
-        reject('Forgery attack detected.');
-      }
+    validateParameters(params);
 
-      const redirectUri = params.redirect_uri;
-      const code = params.code;
+    const ow = openwhisk();
 
-      // build url to the authorization server
-      const requestUrl = `https://slack.com/api/oauth.access?client_id=${clientId}&client_secret=${clientSecret}&redirect_uri=${redirectUri}&code=${code}`;
+    const state = params.state;
+    const clientId = params.client_id.substring(1);
+    const clientSecret = params.client_secret;
 
-      request(
-        {
-          url: requestUrl,
-          method: 'GET',
-          json: true
-        },
-        (error, response, body) => {
-          if (response && response.statusCode === 200) {
-            try {
-              validateResponseBody(body);
+    const hash = createHmacKey(clientId, clientSecret);
 
-              const ow = openwhisk({ apihost: apiHost, api_key: apiKey });
-              const pkg = {
-                parameters: [
-                  {
-                    key: 'ow_api_host',
-                    value: apiHost
-                  },
-                  {
-                    key: 'ow_api_key',
-                    value: apiKey
-                  },
-                  {
-                    key: 'access_token',
-                    value: body.access_token
-                  },
-                  {
-                    key: 'bot_user_id',
-                    value: body.bot.bot_user_id
-                  },
-                  {
-                    key: 'bot_access_token',
-                    value: body.bot.bot_access_token
-                  },
-                  {
-                    key: 'verification_token',
-                    value: params.verification_token
-                  },
-                  {
-                    key: 'client_id',
-                    value: params.client_id
-                  },
-                  {
-                    key: 'redirect_uri',
-                    value: params.redirect_uri
-                  },
-                  {
-                    key: 'client_secret',
-                    value: params.client_secret
-                  }
-                ]
-              };
+    if (hash !== state) {
+      reject('Security hash does not match hash from the server.');
+    }
 
-              ow.packages
-                .update({
-                  packageName: 'slack',
-                  package: pkg
-                })
-                .then(
-                  () => {
-                    resolve({ status: 'Slack bot is now authenticated.' });
-                  },
-                  err => {
-                    reject(err.message);
-                  }
-                );
-            } catch (e) {
-              reject(e.message);
-            }
-          } else {
-            reject(response);
+    const redirectUri = params.redirect_uri;
+    const code = params.code;
+
+    // build url to the authorization server
+    const requestUrl = `https://slack.com/api/oauth.access?client_id=${clientId}&client_secret=${clientSecret}&redirect_uri=${redirectUri}&code=${code}`;
+
+    request(
+      {
+        url: requestUrl,
+        json: true
+      },
+      (error, response, body) => {
+        if (
+          response && response.statusCode >= 200 && response.statusCode < 400
+        ) {
+          try {
+            validateResponseBody(body);
+
+            const pkg = {
+              parameters: [
+                {
+                  key: 'access_token',
+                  value: body.access_token
+                },
+                {
+                  key: 'bot_access_token',
+                  value: body.bot.bot_access_token
+                },
+                {
+                  key: 'bot_user_id',
+                  value: body.bot.bot_user_id
+                },
+                {
+                  key: 'client_id',
+                  value: params.client_id
+                },
+                {
+                  key: 'client_secret',
+                  value: params.client_secret
+                },
+                {
+                  key: 'redirect_uri',
+                  value: params.redirect_uri
+                },
+                {
+                  key: 'verification_token',
+                  value: params.verification_token
+                }
+              ]
+            };
+
+            ow.packages.update({ packageName: 'slack', package: pkg }).then(
+              () => {
+                resolve({
+                  headers: { 'Content-Type': 'text/html' },
+                  body: 'Authorized successfully!'
+                });
+              },
+              err => {
+                reject(err);
+              }
+            );
+          } catch (e) {
+            reject(e);
           }
+        } else {
+          reject(response);
         }
-      );
-    });
+      }
+    );
   });
 }
 
@@ -136,13 +119,7 @@ function main(params) {
  */
 function createHmacKey(clientId, clientSecret) {
   const hmacKey = `${clientId}&${clientSecret}`;
-  const hmac = crypto.createHmac('sha256', hmacKey);
-  hmac.setEncoding('hex');
-  return new Promise(resolve => {
-    hmac.end('authorize', () => {
-      resolve({ hash: hmac.read() });
-    });
-  });
+  return crypto.createHmac('sha256', hmacKey).update('authorize').digest('hex');
 }
 
 /**
@@ -152,17 +129,19 @@ function createHmacKey(clientId, clientSecret) {
  */
 function validateResponseBody(body) {
   // Required: Response body
-  if (!body) {
-    throw new Error('No response body found in http request.');
-  }
+  assert(body, 'No response body found in http request.');
+
   // Required: Authentication access token
-  if (!body.access_token) {
-    throw new Error('No access token found in http request.');
-  }
-  // Required: Authentication bot identifical and access token
-  if (!body.bot) {
-    throw new Error('No bot credentials found in http request.');
-  }
+  assert(body.access_token, 'No access token found in http request.');
+
+  // Required: Authentication bot access token
+  assert(
+    body.bot && body.bot.bot_access_token,
+    'No bot credentials found in http request.'
+  );
+
+  // Required: Authentication bot user ID
+  assert(body.bot && body.bot.bot_user_id, 'No bot ID found in http request.');
 }
 
 /**
@@ -170,30 +149,18 @@ function validateResponseBody(body) {
  *
  *  @params The parameters passed into the action
  */
-function validateParams(params) {
-  // Required: OpenWhisk API host and key
-  const apiHost = params.ow_api_host;
-  const apiKey = params.ow_api_key;
-  if (!apiHost || !apiKey) {
-    throw new Error('No OpenWhisk API Host or Key provided.');
-  }
-  // Required: Slack verification token
-  if (!params.verification_token) {
-    throw new Error('No verification token provided.');
-  }
+function validateParameters(params) {
+  // Required: Slack verfication token
+  assert(params.verification_token, 'No verification token provided.');
+
   // Required: HMAC key provided by Slack to be verified
-  if (!params.state) {
-    throw new Error('No verification state provided.');
-  }
+  assert(params.state, 'No verification state provided.');
+
   // Required: Slack credentials used to build outbound URL to authorization server
-  if (
-    !params.client_id ||
-    !params.client_secret ||
-    !params.redirect_uri ||
-    !params.code
-  ) {
-    throw new Error('Not enough slack credentials provided.');
-  }
+  assert(params.client_id, 'Not enough slack credentials provided.');
+  assert(params.client_secret, 'Not enough slack credentials provided.');
+  assert(params.redirect_uri, 'Not enough slack credentials provided.');
+  assert(params.code, 'Not enough slack credentials provided.');
 }
 
 module.exports = main;

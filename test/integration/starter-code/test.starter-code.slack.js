@@ -6,18 +6,19 @@
 
 const assert = require('assert');
 const openwhisk = require('openwhisk');
-const openWhiskAuthObj = require('../../resources/openwhisk-bindings.json').openwhisk;
+
+const chatPostUrl = 'https://slack.com/api/chat.postMessage';
+
+const inputText = 'Turn on lights';
+const outputText = 'Output text from mock-convo.';
 
 describe('starter-code integration tests for slack', () => {
   // Setup the ow module for the upcoming calls
-  const options = {
-    apihost: openWhiskAuthObj.apihost,
-    api_key: openWhiskAuthObj.api_key
-  };
-  const ow = openwhisk(options);
+  const ow = openwhisk();
 
   let params;
   let expectedResult;
+  let slackData;
 
   beforeEach(() => {
     params = {
@@ -29,7 +30,7 @@ describe('starter-code integration tests for slack', () => {
           type: 'message',
           channel: 'D024BE91L',
           user: 'U2147483697',
-          text: 'Turn on lights',
+          text: inputText,
           ts: '1355517523.000005'
         },
         type: 'event_callback',
@@ -39,18 +40,20 @@ describe('starter-code integration tests for slack', () => {
       },
       provider: 'slack',
       channel_id: 'D024BE91L',
-      message: 'Turn on lights',
+      message: inputText,
       context: {}
     };
 
     expectedResult = {
       channel: 'D024BE91L',
-      text: 'Output text from mock-convo.',
+      text: outputText,
       workspace_id: 'e808d814-9143-4dce-aec7-68af02e650a8',
+      ts: '1355517523.000005',
+      url: chatPostUrl,
       raw_input_data: {
         conversation: {
           input: {
-            text: 'Turn on lights'
+            text: inputText
           }
         },
         slack: params.slack,
@@ -60,7 +63,7 @@ describe('starter-code integration tests for slack', () => {
       raw_output_data: {
         conversation: {
           output: {
-            text: ['Output text from mock-convo.']
+            text: [outputText]
           },
           context: {
             conversation_id: '06aae48c-a5a9-4bbc-95eb-2ddd26db9a7b',
@@ -82,9 +85,39 @@ describe('starter-code integration tests for slack', () => {
         }
       }
     };
+
+    slackData = {
+      text: outputText,
+      attachments: [
+        {
+          actions: [
+            {
+              name: 'test_option_one',
+              text: 'Test Option One',
+              type: 'button',
+              value: 'test option one'
+            },
+            {
+              name: 'test_option_two',
+              text: 'Test Option Two',
+              type: 'button',
+              value: 'test option two'
+            },
+            {
+              name: 'test_option_three',
+              text: 'Test Option Three',
+              type: 'button',
+              value: 'test option three'
+            }
+          ],
+          fallback: 'Buttons not working...',
+          callback_id: 'test_integration_options'
+        }
+      ]
+    };
   });
 
-  it('validate starter-code-slack actions work', () => {
+  it('validate starter-code handles text from conversation', () => {
     const actionName = 'starter-code/integration-pipeline-slack';
 
     return ow.actions
@@ -102,5 +135,32 @@ describe('starter-code integration tests for slack', () => {
           assert(false, error);
         }
       );
-  }).retries(5);
+  })
+    .timeout(5000)
+    .retries(4);
+
+  it(
+    'validate starter-code handles slack-specific data from conversation',
+    () => {
+      const actionName = 'starter-code/integration-pipeline-slack-with-slack-data';
+
+      expectedResult.raw_output_data.conversation.output.slack = {};
+      expectedResult.raw_output_data.conversation.output.slack = slackData;
+      expectedResult.attachments = slackData.attachments;
+      delete expectedResult.ts;
+
+      return ow.actions
+        .invoke({ name: actionName, blocking: true, result: true, params })
+        .then(
+          result => {
+            assert.deepEqual(result, expectedResult);
+          },
+          error => {
+            assert(false, error);
+          }
+        );
+    }
+  )
+    .timeout(5000)
+    .retries(4);
 });

@@ -9,34 +9,31 @@ const slackPost = require('./../../../../channels/slack/post/index.js');
 const slackBindings = require('./../../../resources/slack-bindings.json').slack;
 
 const text = 'Message coming from slack/post unit test.';
-const defaultPostUrl = 'https://slack.com/api/chat.postMessage';
 const badUri = 'badlink.hi';
 const movedUri = 'http://www.ibm.com';
 
 const errorBadUri = `Invalid URI "${badUri}"`;
-const errorMovedPermanently = 'Action returned with status code 301, message: Moved Permanently';
-const errorNoBotAccessToken = 'Bot access token not provided. (Run "./setup.sh" again?)';
+const errorMovedUri = 'Action returned with status code 301, message: Moved Permanently';
+const errorNoBotAccessToken = 'No bot access token provided.';
 const errorNoChannel = 'Channel not provided.';
 const errorNoText = 'Message text not provided.';
 
 describe('Slack Post Unit Tests', () => {
-  let options = {};
-  const expectedResult = {
-    status: 'OK',
-    url: defaultPostUrl,
-    params: {
-      as_user: 'true',
-      text: 'Message coming from slack/post unit test.',
-      channel: slackBindings.channel,
-      token: slackBindings.bot_access_token
-    }
-  };
+  let options;
+  let expectedResult;
 
   beforeEach(() => {
     options = {
       channel: slackBindings.channel,
       bot_access_token: slackBindings.bot_access_token,
       text
+    };
+
+    expectedResult = {
+      as_user: 'true',
+      text: 'Message coming from slack/post unit test.',
+      channel: slackBindings.channel,
+      token: slackBindings.bot_access_token
     };
   });
 
@@ -46,7 +43,22 @@ describe('Slack Post Unit Tests', () => {
         assert.deepEqual(result, expectedResult);
       },
       error => {
-        assert(false, `Invoke action failed: ${error}`);
+        assert(false, `Invoke action failed: ${error.message}`);
+      }
+    );
+  });
+
+  it('validate slack/post works with attachments', () => {
+    const attachments = [{ text: 'Message coming from slack/post unit test.' }];
+    options.attachments = attachments;
+    expectedResult.attachments = attachments;
+
+    return slackPost(options).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
       }
     );
   });
@@ -59,23 +71,23 @@ describe('Slack Post Unit Tests', () => {
         assert(false, 'Action suceeded unexpectedly.');
       },
       error => {
-        assert.equal(error, errorBadUri);
+        assert.equal(error.message, errorBadUri);
       }
     );
   });
 
-  it('validate error when not 200 uri supplied', () => {
+  it('validate error when moved uri supplied', () => {
     options.url = movedUri;
 
     return slackPost(options).then(
       () => {
-        assert(false, 'Action suceeded unexpectedly.');
+        assert(false, 'Action succeeded unexpectedly.');
       },
       error => {
-        assert.equal(error, errorMovedPermanently);
+        assert.equal(error, errorMovedUri);
       }
     );
-  }).timeout(8000);
+  });
 
   it('validate error when no bot access token provided', () => {
     delete options.bot_access_token;
@@ -85,7 +97,7 @@ describe('Slack Post Unit Tests', () => {
         assert(false, 'Action suceeded unexpectedly.');
       },
       error => {
-        assert.equal(error, errorNoBotAccessToken);
+        assert.equal(error.message, errorNoBotAccessToken);
       }
     );
   });
@@ -98,7 +110,7 @@ describe('Slack Post Unit Tests', () => {
         assert(false, 'Action suceeded unexpectedly.');
       },
       error => {
-        assert.equal(error, errorNoChannel);
+        assert.equal(error.message, errorNoChannel);
       }
     );
   });
@@ -111,7 +123,7 @@ describe('Slack Post Unit Tests', () => {
         assert(false, 'Action suceeded unexpectedly.');
       },
       error => {
-        assert.equal(error, errorNoText);
+        assert.equal(error.message, errorNoText);
       }
     );
   });

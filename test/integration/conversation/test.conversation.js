@@ -121,7 +121,7 @@ describe('conversation integration tests', () => {
       e => {
         assert.equal(
           e.error,
-          'URL workspaceid parameter is not a valid GUID.',
+          `URL workspaceid parameter '${params.workspace_id}' is not a valid GUID.`,
           'call should fail as specified workspace does not exist'
         );
       }

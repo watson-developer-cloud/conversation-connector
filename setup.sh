@@ -13,8 +13,7 @@ fi
 # Update providers file with OpenWhisk credentials provided by wsk CLI
 WSK_API_HOST=`wsk property get --apihost | tr "\t" "\n" | tail -n 1`
 WSK_API_KEY=`wsk property get --auth | tr "\t" "\n" | tail -n 1`
-WSK_NAMESPACE=`wsk property get --namespace | tr "\t" "\n" | tail -n 1`
-WSK_NAMESPACE_LIST=`wsk namespace list | tr "\t" "\n" | tail -n 1`
+WSK_NAMESPACE=`wsk namespace list | tail -n +2 | head -n 1`
 
 sed "s/\${WSK_API_HOST}/${WSK_API_HOST}/g;s/\${WSK_API_KEY}/${WSK_API_KEY}/g;s/\${WSK_NAMESPACE}/${WSK_NAMESPACE}/g" $PROVIDERS_FILE > $PROVIDERS_REPLACED_FILE
 
@@ -61,9 +60,16 @@ else
       -p conversation_workspace_id 'dummy_workspace_id' \
       -a web-export true
 
-    echo 'Your '"$pipeline_name"' Callback/Events URL is :'
-    echo https://openwhisk.ng.bluemix.net/api/v1/web/$WSK_NAMESPACE_LIST/default/$pipeline_name.text
-    
+    CHANNEL=`echo $pipeline | jq -r '.actions[]' | tail -n 1 | tr "/" "\n" | head -n 1`
+    if [ "$CHANNEL" == "facebook" ]; then
+      EXT="text"
+    else
+      EXT="json"
+    fi
+    echo ''
+    echo "Your Webhook/Request URL for [${pipeline_name}] is :"
+    echo https://openwhisk.ng.bluemix.net/api/v1/web/$WSK_NAMESPACE/default/$pipeline_name.${EXT}
+
   done
 fi
 

@@ -1,6 +1,6 @@
 {
      "database": {
-         "cloudant_url": "https://1bcd74ee-9960-4e58-8f76-b64cae912904-bluemix:c175dd449d03d600c33e2c9a2c8db1fb2a115d44fffa2248340e82268e83e4b3@1bcd74ee-9960-4e58-8f76-b64cae912904-bluemix.cloudant.com",
+         "cloudant_url": "https://7571cb6c-9204-468b-b3d2-e81137759b04-bluemix:5ae3ed368746ec6b3accea8debfc98be07e50bb18d621c83420d94021ce45246@7571cb6c-9204-468b-b3d2-e81137759b04-bluemix.cloudant.com",
          "dbname": "contextdb"
      }
  }

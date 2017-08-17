@@ -22,7 +22,6 @@ describe('End-to-End tests: Facebook prerequisites', () => {
   const requiredActions = [
     'facebook/post',
     'facebook/receive',
-    'facebook/deploy',
     'starter-code/normalize-conversation-for-facebook',
     'starter-code/normalize-facebook-for-conversation'
   ];

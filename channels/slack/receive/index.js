@@ -1,5 +1,7 @@
 'use strict';
 
+const assert = require('assert');
+
 /**
  * Receives a subscription message from Slack
  *   and returns the appropriate information depending of subscription event received.
@@ -9,64 +11,23 @@
  * @return {Promise} - Result of the Slack subscription event specified by Slack API
  */
 function main(params) {
-  try {
+  return new Promise((resolve, reject) => {
     validateParameters(params);
-  } catch (e) {
-    return Promise.reject(e.message);
-  }
 
-  const type = params.type;
-
-  // url_verification is for validating this action with slack during slack's setup phase
-  //  this action simply passes the challenge passed by slack during verification
-  if (type === 'url_verification') {
-    const challenge = params.challenge || '';
-
-    // Promise reject is used here to break the Openwhisk sequence-action.
-    // Breaking the sequence-action here means sending the challenge directly to the Slack server.
-    return Promise.reject({
-      code: 200,
-      challenge
-    });
-  }
-
-  // event_callback is sent by slack for most major subscription events such as message sent
-  if (type === 'event_callback') {
-    const eventType = params.event && params.event.type;
-    if (!eventType) {
-      return Promise.reject(
-        'No event type specified in event callback slack subscription.'
-      );
+    if (isDuplicateMessage(params)) {
+      reject(extractSlackParameters(params));
+    } else if (isUrlVerification(params)) {
+      const challenge = params.challenge || '';
+      reject({
+        code: 200,
+        challenge
+      });
+    } else if (isBotMessage(params)) {
+      reject({ bot_id: isBotMessage(params) });
+    } else {
+      resolve(extractSlackParameters(params));
     }
-
-    if (eventType === 'message') {
-      const botId = params.event.bot_id;
-
-      if (botId) {
-        // Promise reject is used here to break the Openwhisk sequence-action.
-        // Breaking the sequence-action here means the pipeline shouldn't handle bot messages.
-        return Promise.reject({ bot_id: botId });
-      } else if (
-        params.__ow_headers &&
-        params.__ow_headers['x-slack-retry-reason'] &&
-        params.__ow_headers['x-slack-retry-num'] &&
-        params.__ow_headers['x-slack-retry-reason'] === 'http_timeout' &&
-        params.__ow_headers['x-slack-retry-num'] > 0
-      ) {
-        // OpenWhisk timed out on Slack, and so Slack resent this event subscription as a duplicate
-        //  For now, this duplicate message is ignored,
-        //  but in the future, we need to check if this event was handled by the previous event
-        //  with a database.
-        return Promise.reject(extractSlackParameters(params));
-      }
-
-      return Promise.resolve(extractSlackParameters(params));
-    }
-
-    return Promise.reject('Message type not understood.');
-  }
-
-  return Promise.reject('Event type not understood.');
+  });
 }
 
 /**
@@ -78,24 +39,65 @@ function main(params) {
  *                    and indicators that the JSON is coming from Slack channel package
  */
 function extractSlackParameters(params) {
-  const slackParams = params;
+  const noIncludeKeys = [
+    '__ow_headers',
+    '__ow_method',
+    '__ow_path',
+    '__ow_verb',
+    'client_id',
+    'client_secret',
+    'redirect_uri',
+    'verification_token'
+  ];
 
-  delete slackParams.__ow_headers;
-  delete slackParams.__ow_method;
-  delete slackParams.__ow_path;
-  delete slackParams.__ow_verb;
-  delete slackParams.ow_api_host;
-  delete slackParams.ow_api_key;
-  delete slackParams.client_id;
-  delete slackParams.client_secret;
-  delete slackParams.redirect_uri;
-  delete slackParams.verification_token;
-  delete slackParams.starter_code_action_name;
+  const slackParams = {};
+  Object.keys(params).forEach(key => {
+    if (noIncludeKeys.indexOf(key) < 0) {
+      slackParams[key] = params[key];
+    }
+  });
 
   return {
     slack: slackParams,
     provider: 'slack'
   };
+}
+
+/**
+ * Returns true if the message received was a duplicate/retry message.
+ *
+ * @param  {JSON}  params - Parameters passed into the action
+ * @return {Boolean}      - true only if a duplicate message was detected
+ */
+function isDuplicateMessage(params) {
+  return params.__ow_headers &&
+    params.__ow_headers['x-slack-retry-reason'] &&
+    params.__ow_headers['x-slack-retry-num'] &&
+    params.__ow_headers['x-slack-retry-reason'] === 'http_timeout' &&
+    params.__ow_headers['x-slack-retry-num'] > 0;
+}
+
+/**
+ * Returns true if the message was a challenge request.
+ *
+ * @param  {JSON}  params - Parameters passed into the action
+ * @return {Boolean}      - true only is the message is a challenge message
+ */
+function isUrlVerification(params) {
+  return params.type && params.type === 'url_verification';
+}
+
+/**
+ * Returns true if the message was sent from a bot instead of a human.
+ *
+ * @param  {JSON}  params - Parameters passed into the action
+ * @return {Boolean}      - true only if the message was from a bot
+ */
+function isBotMessage(params) {
+  const slackEvent = params.event;
+  const botId = (slackEvent && slackEvent.bot_id) ||
+    (slackEvent && slackEvent.message && slackEvent.message.bot_id);
+  return botId;
 }
 
 /**
@@ -105,18 +107,17 @@ function extractSlackParameters(params) {
  */
 function validateParameters(params) {
   // Required: Both expected and actuals verification tokens, and they must be equal
-  if (
-    !params.token ||
-    !params.verification_token ||
-    params.token !== params.verification_token
-  ) {
-    throw new Error('Verification token is incorrect.');
-  }
-
-  // Required: The type of Slack subscription event received
-  if (!params.type) {
-    throw new Error('No subscription type specified.');
-  }
+  assert(params.verification_token, 'Verification token is incorrect.');
+  const token = params.token ||
+    (params.payload &&
+      JSON.parse(params.payload) &&
+      JSON.parse(params.payload).token);
+  assert(token, 'Verification token is incorrect.');
+  assert.equal(
+    params.verification_token,
+    token,
+    'Verification token is incorrect.'
+  );
 }
 
 module.exports = main;

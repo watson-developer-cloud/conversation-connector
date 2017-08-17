@@ -5,27 +5,22 @@
  */
 
 const assert = require('assert');
-const openwhiskBindings = require('./../../../resources/openwhisk-bindings.json').openwhisk;
 const slackBindings = require('./../../../resources/slack-bindings.json').slack;
 const slackReceive = require('./../../../../channels/slack/receive/index.js');
 
 const errorBadVerificationTokens = 'Verification token is incorrect.';
-const errorEventNotUnderstood = 'Event type not understood.';
-const errorMessageNotUnderstood = 'Message type not understood.';
-const errorSubscriptionType = 'No subscription type specified.';
-const errorSubWithNoEvent = 'No event type specified in event callback slack subscription.';
 
 describe('Slack Receive Unit Tests', () => {
-  let challengeParams = {};
-  let challengeResult = {};
-  let messageParams = {};
-  let messageResult = {};
+  let challengeParams;
+  let challengeResult;
+  let messageParams;
+  let messageResult;
+  let payloadParams;
+  let payloadResult;
   const incorrectToken = 'incorrect_token';
 
   beforeEach(() => {
     messageParams = {
-      ow_api_host: openwhiskBindings.apihost,
-      ow_api_key: openwhiskBindings.api_key,
       verification_token: slackBindings.verification_token,
       token: slackBindings.verification_token,
       event: {
@@ -34,20 +29,6 @@ describe('Slack Receive Unit Tests', () => {
         channel: slackBindings.channel
       },
       type: 'event_callback'
-    };
-
-    challengeParams = {
-      ow_api_host: openwhiskBindings.apihost,
-      ow_api_key: openwhiskBindings.api_key,
-      verification_token: slackBindings.verification_token,
-      token: slackBindings.verification_token,
-      type: 'url_verification',
-      challenge: 'challenge_token'
-    };
-
-    challengeResult = {
-      code: 200,
-      challenge: 'challenge_token'
     };
 
     messageResult = {
@@ -62,17 +43,42 @@ describe('Slack Receive Unit Tests', () => {
       },
       provider: 'slack'
     };
-  });
 
-  it('validate slack/receive passes on challenge', () => {
-    return slackReceive(challengeParams).then(
-      () => {
-        assert(false, 'Action succeeded unexpectedly.');
+    challengeParams = {
+      verification_token: slackBindings.verification_token,
+      token: slackBindings.verification_token,
+      type: 'url_verification',
+      challenge: 'challenge_token'
+    };
+
+    challengeResult = {
+      code: 200,
+      challenge: 'challenge_token'
+    };
+
+    const payload = {
+      actions: [
+        {
+          name: 'shirt_size_small',
+          value: 'small',
+          type: 'button'
+        }
+      ],
+      callback_id: 'test_callback_id',
+      token: slackBindings.verification_token
+    };
+
+    payloadParams = {
+      verification_token: slackBindings.verification_token,
+      payload: JSON.stringify(payload)
+    };
+
+    payloadResult = {
+      slack: {
+        payload: JSON.stringify(payload)
       },
-      challengeMessage => {
-        assert.deepEqual(challengeMessage, challengeResult);
-      }
-    );
+      provider: 'slack'
+    };
   });
 
   it('validate slack/receive receives slack human message', () => {
@@ -82,6 +88,28 @@ describe('Slack Receive Unit Tests', () => {
       },
       error => {
         assert(false, error);
+      }
+    );
+  });
+
+  it('validate slack/receive receives human interactive response', () => {
+    return slackReceive(payloadParams).then(
+      result => {
+        assert.deepEqual(result, payloadResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate slack/receive passes on challenge', () => {
+    return slackReceive(challengeParams).then(
+      () => {
+        assert(false, 'Action succeeded unexpectedly.');
+      },
+      challengeMessage => {
+        assert.deepEqual(challengeMessage, challengeResult);
       }
     );
   });
@@ -103,18 +131,23 @@ describe('Slack Receive Unit Tests', () => {
     );
   });
 
-  it('validate slack/receive returns to action passed in params', () => {
-    messageParams.starter_code_action_name = '/whisk.system/utils/echo';
+  it('validate slack/receive receives slack bot message when message changed', () => {
+    messageParams.event.message = {};
+    messageParams.event.message.bot_id = 'bot_id';
+
+    const botResponse = {
+      bot_id: 'bot_id'
+    };
 
     return slackReceive(messageParams).then(
-      result => {
-        assert.deepEqual(result, messageResult);
+      () => {
+        assert(false, 'Action succeeded unexpectedly.');
       },
-      error => {
-        assert(false, error);
+      botMessage => {
+        assert.deepEqual(botMessage, botResponse);
       }
     );
-  }).timeout(4000);
+  });
 
   it('validate error when no token', () => {
     delete messageParams.token;
@@ -124,7 +157,7 @@ describe('Slack Receive Unit Tests', () => {
         assert(false, 'Action suceeded unexpectedly.');
       },
       error => {
-        assert.equal(error, errorBadVerificationTokens);
+        assert.equal(error.message, errorBadVerificationTokens);
       }
     );
   });
@@ -137,7 +170,7 @@ describe('Slack Receive Unit Tests', () => {
         assert(false, 'Action suceeded unexpectedly.');
       },
       error => {
-        assert.equal(error, errorBadVerificationTokens);
+        assert.equal(error.message, errorBadVerificationTokens);
       }
     );
   });
@@ -164,59 +197,7 @@ describe('Slack Receive Unit Tests', () => {
         assert(false, 'Action suceeded unexpectedly.');
       },
       error => {
-        assert.equal(error, errorBadVerificationTokens);
-      }
-    );
-  });
-
-  it('valdiate error when subscription type not understood', () => {
-    messageParams.type = 'bad_event_type';
-
-    return slackReceive(messageParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error, errorEventNotUnderstood);
-      }
-    );
-  });
-
-  it('validate error when event not specified', () => {
-    delete messageParams.type;
-
-    return slackReceive(messageParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error, errorSubscriptionType);
-      }
-    );
-  });
-
-  it('validate error when event type not a message', () => {
-    messageParams.event.type = 'not_message';
-
-    return slackReceive(messageParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error, errorMessageNotUnderstood);
-      }
-    );
-  });
-
-  it('validate error when subscription event_callback with no event type', () => {
-    delete messageParams.event.type;
-
-    return slackReceive(messageParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error, errorSubWithNoEvent);
+        assert.equal(error.message, errorBadVerificationTokens);
       }
     );
   });
