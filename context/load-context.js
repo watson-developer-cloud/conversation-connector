@@ -1,5 +1,6 @@
+const assert = require('assert');
 const Cloudant = require('cloudant');
-
+const omit = require('object.omit');
 /**
  *  This action is used to read the most recent Conversation context from the Cloudant context db.
  *  @params Parameters passed by normalize-for-conversation:
@@ -44,22 +45,22 @@ const Cloudant = require('cloudant');
  *  @return request payload with Convo context added.
  */
 function main(params) {
-  try {
+  return new Promise((resolve, reject) => {
     validateParams(params);
-  } catch (e) {
-    return Promise.reject(e.message);
-  }
-  const returnParams = params;
-  const cloudantUrl = params.cloudant_url;
-  const cloudantKey = params.raw_input_data.cloudant_key;
-  const contextDb = params.dbname;
-  const cloudant = getCloudantObj(cloudantUrl);
+    const returnParams = params;
+    const cloudantUrl = params.cloudant_url;
+    const cloudantKey = params.raw_input_data.cloudant_key;
+    const contextDb = params.dbname;
+    const cloudant = getCloudantObj(cloudantUrl);
 
-  const db = cloudant.use(contextDb);
+    const db = cloudant.use(contextDb);
 
-  return getContext(db, cloudantKey).then(context => {
-    returnParams.conversation.context = context;
-    return returnParams;
+    getContext(db, cloudantKey)
+      .then(context => {
+        returnParams.conversation.context = context;
+        resolve(returnParams);
+      })
+      .catch(reject);
   });
 }
 
@@ -87,12 +88,7 @@ function getContext(db, key) {
           }
           reject(err);
         } else {
-          const updatedBody = body;
-          // Delete Cloudant-specific fields which were added to db entries.
-          delete updatedBody.id;
-          delete updatedBody.rev;
-          delete updatedBody.revs_info;
-          resolve(updatedBody);
+          resolve(deleteCloudantFields(body));
         }
       }
     );
@@ -132,33 +128,41 @@ function getCloudantObj(cloudantUrl) {
  * @param params
  */
 function validateParams(params) {
-  if (!params.cloudant_url) {
-    throw new Error(
-      'Illegal Argument Exception: Cloudant db url absent or not bound to the package.'
-    );
-  }
+  // Required: cloudant_url
+  assert(
+    params.cloudant_url,
+    'Cloudant db url absent or not bound to the package.'
+  );
 
-  if (!params.dbname) {
-    throw new Error(
-      'Illegal Argument Exception: dbname absent or not bound to the package.'
-    );
-  }
+  // Required: dbname
+  assert(params.dbname, 'dbname absent or not bound to the package.');
 
-  if (!params.raw_input_data || !params.raw_input_data.cloudant_key) {
-    throw new Error(
-      'Illegal Argument Exception: params.raw_input_data absent in params or cloudant_key absent in params.raw_input_data'
-    );
-  }
+  // Required: raw_input_data
+  assert(params.raw_input_data, 'params.raw_input_data absent in params.');
 
-  if (!params.conversation) {
-    throw new Error(
-      'Illegal Argument Exception: conversation object absent in params.'
-    );
-  }
+  // Required: raw_input_data.cloudant_key
+  assert(
+    params.raw_input_data.cloudant_key,
+    'cloudant_key absent in params.raw_input_data.'
+  );
+
+  // Required: conversation
+  assert(params.conversation, 'conversation object absent in params.');
+}
+
+/**
+ * Deletes context-related info from response
+ * @param response from Cloudant
+ * @return cleaned response
+ */
+function deleteCloudantFields(response) {
+  // Delete Cloudant-specific fields which were added to db entries.
+  return omit(response, ['_id', '_rev', '_revs_info']);
 }
 
 module.exports = {
   main,
   getContext,
-  getCloudantObj
+  getCloudantObj,
+  deleteCloudantFields
 };

@@ -8,6 +8,13 @@ const Cloudant = require('cloudant');
 
 const invalidCloudantUrl = 'invalid-url';
 
+const errorNoCloudantUrl = 'Cloudant db url absent or not bound to the package.';
+const errorNoDbName = 'dbname absent or not bound to the package.';
+const errorNoRawInputData = 'raw_input_data absent in params.';
+const errorNoCloudantKey = 'cloudant_key absent in params.raw_input_data.';
+const errorNoRawOutputData = 'raw_output_data absent in params.';
+const errorNoConversationObj = 'conversation object absent in params.raw_output_data.';
+
 describe('save context unit tests', () => {
   let params = {};
   let func; // Function to test
@@ -18,7 +25,7 @@ describe('save context unit tests', () => {
     params = Object.assign({}, JSON.parse(JSON.stringify(paramsJson)));
   });
 
-  it('validate no url', () => {
+  it('validate error when no url', () => {
     // Use request params for main function
     params = params.main.request;
 
@@ -28,20 +35,16 @@ describe('save context unit tests', () => {
     func = sc.main;
 
     return func(params).then(
-      response => {
-        assert(false, response);
+      () => {
+        assert(false, 'Action suceeded unexpectedly.');
       },
-      e => {
-        assert.equal(
-          e,
-          'Illegal Argument Exception: Cloudant db url absent or not bound to the package.',
-          'Should fail complaining about missing url'
-        );
+      error => {
+        assert.equal(error.message, errorNoCloudantUrl);
       }
     );
   });
 
-  it('validate no dbname', () => {
+  it('validate error when no dbname', () => {
     // Use request params for main function
     params = params.main.request;
 
@@ -51,90 +54,87 @@ describe('save context unit tests', () => {
     func = sc.main;
 
     return func(params).then(
-      response => {
-        assert(false, response);
+      () => {
+        assert(false, 'Action suceeded unexpectedly.');
       },
-      e => {
-        assert.equal(
-          e,
-          'Illegal Argument Exception: dbname absent or not bound to the package.',
-          'Should fail complaining about missing dbname'
-        );
+      error => {
+        assert.equal(error.message, errorNoDbName);
       }
     );
   });
 
-  it('validate no cloudant_key', () => {
+  it('validate error when no raw_input_data', () => {
     // Use request params for main function
     params = params.main.request;
 
-    assert(
-      params.raw_input_data.cloudant_key,
-      'cloudant_key absent in params.raw_input_data'
+    assert(params.raw_input_data, 'raw_input_data absent in params.');
+    delete params.raw_input_data;
+
+    func = sc.main;
+
+    return func(params).then(
+      () => {
+        assert(false, 'Action suceeded unexpectedly.');
+      },
+      error => {
+        assert.equal(error.message, errorNoRawInputData);
+      }
     );
+  });
+
+  it('validate error when no cloudant_key', () => {
+    // Use request params for main function
+    params = params.main.request;
+
+    assert(params.raw_input_data.cloudant_key, 'cloudant_key absent in params.raw_input_data');
     delete params.raw_input_data.cloudant_key;
 
     func = sc.main;
 
     return func(params).then(
-      response => {
-        assert(false, response);
+      () => {
+        assert(false, 'Action suceeded unexpectedly.');
       },
-      e => {
-        assert.equal(
-          e,
-          'Illegal Argument Exception: raw_input_data absent in params or, cloudant_key absent in params.raw_input_data',
-          'Should fail complaining about missing cloudant_key'
-        );
+      error => {
+        assert.equal(error.message, errorNoCloudantKey);
       }
     );
   });
 
-  it('validate no raw_output_data', () => {
+  it('validate error when no raw_output_data', () => {
     // Use request params for main function
     params = params.main.request;
 
-    assert(params.raw_output_data, 'raw_output_data absent in params.');
+    assert(params.raw_output_data, 'raw_output_data absent in package bindings.');
     delete params.raw_output_data;
 
     func = sc.main;
 
     return func(params).then(
-      response => {
-        assert(false, response);
+      () => {
+        assert(false, 'Action suceeded unexpectedly.');
       },
-      e => {
-        assert.equal(
-          e,
-          'Illegal Argument Exception: raw_output_data absent in params.',
-          'Should fail complaining about missing raw_output_data'
-        );
+      error => {
+        assert.equal(error.message, errorNoRawOutputData);
       }
     );
   });
 
-  it('validate no conversation', () => {
+  it('validate error when no Conversation object', () => {
     // Use request params for main function
     params = params.main.request;
 
-    assert(
-      params.raw_output_data.conversation,
-      'conversation absent in params.raw_output_data.'
-    );
+    assert(params.raw_output_data.conversation, 'conversation object absent in package bindings.');
     delete params.raw_output_data.conversation;
 
     func = sc.main;
 
     return func(params).then(
-      response => {
-        assert(false, response);
+      () => {
+        assert(false, 'Action suceeded unexpectedly.');
       },
-      e => {
-        assert.equal(
-          e,
-          'Illegal Argument Exception: raw_output_data absent in params or, conversation object absent in params.raw_output_data.',
-          'Should fail complaining about missing conversation object.'
-        );
+      error => {
+        assert.equal(error.message, errorNoConversationObj);
       }
     );
   });
@@ -412,7 +412,7 @@ describe('save context unit tests', () => {
       .query(() => {
         return true;
       })
-      .reply(200, nockResponseForGet);
+      .reply(404, nockResponseForGet);
 
     const mockPut = nock(cloudantUrl)
       .put(`/${dbName}/${cloudantKey}`)
@@ -480,5 +480,29 @@ describe('save context unit tests', () => {
         assert.equal(500, e.statusCode);
       }
     );
+  });
+
+  it('validateResponseParams response should not contain cloudant_url', () => {
+    func = sc.validateResponseParams;
+    // The params for func.
+    const p = params.validateResponseParams.withCloudantUrl.params;
+    try {
+      func(p);
+    } catch (e) {
+      assert.equal('AssertionError', e.name);
+      assert.equal('cloudant_url present in the response.', e.message);
+    }
+  });
+
+  it('validateResponseParams response should not contain cloudant auth dbname', () => {
+    func = sc.validateResponseParams;
+    // The params for func.
+    const p = params.validateResponseParams.withCloudantDbName.params;
+    try {
+      func(p);
+    } catch (e) {
+      assert.equal('AssertionError', e.name);
+      assert.equal('dbname present in the response.', e.message);
+    }
   });
 });

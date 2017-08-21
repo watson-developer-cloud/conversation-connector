@@ -28,6 +28,7 @@
     "cloudant": "^1.8.0",
     "merge": "^1.2.0",
     "object.pick": "^1.2.0",
+    "object.omit": "^2.0.1",
     "openwhisk": "^3.5.1",
     "request": "^2.81.0",
     "watson-developer-cloud": "^2.29.0"

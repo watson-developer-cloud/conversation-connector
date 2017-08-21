@@ -1,4 +1,6 @@
+const assert = require('assert');
 const Cloudant = require('cloudant');
+const omit = require('object.omit');
 
 /**
  *  This action is used to save the most recent Conversation context to the Cloudant context db.
@@ -76,30 +78,28 @@ const Cloudant = require('cloudant');
  *  @return request payload with Cloudant-specific fields and context package bindings removed.
  */
 function main(params) {
-  try {
+  return new Promise((resolve, reject) => {
     validateParams(params);
-  } catch (e) {
-    return Promise.reject(e.message);
-  }
-  const returnParams = params;
-  const cloudantUrl = params.cloudant_url;
-  const cloudantKey = params.raw_input_data.cloudant_key;
-  const contextDb = params.dbname;
 
-  const cloudant = getCloudantObj(cloudantUrl);
-  const db = cloudant.use(contextDb);
-  return setContext(
-    db,
-    cloudantKey,
-    params.raw_output_data.conversation.context
-  ).then(() => {
-    // Delete the fields that should not be passed to subsequent actions in the sequence.
-    delete returnParams.cloudant_url;
-    delete returnParams.dbname;
-    delete returnParams.raw_output_data.conversation.context._rev;
-    delete returnParams.raw_output_data.conversation.context._info;
-    delete returnParams.raw_output_data.conversation.context._revs_info;
-    return returnParams;
+    let returnParams = params;
+    const cloudantUrl = params.cloudant_url;
+    const cloudantKey = params.raw_input_data.cloudant_key;
+    const contextDb = params.dbname;
+
+    const cloudant = getCloudantObj(cloudantUrl);
+    const db = cloudant.use(contextDb);
+    setContext(
+      db,
+      cloudantKey,
+      params.raw_output_data.conversation.context
+    )
+      .then(() => {
+        // must not flow further in the pipeline
+        returnParams = omit(returnParams, ['cloudant_url', 'dbname']);
+        validateResponseParams(returnParams);
+        resolve(returnParams);
+      })
+      .catch(reject);
   });
 }
 
@@ -122,15 +122,11 @@ function setContext(db, key, doc) {
           // Either a real error or first time we are writing Context
           if (err.statusCode === 404) {
             // missing doc when it's a new user. Simply move on to saving the context.
-            insertContextInDb(db, nkey, doc)
-              .then(context => {
-                resolve(context);
-              })
-              .catch(e => {
-                // This is a real error from Cloudant
-                // when inserting a new doc
-                reject(e);
-              });
+            insertContextInDb(db, nkey, doc).then(resolve).catch(e => {
+              // This is a real error from Cloudant
+              // when inserting a new doc
+              reject(e);
+            });
           } else {
             reject(err);
           }
@@ -138,15 +134,11 @@ function setContext(db, key, doc) {
           // This is a case of a pre-existing Context
           const updatedDoc = doc;
           updatedDoc._rev = body._rev;
-          insertContextInDb(db, nkey, updatedDoc)
-            .then(context => {
-              resolve(context);
-            })
-            .catch(e => {
-              // This is a real error from Cloudant
-              // when overwriting context with the latest one from Convo
-              reject(e);
-            });
+          insertContextInDb(db, nkey, updatedDoc).then(resolve).catch(e => {
+            // This is a real error from Cloudant
+            // when overwriting context with the latest one from Convo
+            reject(e);
+          });
         }
       }
     );
@@ -203,38 +195,50 @@ function normalize(component) {
  * @param params
  */
 function validateParams(params) {
-  if (!params.cloudant_url) {
-    throw new Error(
-      'Illegal Argument Exception: Cloudant db url absent or not bound to the package.'
-    );
-  }
+  // Required: cloudant_url
+  assert(
+    params.cloudant_url,
+    'Cloudant db url absent or not bound to the package.'
+  );
 
-  if (!params.dbname) {
-    throw new Error(
-      'Illegal Argument Exception: dbname absent or not bound to the package.'
-    );
-  }
+  // Required: dbname
+  assert(params.dbname, 'dbname absent or not bound to the package.');
 
-  if (!params.raw_input_data || !params.raw_input_data.cloudant_key) {
-    throw new Error(
-      'Illegal Argument Exception: raw_input_data absent in params or, cloudant_key absent in params.raw_input_data'
-    );
-  }
-  if (!params.raw_output_data) {
-    throw new Error(
-      'Illegal Argument Exception: raw_output_data absent in params.'
-    );
-  }
+  // Required: raw_input_data
+  assert(params.raw_input_data, 'raw_input_data absent in params.');
 
-  if (!params.raw_output_data || !params.raw_output_data.conversation) {
-    throw new Error(
-      'Illegal Argument Exception: raw_output_data absent in params or, conversation object absent in params.raw_output_data.'
-    );
-  }
+  // Required: raw_input_data.cloudant_key
+  assert(
+    params.raw_input_data.cloudant_key,
+    'cloudant_key absent in params.raw_input_data.'
+  );
+
+  // Required: raw_output_data
+  assert(params.raw_output_data, 'raw_output_data absent in params.');
+
+  // Required: raw_output_data.conversation
+  assert(
+    params.raw_output_data.conversation,
+    'conversation object absent in params.raw_output_data.'
+  );
+}
+
+/**
+ *  Validates that we don't return any unwanted fields
+ *
+ *  @body The returning parameters
+ */
+function validateResponseParams(returnParams) {
+  // cloudant_url must be absent in the response
+  assert(!returnParams.cloudant_url, 'cloudant_url present in the response.');
+
+  // dbname must be absent in the response
+  assert(!returnParams.dbname, 'dbname present in the response.');
 }
 
 module.exports = {
   main,
   setContext,
-  getCloudantObj
+  getCloudantObj,
+  validateResponseParams
 };

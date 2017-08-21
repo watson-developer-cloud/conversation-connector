@@ -8,6 +8,12 @@ const Cloudant = require('cloudant');
 
 const invalidCloudantUrl = 'invalid-url';
 
+const errorNoCloudantUrl = 'Cloudant db url absent or not bound to the package.';
+const errorNoDbName = 'dbname absent or not bound to the package.';
+const errorNoRawInputData = 'params.raw_input_data absent in params.';
+const errorNoCloudantKey = 'cloudant_key absent in params.raw_input_data.';
+const errorNoConversationObj = 'conversation object absent in params.';
+
 describe('load context unit tests', () => {
   let params = {};
   let func; // Function to test
@@ -18,7 +24,7 @@ describe('load context unit tests', () => {
     params = Object.assign({}, JSON.parse(JSON.stringify(paramsJson)));
   });
 
-  it('validate no url', () => {
+  it('validate error when no url', () => {
     // Use request params for main function
     params = params.main.request;
 
@@ -28,20 +34,16 @@ describe('load context unit tests', () => {
     func = sc.main;
 
     return func(params).then(
-      response => {
-        assert(false, response);
+      () => {
+        assert(false, 'Action suceeded unexpectedly.');
       },
-      e => {
-        assert.equal(
-          e,
-          'Illegal Argument Exception: Cloudant db url absent or not bound to the package.',
-          'Should fail complaining about missing url'
-        );
+      error => {
+        assert.equal(error.message, errorNoCloudantUrl);
       }
     );
   });
 
-  it('validate no dbname', () => {
+  it('validate error when no dbname', () => {
     // Use request params for main function
     params = params.main.request;
 
@@ -51,46 +53,54 @@ describe('load context unit tests', () => {
     func = sc.main;
 
     return func(params).then(
-      response => {
-        assert(false, response);
+      () => {
+        assert(false, 'Action suceeded unexpectedly.');
       },
-      e => {
-        assert.equal(
-          e,
-          'Illegal Argument Exception: dbname absent or not bound to the package.',
-          'Should fail complaining about missing dbname'
-        );
+      error => {
+        assert.equal(error.message, errorNoDbName);
       }
     );
   });
 
-  it('validate no cloudant_key', () => {
+  it('validate error when no raw_input_data', () => {
     // Use request params for main function
     params = params.main.request;
 
-    assert(
-      params.raw_input_data.cloudant_key,
-      'cloudant_key absent in params.raw_input_data'
+    assert(params.raw_input_data, 'raw_input_data absent in package bindings.');
+    delete params.raw_input_data;
+
+    func = sc.main;
+
+    return func(params).then(
+      () => {
+        assert(false, 'Action suceeded unexpectedly.');
+      },
+      error => {
+        assert.equal(error.message, errorNoRawInputData);
+      }
     );
+  });
+
+  it('validate error when no cloudant_key', () => {
+    // Use request params for main function
+    params = params.main.request;
+
+    assert(params.raw_input_data.cloudant_key, 'cloudant_key absent in params.raw_input_data');
     delete params.raw_input_data.cloudant_key;
 
     func = sc.main;
 
     return func(params).then(
-      response => {
-        assert(false, response);
+      () => {
+        assert(false, 'Action suceeded unexpectedly.');
       },
-      e => {
-        assert.equal(
-          e,
-          'Illegal Argument Exception: params.raw_input_data absent in params or cloudant_key absent in params.raw_input_data',
-          'Should fail complaining about missing cloudant_key'
-        );
+      error => {
+        assert.equal(error.message, errorNoCloudantKey);
       }
     );
   });
 
-  it('validate no Conversation object', () => {
+  it('validate error when no Conversation object', () => {
     // Use request params for main function
     params = params.main.request;
 
@@ -100,15 +110,11 @@ describe('load context unit tests', () => {
     func = sc.main;
 
     return func(params).then(
-      response => {
-        assert(false, response);
+      () => {
+        assert(false, 'Action suceeded unexpectedly.');
       },
-      e => {
-        assert.equal(
-          e,
-          'Illegal Argument Exception: conversation object absent in params.',
-          'Should fail complaining about missing conversation object'
-        );
+      error => {
+        assert.equal(error.message, errorNoConversationObj);
       }
     );
   });
@@ -292,5 +298,29 @@ describe('load context unit tests', () => {
         assert(false, e);
       }
     );
+  });
+
+  it('deleteCloudantFields should delete cloudant revision _id', () => {
+    func = sc.deleteCloudantFields;
+    // The params for func.
+    const p = params.deleteCloudantFields.withCloudantDocId.params;
+    const response = func(p);
+    assert(!response._id, '_id present in Cloudant response.');
+  });
+
+  it('deleteCloudantFields should delete cloudant _rev', () => {
+    func = sc.deleteCloudantFields;
+    // The params for func.
+    const p = params.deleteCloudantFields.withCloudantRev.params;
+    const response = func(p);
+    assert(!response._rev, '_rev present in Cloudant response.');
+  });
+
+  it('deleteCloudantFields should delete cloudant _revs_info', () => {
+    func = sc.deleteCloudantFields;
+    // The params for func.
+    const p = params.deleteCloudantFields.withCloudantRevsInfo.params;
+    const response = func(p);
+    assert(!response._revs_info, '_revs_info present in Cloudant response.');
   });
 });
