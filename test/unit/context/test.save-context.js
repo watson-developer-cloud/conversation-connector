@@ -86,7 +86,10 @@ describe('save context unit tests', () => {
     // Use request params for main function
     params = params.main.request;
 
-    assert(params.raw_input_data.cloudant_key, 'cloudant_key absent in params.raw_input_data');
+    assert(
+      params.raw_input_data.cloudant_key,
+      'cloudant_key absent in params.raw_input_data'
+    );
     delete params.raw_input_data.cloudant_key;
 
     func = sc.main;
@@ -105,7 +108,10 @@ describe('save context unit tests', () => {
     // Use request params for main function
     params = params.main.request;
 
-    assert(params.raw_output_data, 'raw_output_data absent in package bindings.');
+    assert(
+      params.raw_output_data,
+      'raw_output_data absent in package bindings.'
+    );
     delete params.raw_output_data;
 
     func = sc.main;
@@ -124,7 +130,10 @@ describe('save context unit tests', () => {
     // Use request params for main function
     params = params.main.request;
 
-    assert(params.raw_output_data.conversation, 'conversation object absent in package bindings.');
+    assert(
+      params.raw_output_data.conversation,
+      'conversation object absent in package bindings.'
+    );
     delete params.raw_output_data.conversation;
 
     func = sc.main;

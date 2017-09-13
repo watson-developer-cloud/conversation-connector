@@ -6,10 +6,10 @@
     "x-hub-signature": "sha1=e7d42cb171ec3ca26c2d6de14635bd3ea04bf01d",
     "starter_code_action_name": "starter-code/normalize",
     "recipient": {
-      "id": "1481847138543615"
+      "id": "185643828639058"
     },
     "sender": {
-      "id": "185643828639058"
+      "id": "1481847138543615"
     }
   }
 }

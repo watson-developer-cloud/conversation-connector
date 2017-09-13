@@ -88,11 +88,7 @@ function main(params) {
 
     const cloudant = getCloudantObj(cloudantUrl);
     const db = cloudant.use(contextDb);
-    setContext(
-      db,
-      cloudantKey,
-      params.raw_output_data.conversation.context
-    )
+    setContext(db, cloudantKey, params.raw_output_data.conversation.context)
       .then(() => {
         // must not flow further in the pipeline
         returnParams = omit(returnParams, ['cloudant_url', 'dbname']);

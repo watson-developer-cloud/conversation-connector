@@ -1,7 +1,8 @@
 'use strict';
 
 const request = require('request');
-
+const omit = require('object.omit');
+const assert = require('assert');
 /**
  *  Receives a Facebook POST JSON object and sends the object to the Facebook API.
  *
@@ -10,20 +11,19 @@ const request = require('request');
  *  @return - status of post request sent to Facebook POST API
  */
 function main(params) {
-  try {
-    validateParams(params);
-  } catch (e) {
-    return Promise.reject(e.message);
-  }
-
-  const facebookParams = extractFacebookParams(params);
-  const postUrl = params.url || 'https://graph.facebook.com/v2.6/me/messages';
-
   return new Promise((resolve, reject) => {
+    try {
+      validateParameters(params);
+    } catch (e) {
+      reject(e.message);
+    }
+    const accessToken = params.page_access_token;
+    const facebookParams = extractFacebookParams(params);
+    const postUrl = params.url || 'https://graph.facebook.com/v2.6/me/messages';
     request(
       {
         url: postUrl,
-        qs: { access_token: facebookParams.access_token },
+        qs: { access_token: accessToken },
         method: 'POST',
         json: facebookParams
       },
@@ -62,16 +62,14 @@ function main(params) {
  *  graph API needs
  */
 function extractFacebookParams(params) {
-  const facebookParams = params;
-  facebookParams.access_token = facebookParams.page_access_token;
-
-  delete facebookParams.verification_token;
-  delete facebookParams.page_access_token;
-  delete facebookParams.app_secret;
-
-  // TODO Delete these params in starter code???
-  delete facebookParams.raw_input_data;
-  delete facebookParams.raw_output_data;
+  const facebookParams = omit(params, [
+    'page_access_token',
+    'app_secret',
+    'verification_token',
+    'raw_input_data',
+    'raw_output_data',
+    'sub_pipeline'
+  ]);
 
   return facebookParams;
 }
@@ -81,21 +79,13 @@ function extractFacebookParams(params) {
  *
  *  @params The parameters passed into the action
  */
-function validateParams(params) {
+function validateParameters(params) {
   // Required: Access token of the bot
-  if (!params.page_access_token) {
-    throw new Error(
-      'Page access token not provided. Please make sure you have entered page_access_token correctly'
-    );
-  }
+  assert(params.page_access_token, 'Page access token not provided.');
   // Required: Channel identifier
-  if (!params.recipient || !params.recipient.id) {
-    throw new Error('Recepient id not provided.');
-  }
+  assert(params.recipient && params.recipient.id, 'Recepient id not provided.');
   // Required: Message to send
-  if (!params.message || !params.message.text) {
-    throw new Error('Message text not provided.');
-  }
+  assert(params.message, 'Message object not provided.');
 }
 
 module.exports = main;

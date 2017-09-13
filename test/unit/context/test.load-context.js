@@ -85,7 +85,10 @@ describe('load context unit tests', () => {
     // Use request params for main function
     params = params.main.request;
 
-    assert(params.raw_input_data.cloudant_key, 'cloudant_key absent in params.raw_input_data');
+    assert(
+      params.raw_input_data.cloudant_key,
+      'cloudant_key absent in params.raw_input_data'
+    );
     delete params.raw_input_data.cloudant_key;
 
     func = sc.main;

@@ -22,11 +22,9 @@ function main(params) {
 
   return {
     recipient: {
-      id: params.facebook.entry[0].messaging[0].sender.id
+      id: params.facebook.sender.id
     },
-    message: {
-      text: params.facebook.entry[0].messaging[0].message.text
-    }
+    message: params.facebook.message
   };
 }
 

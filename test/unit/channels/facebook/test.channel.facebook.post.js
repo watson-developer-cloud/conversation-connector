@@ -14,9 +14,9 @@ const movedUri = 'http://www.ibm.com';
 
 const errorBadUri = `Invalid URI "${badUri}"`;
 const errorMovedPermanently = 'Action returned with status code 301, message: Moved Permanently';
-const errorNoPageAccessToken = 'Page access token not provided. Please make sure you have entered page_access_token correctly';
+const errorNoPageAccessToken = 'Page access token not provided.';
 const errorNoRecipientId = 'Recepient id not provided.';
-const errorNoMessageText = 'Message text not provided.';
+const errorNoMessageText = 'Message object not provided.';
 
 describe('Facebook Post Unit Tests', () => {
   let postParams = {};
@@ -24,11 +24,10 @@ describe('Facebook Post Unit Tests', () => {
     text: 200,
     url: defaultPostUrl,
     params: {
-      access_token: facebookBindings.page_access_token,
       message: {
         text: 'Hello, World!'
       },
-      recipient: facebookBindings.recipient
+      recipient: facebookBindings.sender
     }
   };
 
@@ -38,7 +37,7 @@ describe('Facebook Post Unit Tests', () => {
       message: {
         text: 'Hello, World!'
       },
-      recipient: facebookBindings.recipient
+      recipient: facebookBindings.sender
     };
   });
 

@@ -56,19 +56,39 @@ else
       echo 'ERROR: Sequence must contain at least one action.'
     fi
 
-    ${WSK} action update ${pipeline_name} --sequence ${pipeline_actions} \
-      -p conversation_workspace_id 'dummy_workspace_id' \
+    CHANNEL=`echo $pipeline | jq -r '.actions[]' | tail -n 1 | tr "/" "\n" | head -n 1`
+
+    if [ "$CHANNEL" == "facebook" ]; then
+      #Remove the first action (i.e. facebook/receive) from the sub-pipeline
+      subpipeline_actions=`echo "$pipeline_actions" | cut -d "," -f2-`
+      #Create the sub-pipeline which will be invoked from within facebook/receive action
+      ${WSK} action update ${pipeline_name} --sequence $subpipeline_actions \
       -a web-export true
 
-    CHANNEL=`echo $pipeline | jq -r '.actions[]' | tail -n 1 | tr "/" "\n" | head -n 1`
-    if [ "$CHANNEL" == "facebook" ]; then
-      EXT="text"
+      FACEBOOK_APP_SECRET=`cat $PROVIDERS_REPLACED_FILE | jq --raw-output '.channels.facebook.app_secret'`
+      FACEBOOK_PAGE_ACCESS_TOKEN=`cat $PROVIDERS_REPLACED_FILE | jq --raw-output '.channels.facebook.page_access_token'`
+      FACEBOOK_VERIFICATION_TOKEN=`cat $PROVIDERS_REPLACED_FILE | jq --raw-output '.channels.facebook.verification_token'`
+
+      ${WSK} package update facebook \
+        -p page_access_token "${FACEBOOK_PAGE_ACCESS_TOKEN}" \
+        -p verification_token "${FACEBOOK_VERIFICATION_TOKEN}" \
+        -p app_secret "${FACEBOOK_APP_SECRET}" \
+        -p sub_pipeline "${pipeline_name}"
+
+      #Print the webhook URL
+      echo ''
+      echo "Your Webhook/Request URL for [${pipeline_name}] is :"
+      echo https://openwhisk.ng.bluemix.net/api/v1/web/$WSK_NAMESPACE/facebook/receive.text
     else
-      EXT="json"
+      #Create pipeline sequence for slack
+      ${WSK} action update ${pipeline_name} --sequence ${pipeline_actions} \
+      -p conversation_workspace_id 'dummy_workspace_id' \
+      -a web-export true
+      #Print the webhook URL
+      echo ''
+      echo "Your Webhook/Request URL for [${pipeline_name}] is :"
+      echo https://openwhisk.ng.bluemix.net/api/v1/web/$WSK_NAMESPACE/default/$pipeline_name.json
     fi
-    echo ''
-    echo "Your Webhook/Request URL for [${pipeline_name}] is :"
-    echo https://openwhisk.ng.bluemix.net/api/v1/web/$WSK_NAMESPACE/default/$pipeline_name.${EXT}
 
   done
 fi
