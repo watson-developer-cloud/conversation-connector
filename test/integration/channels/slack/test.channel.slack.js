@@ -5,7 +5,9 @@
  */
 const assert = require('assert');
 const openwhisk = require('openwhisk');
-const slackBindings = require('./../../../resources/slack-bindings.json').slack;
+const slackBindings = require('./../../../resources/bindings/slack-bindings.json').slack;
+
+const pipelineName = process.env.__TEST_PIPELINE_NAME;
 
 const outputText = 'Message coming from Slack integration test.';
 
@@ -98,7 +100,7 @@ describe('Slack channel integration tests', () => {
   });
 
   it('validate slack channel receives and posts text', () => {
-    const sequenceName = 'slack/integration-pipeline';
+    const sequenceName = `${pipelineName}_slack/integration-pipeline`;
 
     return ow.actions
       .invoke({
@@ -120,7 +122,7 @@ describe('Slack channel integration tests', () => {
     .retries(4);
 
   it('validate slack receives text and posts an attached message', () => {
-    const sequenceName = 'slack/integration-pipeline-text-to-attached-message';
+    const sequenceName = `${pipelineName}_slack/integration-pipeline-text-to-attached-message`;
 
     expectedResults.attachments = attachmentData;
 
@@ -146,7 +148,7 @@ describe('Slack channel integration tests', () => {
   it(
     'validate slack receives an attached message and posts a message update',
     () => {
-      const sequenceName = 'slack/integration-pipeline-attached-message-to-response';
+      const sequenceName = `${pipelineName}_slack/integration-pipeline-attached-message-to-response`;
 
       params = {
         payload: JSON.stringify(attachmentPayload)

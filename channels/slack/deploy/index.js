@@ -1,8 +1,12 @@
 const assert = require('assert');
 const crypto = require('crypto');
-const request = require('request');
+const rp = require('request-promise');
+const Cloudant = require('cloudant');
 const openwhisk = require('openwhisk');
 
+const CLOUDANT_URL = 'cloudant_url';
+const CLOUDANT_AUTH_DBNAME = 'cloudant_auth_dbname';
+const CLOUDANT_AUTH_KEY = 'cloudant_auth_key';
 /**
  *  This action is used by Slack OAuth.
  *  After the user clicks 'Authorize' in the browser and allows Slack bot privileges,
@@ -22,90 +26,47 @@ const openwhisk = require('openwhisk');
  */
 function main(params) {
   return new Promise((resolve, reject) => {
-    validateParameters(params);
+    const cleanedParams = validateAndPreprocessParameters(params);
+    let cloudantCreds;
 
-    const ow = openwhisk();
+    getCloudantCreds()
+      .then(creds => {
+        cloudantCreds = creds;
+        return loadAuth(cloudantCreds);
+      })
+      .then(auth => {
+        const state = cleanedParams.state;
+        const signature = state.signature;
 
-    const state = params.state;
-    const clientId = params.client_id.substring(1);
-    const clientSecret = params.client_secret;
+        const clientId = auth.slack.client_id;
+        const clientSecret = auth.slack.client_secret;
 
-    const hash = createHmacKey(clientId, clientSecret);
+        const hash = createHmacKey(clientId, clientSecret);
 
-    if (hash !== state) {
-      reject('Security hash does not match hash from the server.');
-    }
-
-    const redirectUri = params.redirect_uri;
-    const code = params.code;
-
-    // build url to the authorization server
-    const requestUrl = `https://slack.com/api/oauth.access?client_id=${clientId}&client_secret=${clientSecret}&redirect_uri=${redirectUri}&code=${code}`;
-
-    request(
-      {
-        url: requestUrl,
-        json: true
-      },
-      (error, response, body) => {
-        if (
-          response && response.statusCode >= 200 && response.statusCode < 400
-        ) {
-          try {
-            validateResponseBody(body);
-
-            const pkg = {
-              parameters: [
-                {
-                  key: 'access_token',
-                  value: body.access_token
-                },
-                {
-                  key: 'bot_access_token',
-                  value: body.bot.bot_access_token
-                },
-                {
-                  key: 'bot_user_id',
-                  value: body.bot.bot_user_id
-                },
-                {
-                  key: 'client_id',
-                  value: params.client_id
-                },
-                {
-                  key: 'client_secret',
-                  value: params.client_secret
-                },
-                {
-                  key: 'redirect_uri',
-                  value: params.redirect_uri
-                },
-                {
-                  key: 'verification_token',
-                  value: params.verification_token
-                }
-              ]
-            };
-
-            ow.packages.update({ packageName: 'slack', package: pkg }).then(
-              () => {
-                resolve({
-                  headers: { 'Content-Type': 'text/html' },
-                  body: 'Authorized successfully!'
-                });
-              },
-              err => {
-                reject(err);
-              }
-            );
-          } catch (e) {
-            reject(e);
-          }
-        } else {
-          reject(response);
+        if (hash !== signature) {
+          reject('Security hash does not match hash from the server.');
         }
-      }
-    );
+
+        const redirectUri = state.redirect_uri;
+        const code = cleanedParams.code;
+
+        // build url to the authorization server
+        const requestUrl = `https://slack.com/api/oauth.access?client_id=${clientId}&client_secret=${clientSecret}&redirect_uri=${redirectUri}&code=${code}`;
+
+        const options = {
+          uri: requestUrl,
+          json: true
+        };
+        return rp(options);
+      })
+      .then(body => {
+        validateResponseBody(body);
+        return saveAuth(cloudantCreds, body);
+      })
+      .then(() => {
+        resolve({ status: 'Authorized successfully!' });
+      })
+      .catch(reject);
   });
 }
 
@@ -149,18 +110,309 @@ function validateResponseBody(body) {
  *
  *  @params The parameters passed into the action
  */
-function validateParameters(params) {
-  // Required: Slack verfication token
-  assert(params.verification_token, 'No verification token provided.');
-
-  // Required: HMAC key provided by Slack to be verified
+function validateAndPreprocessParameters(params) {
+  // // Required: Slack verfication token
   assert(params.state, 'No verification state provided.');
+  assert(params.code, 'No code provided in params.');
 
-  // Required: Slack credentials used to build outbound URL to authorization server
-  assert(params.client_id, 'Not enough slack credentials provided.');
-  assert(params.client_secret, 'Not enough slack credentials provided.');
-  assert(params.redirect_uri, 'Not enough slack credentials provided.');
-  assert(params.code, 'Not enough slack credentials provided.');
+  let state = params.state;
+
+  // Safely convert state to a JSON if it came as a string.
+  // This will be the case when state is generated and sent via a bash script.
+  // All double-quotes " get converted to %22 so need to do the reverse now.
+  if (typeof params.state === 'string') {
+    state = JSON.parse(params.state.split('%22').join('"'));
+  }
+  const returnParams = params;
+  returnParams.state = state;
+  return returnParams;
 }
 
-module.exports = main;
+/**
+ *  Gets the annotations for the package specified.
+ *
+ *  @packageName  {string} Name of the package whose annotations are needed
+ *
+ *  @return - package annotations array
+ *  eg: [
+ *     {
+ *       key: 'cloudant_url',
+ *       value: 'https://some-cloudant-url'
+ *     },
+ *     {
+ *       key: 'cloudant_auth_dbname',
+ *       value: 'authdb'
+ *     },
+ *     {
+ *       key: 'cloudant_auth_key',
+ *       value: '123456'
+ *     }
+ *   ]
+ */
+function getPackageAnnotations(packageName) {
+  return new Promise((resolve, reject) => {
+    openwhisk().packages
+      .get(packageName)
+      .then(pkg => {
+        resolve(pkg.annotations);
+      })
+      .catch(reject);
+  });
+}
+
+/**
+ *  Gets the package name from the action name that lives in it.
+ *
+ *  @actionName  {string} Full name of the action from which
+ *               package name is to be extracted.
+ *
+ *  @return - package name
+ *  eg: full action name = '/org_space/pkg/action' then,
+ *      package name = 'pkg'
+ */
+function extractCurrentPackageName(actionName) {
+  return actionName.split('/')[2];
+}
+
+/**
+ *  Gets the cloudant credentials (saved as package annotations)
+ *  from the current action's full name, derived from
+ *  the env var "__OW_ACTION_NAME".
+ *
+ *  @return - cloudant credentials to use for db read/write operations.
+ *  eg: {
+ *       cloudant_url: 'https://some-cloudant-url.com',
+ *       cloudant_auth_dbname: 'abc',
+ *       cloudant_auth_key: '123'
+ *     };
+ */
+function getCloudantCreds() {
+  return new Promise((resolve, reject) => {
+    // Get annotations of the current package.
+    const packageName = extractCurrentPackageName(process.env.__OW_ACTION_NAME);
+    getPackageAnnotations(packageName)
+      .then(annotations => {
+        // Construct a Cloudant creds json obj
+        const cloudantCreds = {};
+        annotations.forEach(a => {
+          cloudantCreds[a.key] = a.value;
+        });
+        checkCloudantCredentials(cloudantCreds);
+        resolve(cloudantCreds);
+      })
+      .catch(reject);
+  });
+}
+
+/**
+ *  Verifies that cloudant creds contain all the keys
+ *  necessary for db operations.
+ *
+ *  @cloudantCreds - {JSON} Cloudant credentials JSON
+ *  eg: {
+ *       cloudant_url: 'https://some-cloudant-url.com',
+ *       cloudant_auth_dbname: 'abc',
+ *       cloudant_auth_key: '123'
+ *     };
+ */
+function checkCloudantCredentials(cloudantCreds) {
+  // Verify that all required Cloudant credentials are present.
+  assert(
+    cloudantCreds[CLOUDANT_URL],
+    'cloudant_url absent in cloudant credentials.'
+  );
+  assert(
+    cloudantCreds[CLOUDANT_AUTH_DBNAME],
+    'cloudant_auth_dbname absent in cloudant credentials.'
+  );
+  assert(
+    cloudantCreds[CLOUDANT_AUTH_KEY],
+    'cloudant_auth_key absent in cloudant credentials.'
+  );
+}
+
+/**
+ *  Loads the auth info from the Cloudant auth db
+ *  using supplied Cloudant credentials.
+ *
+ *  @cloudantCreds - {JSON} Cloudant credentials JSON
+ *
+ *  @return auth information loaded from Cloudant
+ *  eg:
+ *   {
+ *     "conversation": {
+ *       "password": "xxxxxx",
+ *       "username": "xxxxxx",
+ *       "workspace_id": "xxxxxx"
+ *     },
+ *     "facebook": {
+ *       "app_secret": "xxxxxx",
+ *       "page_access_token": "xxxxxx",
+ *       "verification_token": "xxxxxx"
+ *     },
+ *     "slack": {
+ *       "client_id": "xxxxxx",
+ *       "client_secret": "xxxxxx",
+ *       "verification_token": "xxxxxx",
+ *       "access_token": "xxxxxx",
+ *       "bot_access_token": "xxxxxx"
+ *     }
+ *   }
+ */
+function loadAuth(cloudantCreds) {
+  return new Promise((resolve, reject) => {
+    const cloudantUrl = cloudantCreds[CLOUDANT_URL];
+    const cloudantAuthDbName = cloudantCreds[CLOUDANT_AUTH_DBNAME];
+    const cloudantAuthKey = cloudantCreds[CLOUDANT_AUTH_KEY];
+
+    createCloudantObj(cloudantUrl)
+      .then(cloudantObj => {
+        return retrieveDoc(
+          cloudantObj.use(cloudantAuthDbName),
+          cloudantAuthKey
+        );
+      })
+      .then(auth => {
+        resolve(auth);
+      })
+      .catch(err => {
+        reject(err);
+      });
+  });
+}
+
+/**
+ * Creates the Cloudant object using the Cloudant url specified
+ *
+ *  @cloudantUrl - {string} Cloudant url linked to the
+ *                 user's Cloudant instance.
+ *
+ * @return Cloudant object or, rejects with the exception from Cloudant
+ */
+function createCloudantObj(cloudantUrl) {
+  return new Promise((resolve, reject) => {
+    try {
+      const cloudant = Cloudant({
+        url: cloudantUrl,
+        plugin: 'retry',
+        retryAttempts: 5,
+        retryTimeout: 1000
+      });
+      resolve(cloudant);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+/**
+ *  Saves the auth info in the Cloudant auth db
+ *
+ *  @params The parameters passed into the action
+ *  @slackOAuthResult Resulting response body after Slack Oauth completes
+ *
+ *  @return auth information after storing in Cloudant
+ */
+function saveAuth(cloudantCreds, slackOAuth) {
+  return new Promise((resolve, reject) => {
+    const cloudantUrl = cloudantCreds[CLOUDANT_URL];
+    const cloudantAuthDbName = cloudantCreds[CLOUDANT_AUTH_DBNAME];
+    const cloudantAuthKey = cloudantCreds[CLOUDANT_AUTH_KEY];
+    let db;
+
+    createCloudantObj(cloudantUrl)
+      .then(cloudantObj => {
+        db = cloudantObj.use(cloudantAuthDbName);
+        return retrieveDoc(db, cloudantAuthKey);
+      })
+      .then(oldAuth => {
+        const newAuth = oldAuth;
+        if (Object.keys(oldAuth).length === 0) {
+          // No entry exists in the db for this key-might have been
+          // deleted after loadAuth and before OAuth completed.
+          // throw error.
+          reject(`No auth db entry for key ${cloudantAuthKey}. Re-run setup.`);
+        }
+        newAuth._rev = oldAuth._rev;
+        // Add the access tokens to Slack auth.
+        newAuth.slack.access_token = slackOAuth.access_token;
+        newAuth.slack.bot_access_token = slackOAuth.bot.bot_access_token;
+
+        // Delete the client_id and client_secret
+        // as they were only needed for OAuth and
+        // not needed in the future.
+        delete newAuth.slack.client_id;
+        delete newAuth.slack.client_secret;
+        return insertDoc(db, cloudantAuthKey, newAuth);
+      })
+      .then(resp => {
+        resolve(resp);
+      })
+      .catch(reject);
+  });
+}
+
+/**
+ * Retrieves the doc from the Cloudant db using the key provided.
+ *
+ *  @db - {Object} Cloudant db object
+ *  @key - {string} key to use for retrieving doc
+ *
+ *  @return doc or, rejects with an exception from Cloudant
+ */
+function retrieveDoc(db, key) {
+  return new Promise((resolve, reject) => {
+    db.get(
+      key,
+      {
+        // We need to add revision ids to prevent Cloudant update conflicts during writes
+        revs_info: true
+      },
+      (error, response) => {
+        if (error) {
+          if (error.statusCode === 404) {
+            // missing doc when it's a first time deployment.
+            resolve({});
+          }
+          reject(error);
+        }
+        resolve(response);
+      }
+    );
+  });
+}
+
+/**
+ * Inserts doc in the Cloudant db
+ *
+ *  @db - {Object} Cloudant db object
+ *  @key - {string} Cloudant key for inserting doc
+ *  @doc - {JSON} doc to insert
+ *
+ *  @return doc inserted or, throws an exception from Cloudant
+ */
+function insertDoc(db, key, doc) {
+  return new Promise((resolve, reject) => {
+    db.insert(doc, key, (error, response) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(response);
+      }
+    });
+  });
+}
+
+module.exports = {
+  main,
+  name: 'slack/deploy',
+  validateAndPreprocessParameters,
+  validateResponseBody,
+  saveAuth,
+  loadAuth,
+  createCloudantObj,
+  getCloudantCreds,
+  checkCloudantCredentials,
+  retrieveDoc,
+  insertDoc
+};

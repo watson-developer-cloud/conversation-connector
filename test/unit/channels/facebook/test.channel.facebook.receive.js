@@ -6,15 +6,18 @@
 
 const openwhisk = require('openwhisk');
 const assert = require('assert');
+
 const nock = require('nock');
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
-const facebookBindings = require('./../../../resources/facebook-bindings.json').facebook;
-const facebookOpenwhiskResources = require('./../../../resources/test.unit.facebook.receive.json');
+
+process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+
+const facebookBindings = require('./../../../resources/bindings/facebook-bindings.json').facebook;
+const facebookOpenwhiskResources = require('./../../../resources/payloads/test.unit.facebook.receive.json');
+
 const facebookReceive = require('./../../../../channels/facebook/receive/index.js');
 
-const errorNoVerificationToken = 'No verification token provided.';
-const errorNoAppSecret = 'No app secret provided.';
 const errorNoXHubSignature = 'x-hub-signature header not found.';
 const errorVerificationXHubSignature = 'Verfication of facebook signature header failed. Please make sure you are passing the correct app secret';
 const errorNeitherVerificationNorMessageTypeRequest = {
@@ -33,13 +36,42 @@ describe('Facebook Receive Unit Tests', () => {
   let batchedMessageFailedResult = {};
   let openwhiskStub;
   let mockFacebookReceive;
+  let func;
+  let auth;
+
+  const cloudantUrl = 'https://some-cloudant-url.com';
+  const cloudantAuthDbName = 'abc';
+  const cloudantAuthKey = '123';
+
+  const apiHost = process.env.__OW_API_HOST;
+  const apiKey = process.env.__OW_API_KEY;
+  const namespace = process.env.__OW_NAMESPACE;
+  const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
+
+  const owUrl = `https://${apiHost}/api/v1/namespaces`;
+  const expectedOW = {
+    annotations: [
+      {
+        key: 'cloudant_url',
+        value: cloudantUrl
+      },
+      {
+        key: 'cloudant_auth_dbname',
+        value: cloudantAuthDbName
+      },
+      {
+        key: 'cloudant_auth_key',
+        value: cloudantAuthKey
+      }
+    ]
+  };
 
   beforeEach(() => {
     openwhiskStub = sinon.stub().returns(
       openwhisk({
-        apihost: 'https://ibm.com:80',
-        api_key: '123-456',
-        namespace: 'bluemixOrg_bluemixSpace'
+        apihost: apiHost,
+        api_key: apiKey,
+        namespace
       })
     );
 
@@ -49,9 +81,8 @@ describe('Facebook Receive Unit Tests', () => {
     );
 
     mockOpenwhiskEndpoints = {
-      url: 'https://ibm.com',
-      port: '80',
-      actionsEndpoint: '/api/v1/namespaces/bluemixOrg_bluemixSpace/actions/facebook-flexible-pipeline?blocking=true'
+      url: owUrl,
+      actionsEndpoint: `/${namespace}/actions/facebook-flexible-pipeline?blocking=true`
     };
 
     messageParams = {
@@ -166,7 +197,7 @@ describe('Facebook Receive Unit Tests', () => {
       failedActionInvocations: [
         {
           activationId: '46a8fcba2c274db296f3e5602c6xxxxx',
-          errorMessage: 'Recipient id: 185643828639058 , Sender id: 1481847138543615 -- POST https://ibm.com:80/api/v1/namespaces/bluemixOrg_bluemixSpace/actions/facebook-flexible-pipeline Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"'
+          errorMessage: `Recipient id: 185643828639058 , Sender id: 1481847138543615 -- POST https://${apiHost}/api/v1/namespaces/${namespace}/actions/facebook-flexible-pipeline Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"`
         }
       ],
       successfulActionInvocations: [
@@ -184,6 +215,14 @@ describe('Facebook Receive Unit Tests', () => {
     };
 
     challengeResult = { text: 'challenge_token' };
+
+    auth = {
+      facebook: {
+        app_secret: facebookBindings.app_secret,
+        verification_token: facebookBindings.verification_token,
+        page_access_token: facebookBindings.page_access_token
+      }
+    };
   });
 
   afterEach(() => {
@@ -191,9 +230,30 @@ describe('Facebook Receive Unit Tests', () => {
   });
 
   it('validate facebook/receive passes on challenge', () => {
-    return facebookReceive(challengeParams).then(
-      challengeMessage => {
-        assert.deepEqual(challengeMessage, challengeResult);
+    func = facebookReceive.main;
+
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return func(challengeParams).then(
+      result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
+        assert.deepEqual(challengeResult, result);
       },
       error => {
         assert(false, error);
@@ -202,12 +262,32 @@ describe('Facebook Receive Unit Tests', () => {
   });
 
   it('validate facebook/receive receives a legit message request', () => {
-    nock(`${mockOpenwhiskEndpoints.url}:${mockOpenwhiskEndpoints.port}`)
+    nock(`${mockOpenwhiskEndpoints.url}`)
       .post(mockOpenwhiskEndpoints.actionsEndpoint)
       .reply(201, facebookOpenwhiskResources.owSuccessResponse);
 
-    return mockFacebookReceive(messageParams).then(
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return mockFacebookReceive.main(messageParams).then(
       result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
+
         assert.deepEqual(result, messageSuccessfulResult);
       },
       error => {
@@ -217,7 +297,7 @@ describe('Facebook Receive Unit Tests', () => {
   });
 
   it('validate facebook/receive receives a legit batched message request', () => {
-    nock(`${mockOpenwhiskEndpoints.url}:${mockOpenwhiskEndpoints.port}`)
+    nock(`${mockOpenwhiskEndpoints.url}`)
       .post(mockOpenwhiskEndpoints.actionsEndpoint)
       .reply(201, facebookOpenwhiskResources.owSuccessResponse)
       .post(mockOpenwhiskEndpoints.actionsEndpoint)
@@ -225,8 +305,27 @@ describe('Facebook Receive Unit Tests', () => {
       .post(mockOpenwhiskEndpoints.actionsEndpoint)
       .reply(201, facebookOpenwhiskResources.owSuccessResponse);
 
-    return mockFacebookReceive(batchedMessageParams).then(
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return mockFacebookReceive.main(batchedMessageParams).then(
       result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.deepEqual(result, batchedMessageSuccessResult);
       },
       error => {
@@ -236,7 +335,7 @@ describe('Facebook Receive Unit Tests', () => {
   });
 
   it('validate facebook/receive fails for certain batched messages', () => {
-    nock(`${mockOpenwhiskEndpoints.url}:${mockOpenwhiskEndpoints.port}`)
+    const mock = nock(`${mockOpenwhiskEndpoints.url}`)
       .post(mockOpenwhiskEndpoints.actionsEndpoint)
       .reply(201, facebookOpenwhiskResources.owSuccessResponse)
       .post(mockOpenwhiskEndpoints.actionsEndpoint)
@@ -244,8 +343,31 @@ describe('Facebook Receive Unit Tests', () => {
       .post(mockOpenwhiskEndpoints.actionsEndpoint)
       .reply(400, facebookOpenwhiskResources.owFailureResponse.error);
 
-    return mockFacebookReceive(batchedMessageParams).then(
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return mockFacebookReceive.main(batchedMessageParams).then(
       result => {
+        if (!mock.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock server did not get called.');
+        }
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.deepEqual(result, batchedMessageFailedResult);
       },
       error => {
@@ -254,93 +376,69 @@ describe('Facebook Receive Unit Tests', () => {
     );
   });
 
-  it('validate error when no verification token', () => {
-    delete messageParams.verification_token;
-
-    return facebookReceive(messageParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error, errorNoVerificationToken);
-      }
-    );
-  });
-
-  it('validate error when no app secret', () => {
-    delete messageParams.app_secret;
-
-    return facebookReceive(messageParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error, errorNoAppSecret);
-      }
-    );
-  });
-
   it('validate error when no verification signature header', () => {
     delete messageParams.__ow_headers['x-hub-signature'];
+    func = facebookReceive.verifyFacebookSignatureHeader;
 
-    return facebookReceive(messageParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error, errorNoXHubSignature);
-      }
-    );
+    try {
+      func(messageParams);
+    } catch (e) {
+      assert.equal('AssertionError', e.name);
+      assert.equal(e.message, errorNoXHubSignature);
+    }
   });
 
   it('validate error when verification of x-hub-signature fails', () => {
-    messageParams.app_secret = '123';
+    messageParams.__ow_headers['x-hub-signature'] = '123';
 
-    return facebookReceive(messageParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error, errorVerificationXHubSignature);
-      }
-    );
-  });
+    func = facebookReceive.verifyFacebookSignatureHeader;
 
-  it('validate error when bad verification token', () => {
-    challengeParams.verification_token = '123';
-
-    return facebookReceive(challengeParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.deepEqual(error, errorNeitherVerificationNorMessageTypeRequest);
-      }
-    );
+    try {
+      func(messageParams, auth);
+    } catch (e) {
+      assert.equal('AssertionError', e.name);
+      assert.equal(e.message, errorVerificationXHubSignature);
+    }
   });
 
   it('validate error when challenge header hub.mode is not equal to subscribe', () => {
     challengeParams['hub.mode'] = 'something_else';
 
-    return facebookReceive(challengeParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.deepEqual(error, errorNeitherVerificationNorMessageTypeRequest);
-      }
-    );
+    func = facebookReceive.isURLVerificationEvent;
+
+    const res = func(challengeParams);
+    assert.equal(false, res);
   });
 
   it('validate error when message request object is not equal to page', () => {
     messageParams.object = 'something_else';
 
-    return facebookReceive(messageParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+    func = facebookReceive.main;
+
+    return func(messageParams).then(
+      result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
+        assert(false, result);
       },
       error => {
-        assert.deepEqual(error, errorNeitherVerificationNorMessageTypeRequest);
+        assert(errorNeitherVerificationNorMessageTypeRequest, error);
       }
     );
   });

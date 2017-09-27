@@ -5,10 +5,17 @@
  */
 
 const assert = require('assert');
-const slackBindings = require('./../../../resources/slack-bindings.json').slack;
+const nock = require('nock');
+
+const slackBindings = require('./../../../resources/bindings/slack-bindings.json')
+  .slack;
+
+process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+
 const slackReceive = require('./../../../../channels/slack/receive/index.js');
 
-const errorBadVerificationTokens = 'Verification token is incorrect.';
+const errorNoVerificationToken = 'Verification token is absent.';
+const errorBadVerificationToken = 'Verification token is incorrect.';
 
 describe('Slack Receive Unit Tests', () => {
   let challengeParams;
@@ -17,11 +24,39 @@ describe('Slack Receive Unit Tests', () => {
   let messageResult;
   let payloadParams;
   let payloadResult;
+  let auth;
   const incorrectToken = 'incorrect_token';
+
+  let func = slackReceive.main;
+
+  const cloudantUrl = 'https://some-cloudant-url.com';
+  const cloudantAuthDbName = 'abc';
+  const cloudantAuthKey = '123';
+
+  const apiHost = process.env.__OW_API_HOST;
+  const namespace = process.env.__OW_NAMESPACE;
+  const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
+
+  const owUrl = `https://${apiHost}/api/v1/namespaces`;
+  const expectedOW = {
+    annotations: [
+      {
+        key: 'cloudant_url',
+        value: cloudantUrl
+      },
+      {
+        key: 'cloudant_auth_dbname',
+        value: cloudantAuthDbName
+      },
+      {
+        key: 'cloudant_auth_key',
+        value: cloudantAuthKey
+      }
+    ]
+  };
 
   beforeEach(() => {
     messageParams = {
-      verification_token: slackBindings.verification_token,
       token: slackBindings.verification_token,
       event: {
         text: 'Message coming from slack/receive unit test.',
@@ -45,7 +80,6 @@ describe('Slack Receive Unit Tests', () => {
     };
 
     challengeParams = {
-      verification_token: slackBindings.verification_token,
       token: slackBindings.verification_token,
       type: 'url_verification',
       challenge: 'challenge_token'
@@ -69,7 +103,6 @@ describe('Slack Receive Unit Tests', () => {
     };
 
     payloadParams = {
-      verification_token: slackBindings.verification_token,
       payload: JSON.stringify(payload)
     };
 
@@ -79,11 +112,38 @@ describe('Slack Receive Unit Tests', () => {
       },
       provider: 'slack'
     };
+
+    auth = {
+      slack: {
+        client_id: slackBindings.client_id,
+        client_secret: slackBindings.client_secret,
+        verification_token: slackBindings.verification_token
+      }
+    };
   });
 
   it('validate slack/receive receives slack human message', () => {
-    return slackReceive(messageParams).then(
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return func(messageParams).then(
       result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.deepEqual(result, messageResult);
       },
       error => {
@@ -93,8 +153,26 @@ describe('Slack Receive Unit Tests', () => {
   });
 
   it('validate slack/receive receives human interactive response', () => {
-    return slackReceive(payloadParams).then(
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+    return func(payloadParams).then(
       result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.deepEqual(result, payloadResult);
       },
       error => {
@@ -104,7 +182,7 @@ describe('Slack Receive Unit Tests', () => {
   });
 
   it('validate slack/receive passes on challenge', () => {
-    return slackReceive(challengeParams).then(
+    return func(challengeParams).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -121,7 +199,7 @@ describe('Slack Receive Unit Tests', () => {
       bot_id: 'bot_id'
     };
 
-    return slackReceive(messageParams).then(
+    return func(messageParams).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -139,7 +217,7 @@ describe('Slack Receive Unit Tests', () => {
       bot_id: 'bot_id'
     };
 
-    return slackReceive(messageParams).then(
+    return func(messageParams).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -151,53 +229,60 @@ describe('Slack Receive Unit Tests', () => {
 
   it('validate error when no token', () => {
     delete messageParams.token;
+    func = slackReceive.validateParameters;
 
-    return slackReceive(messageParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error.message, errorBadVerificationTokens);
-      }
-    );
-  });
-
-  it('validate error when no verification token', () => {
-    delete messageParams.verification_token;
-
-    return slackReceive(messageParams).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error.message, errorBadVerificationTokens);
-      }
-    );
+    try {
+      func(messageParams);
+    } catch (e) {
+      assert.equal('AssertionError', e.name);
+      assert.equal(e.message, errorNoVerificationToken);
+    }
   });
 
   it('validate no challenge okay', () => {
     delete challengeParams.challenge;
-    challengeResult.challenge = '';
+    func = slackReceive.main;
 
-    return slackReceive(challengeParams).then(
-      () => {
-        assert(false, 'Action succeeded unexpectedly.');
-      },
-      challengeMessage => {
-        assert.deepEqual(challengeMessage, challengeResult);
-      }
-    );
+    func(challengeParams)
+      .then(res => {
+        assert(false, res);
+      })
+      .catch(err => {
+        assert.equal(200, err.code);
+        assert.equal('', err.challenge);
+      });
   });
 
   it('validate error when bad verification token', () => {
     messageParams.token = incorrectToken;
+    func = slackReceive.main;
 
-    return slackReceive(messageParams).then(
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return func(messageParams).then(
       () => {
-        assert(false, 'Action suceeded unexpectedly.');
+        assert(false, 'Action succeeded unexpectedly.');
       },
       error => {
-        assert.equal(error.message, errorBadVerificationTokens);
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
+        assert.equal(error.err.name, 'AssertionError');
+        assert.equal(error.err.message, errorBadVerificationToken);
       }
     );
   });
@@ -207,12 +292,31 @@ describe('Slack Receive Unit Tests', () => {
       'x-slack-retry-reason': 'http_timeout',
       'x-slack-retry-num': 1
     };
+    func = slackReceive.main;
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
 
-    return slackReceive(messageParams).then(
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return func(messageParams).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
       error => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.deepEqual(error, messageResult);
       }
     );

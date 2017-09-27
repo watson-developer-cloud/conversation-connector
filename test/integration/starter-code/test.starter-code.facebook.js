@@ -6,7 +6,9 @@
 
 const assert = require('assert');
 const openwhisk = require('openwhisk');
-const facebookBindings = require('./../../resources/facebook-bindings.json').facebook;
+const facebookBindings = require('./../../resources/bindings/facebook-bindings.json').facebook;
+
+const pipelineName = process.env.__TEST_PIPELINE_NAME;
 
 describe('starter-code integration tests for facebook', () => {
   const ow = openwhisk();
@@ -32,7 +34,7 @@ describe('starter-code integration tests for facebook', () => {
       raw_input_data: {
         facebook: params.facebook,
         provider: 'facebook',
-        cloudant_key: 'facebook_1481847138543615_e808d814-9143-4dce-aec7-68af02e650a8_185643828639058',
+        cloudant_context_key: 'facebook_1481847138543615_e808d814-9143-4dce-aec7-68af02e650a8_185643828639058',
         conversation: { input: { text: 'hello, world!' } }
       },
       message: { text: 'Output text from mock-convo.' },
@@ -51,8 +53,7 @@ describe('starter-code integration tests for facebook', () => {
             }
           }
         }
-      },
-      workspace_id: 'e808d814-9143-4dce-aec7-68af02e650a8'
+      }
     };
 
     facebookData = {
@@ -81,7 +82,7 @@ describe('starter-code integration tests for facebook', () => {
   });
 
   it('validate starter-code-facebook actions work', () => {
-    const actionName = 'starter-code/integration-pipeline-facebook';
+    const actionName = `${pipelineName}_starter-code/integration-pipeline-facebook`;
 
     return ow.actions
       .invoke({
@@ -103,7 +104,7 @@ describe('starter-code integration tests for facebook', () => {
   it(
     'validate starter-code handles facebook-specific data from conversation',
     () => {
-      const actionName = 'starter-code/integration-pipeline-facebook-with-facebook-data';
+      const actionName = `${pipelineName}_starter-code/integration-pipeline-facebook-with-facebook-data`;
       expectedResult.message = facebookData;
       expectedResult.raw_output_data.conversation.output.facebook = {};
       expectedResult.raw_output_data.conversation.output.facebook = facebookData;

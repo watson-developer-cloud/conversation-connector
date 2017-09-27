@@ -1,18 +1,15 @@
 'use strict';
 
 const assert = require('assert');
-const conversation = require('../../../conversation/call-conversation');
 const openwhisk = require('openwhisk');
-const openWhiskAuthObj = require('../../resources/openwhisk-bindings.json').openwhisk;
-const packageBindings = require('../../resources/conversation-bindings.json').conversation;
+
+const packageBindings = require('../../resources/bindings/conversation-bindings.json').conversation;
+
+const pipelineName = process.env.__TEST_PIPELINE_NAME;
 
 describe('conversation integration tests', () => {
   // Setup the ow module for the upcoming calls
-  const options = {
-    apihost: 'openwhisk.ng.bluemix.net',
-    api_key: openWhiskAuthObj.api_key
-  };
-  const ow = openwhisk(options);
+  const ow = openwhisk();
 
   let params = {};
 
@@ -39,7 +36,7 @@ describe('conversation integration tests', () => {
   });
 
   it('call using OpenWhisk module ', () => {
-    const name = 'conversation/call-conversation';
+    const name = `${pipelineName}_conversation/call-conversation`;
     const blocking = true;
     const result = true;
 
@@ -66,65 +63,4 @@ describe('conversation integration tests', () => {
         assert(false, e);
       });
   }).timeout(16000);
-
-  it('real working call similar to sequence approach', () => {
-    // call Conversation once to kick off the conversation. The car dashboard workspace we are
-    // using expects an initial prep call before returning real answers.
-    return conversation(params).then(
-      response => {
-        params.conversation.context = response.context;
-
-        // Make the real test call to conversation
-        return conversation(params).then(
-          responseInner => {
-            assert.equal(
-              responseInner.conversation.output.text[0],
-              'Hi. It looks like a nice drive today. What would you like me to do?  ',
-              'response from conversation does not contain expected answer'
-            );
-          },
-          e => {
-            assert(false, e);
-          }
-        );
-      },
-      e => {
-        assert(false, e);
-      }
-    );
-  }).timeout(16000);
-
-  it('real failing authentication call', () => {
-    params.username = 'badusername';
-
-    return conversation(params).then(
-      response => {
-        assert(false, response);
-      },
-      e => {
-        assert.equal(
-          e.code,
-          401,
-          'expected conversation call to fail with 401 unauthorized status'
-        );
-      }
-    );
-  }).timeout(4000);
-
-  it('real failing not valid workspace call', () => {
-    params.workspace_id = 'badworkspace';
-
-    return conversation(params).then(
-      response => {
-        assert(false, response);
-      },
-      e => {
-        assert.equal(
-          e.error,
-          `URL workspaceid parameter '${params.workspace_id}' is not a valid GUID.`,
-          'call should fail as specified workspace does not exist'
-        );
-      }
-    );
-  }).timeout(8000);
 });

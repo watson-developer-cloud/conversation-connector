@@ -2,5 +2,7 @@
 
 export WSK=${WSK-wsk}
 
-${WSK} action update context/middle-for-context ./test/integration/context/middle-for-context.js | grep -v 'ok'
-${WSK} action update context/integration-pipeline --sequence context/load-context,context/middle-for-context,context/save-context | grep -v 'ok'
+PACKAGE_NAME="$1_context"
+
+${WSK} action update ${PACKAGE_NAME}/middle-for-context ./test/integration/context/middle-for-context.js | grep -v 'ok'
+${WSK} action update ${PACKAGE_NAME}/integration-pipeline --sequence ${PACKAGE_NAME}/load-context,${PACKAGE_NAME}/middle-for-context,${PACKAGE_NAME}/save-context | grep -v 'ok'

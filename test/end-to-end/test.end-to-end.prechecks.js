@@ -3,18 +3,19 @@
 const assert = require('assert');
 const openwhisk = require('openwhisk');
 
-const openwhiskBindings = require('./../resources/openwhisk-bindings.json').openwhisk;
-const safeExtractErrorMessage = require('./../resources/helper-methods.js').safeExtractErrorMessage;
+const safeExtractErrorMessage = require('./../utils/helper-methods.js')
+  .safeExtractErrorMessage;
+
+const pipelineName = process.env.__TEST_PIPELINE_NAME;
 
 describe('End-to-End tests: Conversation & Starter-code prerequisites', () => {
-  const ow = openwhisk(openwhiskBindings);
-
+  const ow = openwhisk();
   const requiredActions = [
-    'starter-code/pre-conversation',
-    'starter-code/post-conversation',
-    'conversation/call-conversation',
-    'context/load-context',
-    'context/save-context'
+    `${pipelineName}_starter-code/pre-conversation`,
+    `${pipelineName}_starter-code/post-conversation`,
+    `${pipelineName}_conversation/call-conversation`,
+    `${pipelineName}_context/load-context`,
+    `${pipelineName}_context/save-context`
   ];
 
   requiredActions.forEach(action => {

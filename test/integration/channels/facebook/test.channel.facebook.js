@@ -5,10 +5,12 @@
  */
 const assert = require('assert');
 const openwhisk = require('openwhisk');
-const facebookBindings = require('./../../../resources/facebook-bindings.json').facebook;
+const facebookBindings = require('./../../../resources/bindings/facebook-bindings.json').facebook;
 
-const facebookWebhook = 'facebook/receive';
-const facebookSubPipeline = 'facebook/integration-pipeline';
+const pipelineName = process.env.__TEST_PIPELINE_NAME;
+
+const facebookWebhook = `${pipelineName}_facebook/receive`;
+const facebookSubPipeline = `${pipelineName}_facebook/integration-pipeline`;
 
 describe('Facebook channel integration tests', () => {
   const ow = openwhisk();
@@ -24,6 +26,7 @@ describe('Facebook channel integration tests', () => {
         activationId: '',
         successResponse: {
           params: {
+            batched_messages: `${pipelineName}_facebook/batched_messages`,
             message: {
               text: 'hello, world!'
             },
@@ -46,6 +49,7 @@ describe('Facebook channel integration tests', () => {
         activationId: '',
         successResponse: {
           params: {
+            batched_messages: `${pipelineName}_facebook/batched_messages`,
             message: {
               attachment: {
                 type: 'template',
@@ -93,6 +97,7 @@ describe('Facebook channel integration tests', () => {
         successResponse: {
           text: 200,
           params: {
+            batched_messages: `${pipelineName}_facebook/batched_messages`,
             recipient: facebookBindings.sender,
             message: { text: 'hi' }
           },
@@ -104,6 +109,7 @@ describe('Facebook channel integration tests', () => {
         successResponse: {
           text: 200,
           params: {
+            batched_messages: `${pipelineName}_facebook/batched_messages`,
             recipient: facebookBindings.sender,
             message: { text: 'hi' }
           },
@@ -120,9 +126,6 @@ describe('Facebook channel integration tests', () => {
       __ow_headers: {
         'x-hub-signature': facebookBindings['x-hub-signature']
       },
-      verification_token: facebookBindings.verification_token,
-      app_secret: facebookBindings.app_secret,
-      page_access_token: facebookBindings.page_access_token,
       object: 'page',
       entry: [
         {
@@ -146,9 +149,6 @@ describe('Facebook channel integration tests', () => {
       __ow_headers: {
         'x-hub-signature': 'sha1=eb4412b17e32da9656bb3e3551094d531438b6da'
       },
-      verification_token: facebookBindings.verification_token,
-      app_secret: facebookBindings.app_secret,
-      page_access_token: facebookBindings.page_access_token,
       object: 'page',
       entry: [
         {
@@ -192,8 +192,6 @@ describe('Facebook channel integration tests', () => {
       __ow_headers: {
         'x-hub-signature': 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738'
       },
-      verification_token: facebookBindings.verification_token,
-      app_secret: facebookBindings.app_secret,
       object: 'page',
       entry: [
         {

@@ -2,15 +2,18 @@
 
 export WSK=${WSK-wsk}
 
-BINDINGS=$1
+PACKAGE_NAME=$1
+CLOUDANT_URL=$2
+CLOUDANT_AUTH_DBNAME=$3
+CLOUDANT_AUTH_KEY=$4
 
-CONVO_WORKSPACE_ID=`cat ${BINDINGS} | jq --raw-output '.conversation.workspace_id'`
-
-${WSK} package update starter-code \
-    -p workspace_id ${CONVO_WORKSPACE_ID}
+${WSK} package update $PACKAGE_NAME \
+  -a cloudant_url "${CLOUDANT_URL}" \
+  -a cloudant_auth_dbname "${CLOUDANT_AUTH_DBNAME}" \
+  -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}"
 
 for file in `find . -type f -name '*.js'`; do
   file_basename=`basename ${file}`
   file_basename=${file_basename%.*}
-  ${WSK} action update starter-code/${file_basename}  ${file}
+  ${WSK} action update $PACKAGE_NAME/${file_basename}  ${file}
 done

@@ -5,8 +5,12 @@
  */
 
 const assert = require('assert');
+const nock = require('nock');
+
+process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+
 const slackPost = require('./../../../../channels/slack/post/index.js');
-const slackBindings = require('./../../../resources/slack-bindings.json').slack;
+const slackBindings = require('./../../../resources/bindings/slack-bindings.json').slack;
 
 const text = 'Message coming from slack/post unit test.';
 const badUri = 'badlink.hi';
@@ -14,13 +18,41 @@ const movedUri = 'http://www.ibm.com';
 
 const errorBadUri = `Invalid URI "${badUri}"`;
 const errorMovedUri = 'Action returned with status code 301, message: Moved Permanently';
-const errorNoBotAccessToken = 'No bot access token provided.';
 const errorNoChannel = 'Channel not provided.';
 const errorNoText = 'Message text not provided.';
 
 describe('Slack Post Unit Tests', () => {
   let options;
   let expectedResult;
+  let auth;
+
+  let func;
+
+  const cloudantUrl = 'https://some-cloudant-url.com';
+  const cloudantAuthDbName = 'abc';
+  const cloudantAuthKey = '123';
+
+  const apiHost = process.env.__OW_API_HOST;
+  const namespace = process.env.__OW_NAMESPACE;
+  const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
+
+  const owUrl = `https://${apiHost}/api/v1/namespaces`;
+  const expectedOW = {
+    annotations: [
+      {
+        key: 'cloudant_url',
+        value: cloudantUrl
+      },
+      {
+        key: 'cloudant_auth_dbname',
+        value: cloudantAuthDbName
+      },
+      {
+        key: 'cloudant_auth_key',
+        value: cloudantAuthKey
+      }
+    ]
+  };
 
   beforeEach(() => {
     options = {
@@ -35,15 +67,46 @@ describe('Slack Post Unit Tests', () => {
       channel: slackBindings.channel,
       token: slackBindings.bot_access_token
     };
+
+    auth = {
+      slack: {
+        client_id: slackBindings.client_id,
+        client_secret: slackBindings.client_secret,
+        verification_token: slackBindings.verification_token,
+        access_token: slackBindings.access_token,
+        bot_access_token: slackBindings.bot_access_token
+      }
+    };
   });
 
   it('validate slack/post works as intended', () => {
-    return slackPost(options).then(
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    func = slackPost.main;
+
+    return func(options).then(
       result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.deepEqual(result, expectedResult);
       },
       error => {
-        assert(false, `Invoke action failed: ${error.message}`);
+        assert(false, error);
       }
     );
   });
@@ -53,8 +116,29 @@ describe('Slack Post Unit Tests', () => {
     options.attachments = attachments;
     expectedResult.attachments = attachments;
 
-    return slackPost(options).then(
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    func = slackPost.main;
+
+    return func(options).then(
       result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.deepEqual(result, expectedResult);
       },
       error => {
@@ -64,9 +148,9 @@ describe('Slack Post Unit Tests', () => {
   });
 
   it('validate error when bad uri supplied', () => {
-    options.url = badUri;
+    func = slackPost.postSlack;
 
-    return slackPost(options).then(
+    return func(options, badUri).then(
       () => {
         assert(false, 'Action suceeded unexpectedly.');
       },
@@ -77,9 +161,9 @@ describe('Slack Post Unit Tests', () => {
   });
 
   it('validate error when moved uri supplied', () => {
-    options.url = movedUri;
+    func = slackPost.postSlack;
 
-    return slackPost(options).then(
+    return func(options, movedUri).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -89,42 +173,28 @@ describe('Slack Post Unit Tests', () => {
     );
   });
 
-  it('validate error when no bot access token provided', () => {
-    delete options.bot_access_token;
-
-    return slackPost(options).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error.message, errorNoBotAccessToken);
-      }
-    );
-  });
-
   it('validate error when no channel provided', () => {
     delete options.channel;
+    func = slackPost.validateParameters;
 
-    return slackPost(options).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error.message, errorNoChannel);
-      }
-    );
+    try {
+      func(options);
+    } catch (e) {
+      assert.equal('AssertionError', e.name);
+      assert.equal(e.message, errorNoChannel);
+    }
   });
 
   it('validate error when no message text provided', () => {
     delete options.text;
 
-    return slackPost(options).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error.message, errorNoText);
-      }
-    );
+    func = slackPost.validateParameters;
+
+    try {
+      func(options);
+    } catch (e) {
+      assert.equal('AssertionError', e.name);
+      assert.equal(e.message, errorNoText);
+    }
   });
 });

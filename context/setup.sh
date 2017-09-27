@@ -2,10 +2,11 @@
 
 export WSK=${WSK-wsk}
 
-BINDINGS=$1
-CLOUDANT_INSTANCE_NAME='convoflex'
-CLOUDANT_INSTANCE_KEY='bot-key'
-CONTEXT_DB='contextdb'
+PACKAGE_NAME=$1
+CLOUDANT_INSTANCE_NAME=$2
+CLOUDANT_INSTANCE_KEY=$3
+
+CLOUDANT_CONTEXT_DBNAME='contextdb'
 
 # Create Cloudant instance called '${CLOUDANT_INSTANCE_NAME}' in the user's' org/space (assumed to be the same as the current org/space for now)
 echo "Setting up cloudant"
@@ -27,12 +28,12 @@ CLOUDANT_URL="`echo $CLOUDANT_CREDS | jq --raw-output .url`"
 
 # create context database
 echo "Creating cloudant context database"
-curl -s -XPUT "$CLOUDANT_URL/${CONTEXT_DB}" | grep -v "already exists"
+curl -s -XPUT "$CLOUDANT_URL/${CLOUDANT_CONTEXT_DBNAME}" | grep -v "already exists"
 
 # bind the secrets to the context package
-${WSK} package update context \
-    -p cloudant_url ${CLOUDANT_URL} \
-    -p dbname ${CONTEXT_DB} \
+${WSK} package update $PACKAGE_NAME \
+    -a cloudant_url ${CLOUDANT_URL} \
+    -a cloudant_context_dbname ${CLOUDANT_CONTEXT_DBNAME} \
 
-${WSK} action update context/load-context load-context.js
-${WSK} action update context/save-context save-context.js
+${WSK} action update $PACKAGE_NAME/load-context load-context.js
+${WSK} action update $PACKAGE_NAME/save-context save-context.js

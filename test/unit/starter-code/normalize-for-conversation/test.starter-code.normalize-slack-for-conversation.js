@@ -5,6 +5,13 @@
  */
 
 const assert = require('assert');
+const nock = require('nock');
+
+process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+
+const conversationBindings = require('../../../resources/bindings/conversation-bindings.json')
+  .conversation;
+
 const scNormSlackForConvo = require('./../../../../starter-code/normalize-for-conversation/normalize-slack-for-conversation.js');
 
 const channel = 'CXXXXXXXXX';
@@ -12,14 +19,40 @@ const text = 'Message coming from starter-code/normalize_slack_for_conversation 
 
 const errorBadSupplier = "Provider not supplied or isn't Slack.";
 const errorNoSlackData = 'Slack JSON data is missing.';
-const errorNoWorkspaceId = 'workspace_id not present as a package binding.';
 
 describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
   let textMessageParams;
   let expectedResult;
   let buttonPayload;
   let buttonMessageParams;
+  let func;
+  let auth;
 
+  const cloudantUrl = 'https://some-cloudant-url.com';
+  const cloudantAuthDbName = 'abc';
+  const cloudantAuthKey = '123';
+
+  const apiHost = process.env.__OW_API_HOST;
+  const namespace = process.env.__OW_NAMESPACE;
+  const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
+
+  const owUrl = `https://${apiHost}/api/v1/namespaces`;
+  const expectedOW = {
+    annotations: [
+      {
+        key: 'cloudant_url',
+        value: cloudantUrl
+      },
+      {
+        key: 'cloudant_auth_dbname',
+        value: cloudantAuthDbName
+      },
+      {
+        key: 'cloudant_auth_key',
+        value: cloudantAuthKey
+      }
+    ]
+  };
   beforeEach(() => {
     textMessageParams = {
       slack: {
@@ -39,7 +72,6 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
         event_time: 1234567890
       },
       provider: 'slack',
-      workspace_id: 'abcd-123',
       context: {}
     };
 
@@ -52,7 +84,7 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
       raw_input_data: {
         slack: textMessageParams.slack,
         provider: 'slack',
-        cloudant_key: 'slack_TXXXXXXXX_abcd-123_U2147483697_CXXXXXXXXX'
+        cloudant_context_key: `slack_TXXXXXXXX_${conversationBindings.workspace_id}_U2147483697_CXXXXXXXXX`
       }
     };
 
@@ -85,14 +117,39 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
         payload: JSON.stringify(buttonPayload)
       },
       provider: 'slack',
-      workspace_id: 'abcd-123',
       context: {}
+    };
+
+    auth = {
+      conversation: {
+        workspace_id: conversationBindings.workspace_id
+      }
     };
   });
 
-  it('validate normalization works', () => {
-    return scNormSlackForConvo(textMessageParams).then(
+  it('validate normalizing works for a regular text message', () => {
+    func = scNormSlackForConvo.main;
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return func(textMessageParams).then(
       result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.deepEqual(result, expectedResult);
       },
       error => {
@@ -104,8 +161,28 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
   it('validate normalization works for buttons', () => {
     expectedResult.raw_input_data.slack = buttonMessageParams.slack;
 
-    return scNormSlackForConvo(buttonMessageParams).then(
+    func = scNormSlackForConvo.main;
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return func(buttonMessageParams).then(
       result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.deepEqual(result, expectedResult);
       },
       error => {
@@ -127,8 +204,28 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
 
     expectedResult.raw_input_data.slack = menuMessageParams.slack;
 
-    return scNormSlackForConvo(menuMessageParams).then(
+    func = scNormSlackForConvo.main;
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return func(menuMessageParams).then(
       result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.deepEqual(result, expectedResult);
       },
       error => {
@@ -149,8 +246,28 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
 
     expectedResult.raw_input_data.slack = textMessageParams.slack;
 
-    return scNormSlackForConvo(textMessageParams).then(
+    func = scNormSlackForConvo.main;
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return func(textMessageParams).then(
       result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.deepEqual(result, expectedResult);
       },
       error => {
@@ -161,40 +278,23 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
 
   it('validate error when provider missing', () => {
     delete textMessageParams.provider;
-
-    return scNormSlackForConvo(textMessageParams).then(
-      () => {
-        assert(false, 'Action succeeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error.message, errorBadSupplier);
-      }
-    );
+    func = scNormSlackForConvo.validateParameters;
+    try {
+      func(textMessageParams);
+    } catch (e) {
+      assert.equal('AssertionError', e.name);
+      assert.equal(e.message, errorBadSupplier);
+    }
   });
 
   it('validate error when slack data missing', () => {
     delete textMessageParams.slack;
-
-    return scNormSlackForConvo(textMessageParams).then(
-      () => {
-        assert(false, 'Action succeeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error.message, errorNoSlackData);
-      }
-    );
-  });
-
-  it('validate error when workspace_id not bound to package', () => {
-    delete textMessageParams.workspace_id;
-
-    return scNormSlackForConvo(textMessageParams).then(
-      () => {
-        assert(false, 'Action succeeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error.message, errorNoWorkspaceId);
-      }
-    );
+    func = scNormSlackForConvo.validateParameters;
+    try {
+      func(textMessageParams);
+    } catch (e) {
+      assert.equal('AssertionError', e.name);
+      assert.equal(e.message, errorNoSlackData);
+    }
   });
 });

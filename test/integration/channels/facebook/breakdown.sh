@@ -2,5 +2,7 @@
 
 export WSK=${WSK-wsk}
 
-${WSK} action delete facebook/middle | grep -v 'ok'
-${WSK} action delete facebook/integration-pipeline | grep -v 'ok'
+PACKAGE_NAME="$1_facebook"
+
+${WSK} action delete ${PACKAGE_NAME}/middle | grep -v 'ok'
+${WSK} action delete ${PACKAGE_NAME}/integration-pipeline | grep -v 'ok'

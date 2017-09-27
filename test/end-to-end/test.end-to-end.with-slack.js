@@ -3,11 +3,11 @@
 const assert = require('assert');
 const openwhisk = require('openwhisk');
 
-const safeExtractErrorMessage = require('./../resources/helper-methods.js').safeExtractErrorMessage;
+const safeExtractErrorMessage = require('./../utils/helper-methods.js').safeExtractErrorMessage;
 const clearContextDb = require('./../utils/cloudant-utils.js').clearContextDb;
 
-const slackBindings = require('./../resources/slack-bindings.json').slack;
-const cloudantBindings = require('./../resources/cloudant-bindings.json').database;
+const slackBindings = require('./../resources/bindings/slack-bindings.json').slack;
+const cloudantBindings = require('./../resources/bindings/cloudant-bindings.json');
 
 const carDashboardReplyWelcome = 'Hi. It looks like a nice drive today. What would you like me to do?  ';
 const carDashboardReplyLights = "I'll turn on the lights for you.";
@@ -16,6 +16,8 @@ const buttonMessageInputText = 'Buy me a shirt please.';
 const buttonMessageResponse = 'What shirt size would you like?';
 const updateMessageResponse = "I'll buy a small shirt for you.";
 
+const pipelineName = process.env.__TEST_PIPELINE_NAME;
+
 /**
  * Slack prerequisites test suite verifies the Slack package is properly deployed in OpenWhisk
  */
@@ -23,11 +25,11 @@ describe('End-to-End tests: Slack prerequisites', () => {
   const ow = openwhisk();
 
   const requiredActions = [
-    'slack/post',
-    'slack/receive',
-    'slack/deploy',
-    'starter-code/normalize-conversation-for-slack',
-    'starter-code/normalize-slack-for-conversation'
+    `${pipelineName}_slack/post`,
+    `${pipelineName}_slack/receive`,
+    `${pipelineName}_slack/deploy`,
+    `${pipelineName}_starter-code/normalize-conversation-for-slack`,
+    `${pipelineName}_starter-code/normalize-slack-for-conversation`
   ];
 
   requiredActions.forEach(action => {
@@ -61,7 +63,6 @@ describe('End-to-End tests: with Slack package', () => {
     text: carDashboardReplyLights,
     as_user: 'true',
     token: slackBindings.bot_access_token,
-    workspace_id: 'e808d814-9143-4dce-aec7-68af02e650a8',
     ts: 'XXXXXXXXX.XXXXXX'
   };
 
@@ -88,7 +89,6 @@ describe('End-to-End tests: with Slack package', () => {
       text: carDashboardReplyWelcome,
       as_user: 'true',
       token: slackBindings.bot_access_token,
-      workspace_id: 'e808d814-9143-4dce-aec7-68af02e650a8',
       ts: 'XXXXXXXXX.XXXXXX'
     };
 
@@ -146,7 +146,7 @@ describe('End-to-End tests: with Slack package', () => {
       token: slackBindings.verification_token
     };
 
-    clearContextDb(cloudantBindings.dbname, cloudantBindings.cloudant_url);
+    clearContextDb(cloudantBindings.database.context.name, cloudantBindings.url);
   });
 
   // Under validated circumstances, the channel (mocked parameters here) will send parameters
@@ -174,10 +174,10 @@ describe('End-to-End tests: with Slack package', () => {
 
   // Under validated circumstances, context package should load and save context
   // to complete a single-turn conversation successfully.
-  it('context pipeline works for single Conversation turn', () => {
+  it.skip('context pipeline works for single Conversation turn', () => {
     return clearContextDb(
-      cloudantBindings.dbname,
-      cloudantBindings.cloudant_url
+      cloudantBindings.database.context.name,
+      cloudantBindings.url
     ).then(() => {
       return ow.actions
         .invoke({
@@ -195,16 +195,14 @@ describe('End-to-End tests: with Slack package', () => {
           }
         );
     });
-  })
-    .timeout(8000)
-    .retries(4);
+  });
 
   // Under validated circumstances, context package should load and save context
   // to complete a multi-turn conversation successfully.
-  it('context pipeline works for multiple Conversation turns', () => {
+  it.skip('context pipeline works for multiple Conversation turns', () => {
     return clearContextDb(
-      cloudantBindings.dbname,
-      cloudantBindings.cloudant_url
+      cloudantBindings.database.context.name,
+      cloudantBindings.url
     ).then(() => {
       return ow.actions
         .invoke({
@@ -235,15 +233,13 @@ describe('End-to-End tests: with Slack package', () => {
           return assert(false, safeExtractErrorMessage(err));
         });
     });
-  })
-    .timeout(8000)
-    .retries(4);
+  });
 
   // Using a context database, if the user sends a text message that triggers an interactive
   //  response from Conversation, that response should accurately be converted to a
   //  Slack attached message. (In a clean database, the first message is always a welcome
   //  message, so the second message is the message to validate.)
-  it(
+  it.skip(
     'validate when conversation is text input to attached message output',
     () => {
       expectedResult.text = buttonMessageResponse;
@@ -274,15 +270,13 @@ describe('End-to-End tests: with Slack package', () => {
           assert(false, safeExtractErrorMessage(error));
         });
     }
-  )
-    .timeout(5000)
-    .retries(4);
+  );
 
   // This is a continutaion from the previous test case. If the user triggers an attached message
   //  response, then the response sent from Conversation is used to replace the buttons row that
   //  the user clicks. Here, only the third message is validated. (See the previous test case for
   //  validation on the first two messages.)
-  it(
+  it.skip(
     'validate when conversation is attached message response input to message update output',
     () => {
       expectedResult.text = buttonMessageInputText;
@@ -325,7 +319,5 @@ describe('End-to-End tests: with Slack package', () => {
           return assert(false, error);
         });
     }
-  )
-    .timeout(5000)
-    .retries(4);
+  );
 });

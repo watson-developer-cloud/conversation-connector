@@ -2,5 +2,7 @@
 
 export WSK=${WSK-wsk}
 
-${WSK} action delete context/integration-pipeline | grep -v 'ok'
-${WSK} action delete context/middle-for-context | grep -v 'ok'
+PACKAGE_NAME="$1_context"
+
+${WSK} action delete ${PACKAGE_NAME}/integration-pipeline | grep -v 'ok'
+${WSK} action delete ${PACKAGE_NAME}/middle-for-context | grep -v 'ok'

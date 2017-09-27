@@ -5,11 +5,16 @@
  */
 
 const assert = require('assert');
+const nock = require('nock');
+
+process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+
+const conversationBindings = require('../../../resources/bindings/conversation-bindings.json')
+  .conversation;
 const scNormFacebookForConvo = require('./../../../../starter-code/normalize-for-conversation/normalize-facebook-for-conversation.js');
 
 const errorBadSupplier = "Provider not supplied or isn't Facebook.";
 const errorNoFacebookData = 'Facebook JSON data is missing.';
-const errorNoWorkspaceId = 'workspace_id not present as a package binding.';
 const errorNoMsgOrPostbackTypeEvent = 'Neither message.text event detected nor postback.payload event detected. Please add appropriate code to handle a different facebook event.';
 const text = 'hello, world!';
 
@@ -18,6 +23,35 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
   let textMsgResult;
   let buttonClickParams;
   let buttonClickResult;
+
+  let func;
+  let auth;
+
+  const cloudantUrl = 'https://some-cloudant-url.com';
+  const cloudantAuthDbName = 'abc';
+  const cloudantAuthKey = '123';
+
+  const apiHost = process.env.__OW_API_HOST;
+  const namespace = process.env.__OW_NAMESPACE;
+  const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
+
+  const owUrl = `https://${apiHost}/api/v1/namespaces`;
+  const expectedOW = {
+    annotations: [
+      {
+        key: 'cloudant_url',
+        value: cloudantUrl
+      },
+      {
+        key: 'cloudant_auth_dbname',
+        value: cloudantAuthDbName
+      },
+      {
+        key: 'cloudant_auth_key',
+        value: cloudantAuthKey
+      }
+    ]
+  };
 
   beforeEach(() => {
     textMsgParams = {
@@ -32,7 +66,6 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
           text: 'hello, world!'
         }
       },
-      workspace_id: 'abcd-123',
       provider: 'facebook'
     };
 
@@ -49,7 +82,6 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
           title: 'Click here'
         }
       },
-      workspace_id: 'abcd-123',
       provider: 'facebook'
     };
 
@@ -62,7 +94,7 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
       raw_input_data: {
         facebook: textMsgParams.facebook,
         provider: 'facebook',
-        cloudant_key: 'facebook_user_id_abcd-123_page_id'
+        cloudant_context_key: `facebook_user_id_${conversationBindings.workspace_id}_page_id`
       }
     };
 
@@ -75,14 +107,40 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
       raw_input_data: {
         facebook: buttonClickParams.facebook,
         provider: 'facebook',
-        cloudant_key: 'facebook_user_id_abcd-123_page_id'
+        cloudant_context_key: `facebook_user_id_${conversationBindings.workspace_id}_page_id`
+      }
+    };
+
+    auth = {
+      conversation: {
+        workspace_id: conversationBindings.workspace_id
       }
     };
   });
 
   it('validate normalizing works for a regular text message', () => {
-    return scNormFacebookForConvo(textMsgParams).then(
+    func = scNormFacebookForConvo.main;
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return func(textMsgParams).then(
       result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.deepEqual(result, textMsgResult);
       },
       error => {
@@ -92,8 +150,28 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
   });
 
   it('validate normalizing works for an event when a button is clicked', () => {
-    return scNormFacebookForConvo(buttonClickParams).then(
+    func = scNormFacebookForConvo.main;
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return func(buttonClickParams).then(
       result => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.deepEqual(result, buttonClickResult);
       },
       error => {
@@ -105,11 +183,31 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
   it('validate error when neither message type event nor postback type event detected', () => {
     delete textMsgParams.facebook.message;
 
-    return scNormFacebookForConvo(textMsgParams).then(
-      () => {
-        assert(false, 'Action succeeded unexpectedly.');
+    func = scNormFacebookForConvo.main;
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, expectedOW);
+
+    const mockCloudantGet = nock(cloudantUrl)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, auth);
+
+    return func(textMsgParams).then(
+      result => {
+        assert(false, result);
       },
       error => {
+        if (!mockCloudantGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Cloudant Get server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW Get server did not get called.');
+        }
         assert.equal(error, errorNoMsgOrPostbackTypeEvent);
       }
     );
@@ -118,39 +216,24 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
   it('validate error when provider missing', () => {
     delete textMsgParams.provider;
 
-    return scNormFacebookForConvo(textMsgParams).then(
-      () => {
-        assert(false, 'Action succeeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error, errorBadSupplier);
-      }
-    );
+    func = scNormFacebookForConvo.validateParameters;
+    try {
+      func(textMsgParams);
+    } catch (e) {
+      assert.equal('AssertionError', e.name);
+      assert.equal(e.message, errorBadSupplier);
+    }
   });
 
   it('validate error when facebook data missing', () => {
     delete textMsgParams.facebook;
 
-    return scNormFacebookForConvo(textMsgParams).then(
-      () => {
-        assert(false, 'Action succeeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error, errorNoFacebookData);
-      }
-    );
-  });
-
-  it('validate error when workspace_id not bound to package', () => {
-    delete textMsgParams.workspace_id;
-
-    return scNormFacebookForConvo(textMsgParams).then(
-      () => {
-        assert(false, 'Action succeeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error, errorNoWorkspaceId);
-      }
-    );
+    func = scNormFacebookForConvo.validateParameters;
+    try {
+      func(textMsgParams);
+    } catch (e) {
+      assert.equal('AssertionError', e.name);
+      assert.equal(e.message, errorNoFacebookData);
+    }
   });
 });

@@ -30,7 +30,7 @@
             "event_id": "Ev08MFMKH6"
           },
           "provider": "slack",
-          "cloudant_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
+            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
         }
       },
       "response": {
@@ -57,7 +57,7 @@
               "event_id": "Ev08MFMKH6"
             },
             "provider": "slack",
-            "cloudant_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
+            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
           },
           "channel": "D024BE91L",
           "text": "Hi. It looks like a nice drive today. What would you like me to do?  ",
@@ -126,7 +126,7 @@
               "event_id": "Ev08MFMKH6"
             },
             "provider": "slack",
-            "cloudant_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
+            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
           }
         },
         {
@@ -158,7 +158,7 @@
               "event_id": "Ev08MFMKH6"
             },
             "provider": "slack",
-            "cloudant_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
+            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
           }
         }
       ],
@@ -187,7 +187,7 @@
               "event_id": "Ev08MFMKH6"
             },
             "provider": "slack",
-            "cloudant_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
+            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
           },
           "channel": "D024BE91L",
           "text": "Hi. It looks like a nice drive today. What would you like me to do?  ",
@@ -248,7 +248,7 @@
               "event_id": "Ev08MFMKH6"
             },
             "provider": "slack",
-            "cloudant_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
+            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
           },
           "channel": "D024BE91L",
           "text": "Ok. Turning on the lights.",

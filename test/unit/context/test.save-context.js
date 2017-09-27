@@ -2,20 +2,26 @@
 
 const assert = require('assert');
 const nock = require('nock');
+
+process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+
 const sc = require('../../../context/save-context.js');
-const paramsJson = require('../../resources/test.unit.context.json').saveContextJson;
+const paramsJson = require('../../resources/payloads/test.unit.context.json')
+  .saveContextJson;
 const Cloudant = require('cloudant');
 
 const invalidCloudantUrl = 'invalid-url';
 
-const errorNoCloudantUrl = 'Cloudant db url absent or not bound to the package.';
-const errorNoDbName = 'dbname absent or not bound to the package.';
+const errorInvalidUrl =
+  'Cloudant object creation failed. Error from Cloudant: Error: invalid url.';
 const errorNoRawInputData = 'raw_input_data absent in params.';
-const errorNoCloudantKey = 'cloudant_key absent in params.raw_input_data.';
+const errorNoCloudantContextKey =
+  'cloudant_context_key absent in params.raw_input_data.';
 const errorNoRawOutputData = 'raw_output_data absent in params.';
-const errorNoConversationObj = 'conversation object absent in params.raw_output_data.';
+const errorNoConversationObj =
+  'conversation object absent in params.raw_output_data.';
 
-describe('save context unit tests', () => {
+describe('Save Context Unit Tests: main()', () => {
   let params = {};
   let func; // Function to test
 
@@ -25,130 +31,97 @@ describe('save context unit tests', () => {
     params = Object.assign({}, JSON.parse(JSON.stringify(paramsJson)));
   });
 
-  it('validate error when no url', () => {
-    // Use request params for main function
+  it('main all ok', () => {
+    // The expected response for main function when all ok.
+    const expected = params.main.responses;
+
+    // Use request params for main function when all ok.
     params = params.main.request;
 
-    assert(params.cloudant_url, 'url absent in package bindings.');
-    delete params.cloudant_url;
+    // This is what the mock calls should return.
+    const nockResponseForGet = expected[0];
+    const nockResponseForPut = expected[1].raw_output_data.conversation.context;
+
+    const apiHost = process.env.__OW_API_HOST;
+    const namespace = process.env.__OW_NAMESPACE;
+    const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
+
+    const cloudantUrl = 'https://pinkunicorns.cloudant.com';
+    const cloudantContextDbName = 'convo-context';
+
+    const cloudantKey = params.raw_input_data.cloudant_context_key;
+
+    const owUrl = `https://${apiHost}/api/v1/namespaces`;
+
+    const mockResponseOW = {
+      annotations: [
+        {
+          key: 'cloudant_url',
+          value: cloudantUrl
+        },
+        {
+          key: 'cloudant_context_dbname',
+          value: cloudantContextDbName
+        }
+      ]
+    };
+
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, mockResponseOW);
+
+    const mockGet = nock(cloudantUrl)
+      .get(`/${cloudantContextDbName}/${cloudantKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(404, nockResponseForGet);
+
+    const mockPut = nock(cloudantUrl)
+      .put(`/${cloudantContextDbName}/${cloudantKey}`)
+      .query(() => {
+        return true;
+      })
+      .reply(200, nockResponseForPut);
 
     func = sc.main;
 
     return func(params).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
+      response => {
+        if (!mockGet.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Get server did not get called.');
+        }
+        if (!mockPut.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock Put server did not get called.');
+        }
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW server did not get called.');
+        }
+        nock.cleanAll();
+        assert.deepEqual(response, expected[1]);
       },
-      error => {
-        assert.equal(error.message, errorNoCloudantUrl);
+      e => {
+        nock.cleanAll();
+        assert(false, e);
       }
     );
   });
+});
 
-  it('validate error when no dbname', () => {
-    // Use request params for main function
-    params = params.main.request;
+describe('Save Context Unit Tests: setContext()', () => {
+  let params = {};
+  const func = sc.setContext; // Function to test
 
-    assert(params.dbname, 'dbname absent in package bindings.');
-    delete params.dbname;
-
-    func = sc.main;
-
-    return func(params).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error.message, errorNoDbName);
-      }
-    );
+  beforeEach(() => {
+    // merge the two objects, deep copying packageBindings so it doesn't get changed between tests
+    // and we only have to read it once
+    params = Object.assign({}, JSON.parse(JSON.stringify(paramsJson)));
   });
 
-  it('validate error when no raw_input_data', () => {
-    // Use request params for main function
-    params = params.main.request;
-
-    assert(params.raw_input_data, 'raw_input_data absent in params.');
-    delete params.raw_input_data;
-
-    func = sc.main;
-
-    return func(params).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error.message, errorNoRawInputData);
-      }
-    );
-  });
-
-  it('validate error when no cloudant_key', () => {
-    // Use request params for main function
-    params = params.main.request;
-
-    assert(
-      params.raw_input_data.cloudant_key,
-      'cloudant_key absent in params.raw_input_data'
-    );
-    delete params.raw_input_data.cloudant_key;
-
-    func = sc.main;
-
-    return func(params).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error.message, errorNoCloudantKey);
-      }
-    );
-  });
-
-  it('validate error when no raw_output_data', () => {
-    // Use request params for main function
-    params = params.main.request;
-
-    assert(
-      params.raw_output_data,
-      'raw_output_data absent in package bindings.'
-    );
-    delete params.raw_output_data;
-
-    func = sc.main;
-
-    return func(params).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error.message, errorNoRawOutputData);
-      }
-    );
-  });
-
-  it('validate error when no Conversation object', () => {
-    // Use request params for main function
-    params = params.main.request;
-
-    assert(
-      params.raw_output_data.conversation,
-      'conversation object absent in package bindings.'
-    );
-    delete params.raw_output_data.conversation;
-
-    func = sc.main;
-
-    return func(params).then(
-      () => {
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        assert.equal(error.message, errorNoConversationObj);
-      }
-    );
-  });
-
-  it('set context all ok', () => {
+  it('all ok', () => {
     // The expected responses for setContext function when all ok.
     const expected = params.setContext.allOk.responses;
 
@@ -185,8 +158,6 @@ describe('save context unit tests', () => {
       })
       .reply(200, exp1);
 
-    func = sc.setContext;
-
     return func(db, key, doc).then(
       response => {
         if (!mockGet.isDone()) {
@@ -207,7 +178,7 @@ describe('save context unit tests', () => {
     );
   });
 
-  it('set context works when saving for the first time', () => {
+  it('works when saving for the first time', () => {
     // The expected responses for setContext function when saving for the first time.
     const expected = params.setContext.missingContext.responses;
 
@@ -244,8 +215,6 @@ describe('save context unit tests', () => {
       })
       .reply(200, exp1);
 
-    func = sc.setContext;
-
     return func(db, key, doc).then(
       response => {
         if (!mockGet.isDone()) {
@@ -266,24 +235,7 @@ describe('save context unit tests', () => {
     );
   });
 
-  it('validate Cloudant url should be proper', () => {
-    func = sc.getCloudantObj;
-
-    return func(invalidCloudantUrl).then(
-      response => {
-        assert(false, response);
-      },
-      e => {
-        assert.equal(
-          e,
-          'Cloudant object creation failed. Error from Cloudant: Error: invalid url.',
-          'Should fail complaining about invalid url.'
-        );
-      }
-    );
-  });
-
-  it('set context should fail when inserting null context for the first time', () => {
+  it('should fail when inserting null context for the first time', () => {
     // The expected error for setContext function when inserting null context.
     const expected = params.setContext.insertNullContext.responses;
 
@@ -320,8 +272,6 @@ describe('save context unit tests', () => {
       })
       .reply(400, exp1);
 
-    func = sc.setContext;
-
     return func(db, key, doc).then(
       response => {
         if (!mockGet.isDone()) {
@@ -342,7 +292,7 @@ describe('save context unit tests', () => {
     );
   });
 
-  it('set context should fail when overwriting old context with Json Array', () => {
+  it('should fail when overwriting old context with Json Array', () => {
     // The expected error for setContext function when overwriting context with a JsonArray.
     const expected = params.setContext.overwriteContextWithJsonArray.responses;
 
@@ -378,8 +328,6 @@ describe('save context unit tests', () => {
       })
       .reply(400, exp1);
 
-    func = sc.setContext;
-
     return func(db, key, doc).then(
       response => {
         if (!mockGet.isDone()) {
@@ -401,70 +349,25 @@ describe('save context unit tests', () => {
     );
   });
 
-  it('main all ok', () => {
-    // The expected response for main function when all ok.
-    const expected = params.main.responses;
+  it('should fail when Cloudant returns anything other than a 200 or 404', () => {
+    const expected = params.setContext.cloudantError.responses;
+    params = params.setContext.cloudantError.request;
 
-    // Use request params for main function when all ok.
-    params = params.main.request;
-
-    // This is what the mock calls should return.
-    const nockResponseForGet = expected[0];
-    const nockResponseForPut = expected[1].raw_output_data.conversation.context;
-
-    const dbName = params.dbname;
-    const cloudantUrl = params.cloudant_url;
-    const cloudantKey = params.raw_input_data.cloudant_key;
-
-    const mockGet = nock(cloudantUrl)
-      .get(`/${dbName}/${cloudantKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(404, nockResponseForGet);
-
-    const mockPut = nock(cloudantUrl)
-      .put(`/${dbName}/${cloudantKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, nockResponseForPut);
-
-    func = sc.main;
-
-    return func(params).then(
-      response => {
-        if (!mockGet.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Get server did not get called.');
-        }
-        if (!mockPut.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Put server did not get called.');
-        }
-        nock.cleanAll();
-        assert.deepEqual(response, expected[1]);
-      },
-      e => {
-        nock.cleanAll();
-        assert(false, e);
-      }
-    );
-  });
-
-  it('main handle error from Cloudant', () => {
-    // The expected error for main function when Cloudant throws an error.
-    const expected = params.main.responses;
-
-    // Use request params for main function when Cloudant throws an error.
-    params = params.main.request;
-
-    // This is what the mock call should return.
     const nockResponseForGet = expected[0];
 
-    const dbName = params.dbname;
+    const dbName = params.cloudant_context_dbname;
     const cloudantUrl = params.cloudant_url;
-    const cloudantKey = params.raw_input_data.cloudant_key;
+    const cloudantKey = params.cloudant_context_key;
+    const doc = params.doc;
+
+    const cloudant = Cloudant({
+      url: cloudantUrl,
+      plugin: 'retry',
+      retryAttempts: 5,
+      retryTimeout: 1000
+    });
+
+    const db = cloudant.use(dbName);
 
     const mockGet = nock(cloudantUrl)
       .get(`/${dbName}/${cloudantKey}`)
@@ -473,16 +376,14 @@ describe('save context unit tests', () => {
       })
       .reply(500, nockResponseForGet);
 
-    func = sc.main;
-
-    return func(params).then(
+    return func(db, cloudantKey, doc).then(
       response => {
         if (!mockGet.isDone()) {
           nock.cleanAll();
           assert(false, 'Mock Get server did not get called.');
         }
         nock.cleanAll();
-        assert.deepEqual(response, expected[0]);
+        assert(false, response);
       },
       e => {
         nock.cleanAll();
@@ -490,28 +391,116 @@ describe('save context unit tests', () => {
       }
     );
   });
+});
 
-  it('validateResponseParams response should not contain cloudant_url', () => {
-    func = sc.validateResponseParams;
-    // The params for func.
-    const p = params.validateResponseParams.withCloudantUrl.params;
+describe('Save Context Unit Tests: getCloudantCreds()', () => {
+  const func = sc.getCloudantCreds; // function to test
+
+  it('All OK', () => {
+    const cloudantUrl = 'https://pinkunicorns.cloudant.com';
+    const cloudantContextDbName = 'convo-context';
+
+    const apiHost = process.env.__OW_API_HOST;
+    const namespace = process.env.__OW_NAMESPACE;
+    const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
+
+    const owUrl = `https://${apiHost}/api/v1/namespaces`;
+
+    const mockResponseOW = {
+      annotations: [
+        {
+          key: 'cloudant_url',
+          value: cloudantUrl
+        },
+        {
+          key: 'cloudant_context_dbname',
+          value: cloudantContextDbName
+        }
+      ]
+    };
+    const expected = {
+      cloudant_url: cloudantUrl,
+      cloudant_context_dbname: cloudantContextDbName
+    };
+
+    const mockOW = nock(owUrl)
+      .get(`/${namespace}/packages/${packageName}`)
+      .reply(200, mockResponseOW);
+
+    return func().then(
+      response => {
+        if (!mockOW.isDone()) {
+          nock.cleanAll();
+          assert(false, 'Mock OW server did not get called.');
+        }
+        nock.cleanAll();
+        assert.deepEqual(response, expected);
+      },
+      e => {
+        nock.cleanAll();
+        assert(false, e);
+      }
+    );
+  });
+});
+
+describe('Save Context Unit Tests: createCloudantObj()', () => {
+  const func = sc.createCloudantObj;
+
+  it('validate Cloudant url should be proper', () => {
+    return func(invalidCloudantUrl).then(
+      response => {
+        assert(false, response);
+      },
+      e => {
+        assert.equal(
+          e,
+          errorInvalidUrl,
+          'Should fail complaining about invalid url.'
+        );
+      }
+    );
+  });
+});
+
+describe('Save Context Unit Tests: validateParams()', () => {
+  const func = sc.validateParams;
+  it('should throw AssertionError for missing raw_input_data', () => {
     try {
-      func(p);
+      func({});
     } catch (e) {
-      assert.equal('AssertionError', e.name);
-      assert.equal('cloudant_url present in the response.', e.message);
+      assert.equal(e.name, 'AssertionError');
+      assert.equal(e.message, errorNoRawInputData);
     }
   });
 
-  it('validateResponseParams response should not contain cloudant auth dbname', () => {
-    func = sc.validateResponseParams;
-    // The params for func.
-    const p = params.validateResponseParams.withCloudantDbName.params;
+  it('should throw AssertionError for missing cloudant_context_key', () => {
     try {
-      func(p);
+      func({ raw_input_data: {} });
     } catch (e) {
-      assert.equal('AssertionError', e.name);
-      assert.equal('dbname present in the response.', e.message);
+      assert.equal(e.name, 'AssertionError');
+      assert.equal(e.message, errorNoCloudantContextKey);
+    }
+  });
+
+  it('should throw AssertionError for missing raw_output_data', () => {
+    try {
+      func({ raw_input_data: { cloudant_context_key: 'xyz' } });
+    } catch (e) {
+      assert.equal(e.name, 'AssertionError');
+      assert.equal(e.message, errorNoRawOutputData);
+    }
+  });
+
+  it('should throw AssertionError for missing Conversation object', () => {
+    try {
+      func({
+        raw_input_data: { cloudant_context_key: 'xyz' },
+        raw_output_data: {}
+      });
+    } catch (e) {
+      assert.equal(e.name, 'AssertionError');
+      assert.equal(e.message, errorNoConversationObj);
     }
   });
 });

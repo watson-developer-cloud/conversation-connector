@@ -2,6 +2,8 @@
 
 WSK=${WSK-wsk}
 
-${WSK} action update facebook/middle ./test/integration/channels/facebook/middle.js | grep -v 'ok'
+PACKAGE_NAME="$1_facebook"
 
-${WSK} action update facebook/integration-pipeline --sequence facebook/middle,facebook/post | grep -v 'ok'
+${WSK} action update ${PACKAGE_NAME}/middle ./test/integration/channels/facebook/middle.js | grep -v 'ok'
+
+${WSK} action update ${PACKAGE_NAME}/integration-pipeline --sequence ${PACKAGE_NAME}/middle,${PACKAGE_NAME}/post | grep -v 'ok'

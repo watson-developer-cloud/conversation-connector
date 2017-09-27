@@ -3,15 +3,17 @@
 const assert = require('assert');
 const openwhisk = require('openwhisk');
 
-const safeExtractErrorMessage = require('./../resources/helper-methods.js').safeExtractErrorMessage;
-const facebookBindings = require('./../resources/facebook-bindings.json').facebook;
-const conversationBindings = require('./../resources/conversation-bindings.json').conversation;
-const cloudantBindings = require('./../resources/cloudant-bindings.json');
+const safeExtractErrorMessage = require('./../utils/helper-methods.js').safeExtractErrorMessage;
+const facebookBindings = require('./../resources/bindings/facebook-bindings.json').facebook;
+const cloudantBindings = require('./../resources/bindings/cloudant-bindings.json');
 
 const clearContextDb = require('./../utils/cloudant-utils.js').clearContextDb;
 
 const carDashboardReplyWelcome = 'Hi. It looks like a nice drive today. What would you like me to do?  ';
 const carDashboardReplyLights = "I'll turn on the lights for you.";
+
+const pipelineName = process.env.__TEST_PIPELINE_NAME;
+
 /**
  * Facebook prerequisites test suite verifies the Facebook package is properly deployed in OpenWhisk
  */
@@ -19,10 +21,10 @@ describe('End-to-End tests: Facebook prerequisites', () => {
   const ow = openwhisk();
 
   const requiredActions = [
-    'facebook/post',
-    'facebook/receive',
-    'starter-code/normalize-conversation-for-facebook',
-    'starter-code/normalize-facebook-for-conversation'
+    `${pipelineName}_facebook/post`,
+    `${pipelineName}_facebook/receive`,
+    `${pipelineName}_starter-code/normalize-conversation-for-facebook`,
+    `${pipelineName}_starter-code/normalize-facebook-for-conversation`
   ];
 
   requiredActions.forEach(action => {
@@ -43,7 +45,7 @@ describe('End-to-End tests: Facebook prerequisites', () => {
 describe('End-to-End tests: Facebook as channel package', () => {
   const ow = openwhisk();
   const actionFacebookPipeline = 'test-pipeline-facebook';
-  const facebookWebhook = 'facebook/receive';
+  const facebookWebhook = `${pipelineName}_facebook/receive`;
   let params = {};
 
   const expectedResult = {
@@ -54,11 +56,11 @@ describe('End-to-End tests: Facebook as channel package', () => {
         successResponse: {
           text: 200,
           params: {
+            batched_messages: `${pipelineName}_facebook/batched_messages`,
             recipient: { id: facebookBindings.sender.id },
             message: {
               text: carDashboardReplyWelcome
-            },
-            workspace_id: conversationBindings.workspace_id
+            }
           },
           url: 'https://graph.facebook.com/v2.6/me/messages'
         },
@@ -73,8 +75,6 @@ describe('End-to-End tests: Facebook as channel package', () => {
       __ow_headers: {
         'x-hub-signature': 'sha1=7022aaa4676f7355e712d2427e204ff3f7be0e91'
       },
-      verification_token: facebookBindings.verification_token,
-      app_secret: facebookBindings.app_secret,
       object: 'page',
       entry: [
         {
@@ -122,9 +122,9 @@ describe('End-to-End tests: Facebook as channel package', () => {
     .retries(4);
 });
 
-describe('End-to-End tests: Facebook context package works', () => {
+describe.skip('End-to-End tests: Facebook context package works', () => {
   const ow = openwhisk();
-  const facebookWebhook = 'facebook/receive';
+  const facebookWebhook = `${pipelineName}_facebook/receive`;
   const contextPipeline = 'test-pipeline-context-facebook';
   let params = {};
 
@@ -136,11 +136,11 @@ describe('End-to-End tests: Facebook context package works', () => {
         successResponse: {
           text: 200,
           params: {
+            batched_messages: `${pipelineName}_facebook/batched_messages`,
             recipient: { id: facebookBindings.sender.id },
             message: {
               text: carDashboardReplyWelcome
-            },
-            workspace_id: conversationBindings.workspace_id
+            }
           },
           url: 'https://graph.facebook.com/v2.6/me/messages'
         },
@@ -157,11 +157,11 @@ describe('End-to-End tests: Facebook context package works', () => {
         successResponse: {
           text: 200,
           params: {
+            batched_messages: `${pipelineName}_facebook/batched_messages`,
             recipient: { id: facebookBindings.sender.id },
             message: {
               text: carDashboardReplyLights
-            },
-            workspace_id: conversationBindings.workspace_id
+            }
           },
           url: 'https://graph.facebook.com/v2.6/me/messages'
         },
@@ -176,8 +176,6 @@ describe('End-to-End tests: Facebook context package works', () => {
       __ow_headers: {
         'x-hub-signature': 'sha1=7022aaa4676f7355e712d2427e204ff3f7be0e91'
       },
-      verification_token: facebookBindings.verification_token,
-      app_secret: facebookBindings.app_secret,
       object: 'page',
       entry: [
         {
@@ -201,8 +199,8 @@ describe('End-to-End tests: Facebook context package works', () => {
   // to complete a single-turn conversation successfully.
   it('context pipeline works for single Conversation turn', () => {
     return clearContextDb(
-      cloudantBindings.database.dbname,
-      cloudantBindings.database.cloudant_url
+      cloudantBindings.database.context.name,
+      cloudantBindings.url
     ).then(() => {
       params.sub_pipeline = contextPipeline;
       return ow.actions
@@ -232,8 +230,8 @@ describe('End-to-End tests: Facebook context package works', () => {
   // to complete a multi-turn conversation successfully.
   it('context pipeline works for multiple Conversation turns', () => {
     return clearContextDb(
-      cloudantBindings.database.dbname,
-      cloudantBindings.database.cloudant_url
+      cloudantBindings.database.context.name,
+      cloudantBindings.url
     ).then(() => {
       params.sub_pipeline = contextPipeline;
       return ow.actions
@@ -281,7 +279,7 @@ describe('End-to-End tests: Facebook context package works', () => {
 describe('End-to-End tests: Facebook as channel package - for batched messages', () => {
   const ow = openwhisk();
   const actionFacebookPipeline = 'test-pipeline-batched-messages-facebook';
-  const facebookWebhook = 'facebook/receive';
+  const facebookWebhook = `${pipelineName}_facebook/receive`;
   let params = {};
 
   const expectedResult = {
@@ -297,9 +295,9 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
         successResponse: {
           text: 200,
           params: {
+            batched_messages: `${pipelineName}_facebook/batched_messages`,
             recipient: facebookBindings.sender,
-            message: { text: 'Hello! What can I help you with?' },
-            workspace_id: conversationBindings.workspace_id
+            message: { text: 'Hello! What can I help you with?' }
           },
           url: 'https://graph.facebook.com/v2.6/me/messages'
         },
@@ -309,9 +307,9 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
         successResponse: {
           text: 200,
           params: {
+            batched_messages: `${pipelineName}_facebook/batched_messages`,
             recipient: facebookBindings.sender,
-            message: { text: 'Hello! What can I help you with?' },
-            workspace_id: conversationBindings.workspace_id
+            message: { text: 'Hello! What can I help you with?' }
           },
           url: 'https://graph.facebook.com/v2.6/me/messages'
         },
@@ -326,8 +324,6 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
       __ow_headers: {
         'x-hub-signature': 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738'
       },
-      verification_token: facebookBindings.verification_token,
-      app_secret: facebookBindings.app_secret,
       object: 'page',
       entry: [
         {

@@ -9,6 +9,8 @@ const openwhisk = require('openwhisk');
 
 const chatPostUrl = 'https://slack.com/api/chat.postMessage';
 
+const pipelineName = process.env.__TEST_PIPELINE_NAME;
+
 const inputText = 'Turn on lights';
 const outputText = 'Output text from mock-convo.';
 
@@ -47,7 +49,6 @@ describe('starter-code integration tests for slack', () => {
     expectedResult = {
       channel: 'D024BE91L',
       text: outputText,
-      workspace_id: 'e808d814-9143-4dce-aec7-68af02e650a8',
       ts: '1355517523.000005',
       url: chatPostUrl,
       raw_input_data: {
@@ -58,7 +59,7 @@ describe('starter-code integration tests for slack', () => {
         },
         slack: params.slack,
         provider: 'slack',
-        cloudant_key: 'slack_TXXXXXXXX_e808d814-9143-4dce-aec7-68af02e650a8_U2147483697_D024BE91L'
+        cloudant_context_key: 'slack_TXXXXXXXX_e808d814-9143-4dce-aec7-68af02e650a8_U2147483697_D024BE91L'
       },
       raw_output_data: {
         conversation: {
@@ -118,7 +119,7 @@ describe('starter-code integration tests for slack', () => {
   });
 
   it('validate starter-code handles text from conversation', () => {
-    const actionName = 'starter-code/integration-pipeline-slack';
+    const actionName = `${pipelineName}_starter-code/integration-pipeline-slack`;
 
     return ow.actions
       .invoke({
@@ -142,7 +143,7 @@ describe('starter-code integration tests for slack', () => {
   it(
     'validate starter-code handles slack-specific data from conversation',
     () => {
-      const actionName = 'starter-code/integration-pipeline-slack-with-slack-data';
+      const actionName = `${pipelineName}_starter-code/integration-pipeline-slack-with-slack-data`;
 
       expectedResult.raw_output_data.conversation.output.slack = {};
       expectedResult.raw_output_data.conversation.output.slack = slackData;

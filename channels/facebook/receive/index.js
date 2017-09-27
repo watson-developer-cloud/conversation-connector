@@ -1,7 +1,11 @@
 const crypto = require('crypto');
 const openwhisk = require('openwhisk');
 const assert = require('assert');
-const pick = require('object.pick');
+const Cloudant = require('cloudant');
+
+const CLOUDANT_URL = 'cloudant_url';
+const CLOUDANT_AUTH_DBNAME = 'cloudant_auth_dbname';
+const CLOUDANT_AUTH_KEY = 'cloudant_auth_key';
 
 /* BACKGROUND:
  *
@@ -85,39 +89,36 @@ const pick = require('object.pick');
 
 function main(params) {
   return new Promise((resolve, reject) => {
-    try {
-      validateParameters(params);
-    } catch (e) {
-      reject(e.message);
-    }
-    // url verification takes place during facebook's webhook setup phase i.e. facebook makes
-    // a GET request to the provided webhook endpoint and expects a challenge value in return.
-    // This action simply passes the challenge passed by facebook during verification
-    if (isURLVerificationEvent(params)) {
-      // Challege value is returned
-      resolve({ text: params['hub.challenge'] });
+    getCloudantCreds()
+      .then(cloudantCreds => {
+        return loadAuth(cloudantCreds);
+      })
+      .then(auth => {
+        // url verification takes place during facebook's webhook setup phase i.e. facebook makes
+        // a GET request to the provided webhook endpoint and expects a challenge value in return.
+        // This action simply passes the challenge passed by facebook during verification
+        if (isURLVerificationEvent(params, auth)) {
+          // Challege value is returned
+          resolve({ text: params['hub.challenge'] });
 
-      // When a request is coming from a facebook page, then facebook makes a POST request to
-      // the provided webhook endpoint (which is the receive action)
-    } else if (isPageObject(params)) {
-      // Every time facebook makes a POST request to the webhook endpoint, it sends along
-      // x-hub-signature header which basically contains SHA1 key. In order to make sure, that
-      // the request is coming from facebook, it is important to calculate the HMAC key using
-      // app-secret and the request payload and compare it against the x-hub-signature header.
-      try {
-        verifyFacebookSignatureHeader(params);
-      } catch (e) {
-        reject(e.message);
-      }
+          // When a request is coming from a facebook page, then facebook makes a POST request to
+          // the provided webhook endpoint (which is the receive action)
+        } else if (isPageObject(params)) {
+          // Every time facebook makes a POST request to the webhook endpoint, it sends along
+          // x-hub-signature header which basically contains SHA1 key. In order to make sure, that
+          // the request is coming from facebook, it is important to calculate the HMAC key using
+          // app-secret and the request payload and compare it against the x-hub-signature header.
+          verifyFacebookSignatureHeader(params, auth);
 
-      // React to all the events/messages present in the entries array.
-      resolve(runBatchedEntriesInParallel(params));
-    }
-    // Neither page nor verification type request is detected
-    reject({
-      status: 400,
-      text: 'Neither a page type request nor a verfication type request detected'
-    });
+          // React to all the events/messages present in the entries array.
+          resolve(runBatchedEntriesInParallel(params));
+        }
+        // Neither page nor verification type request is detected
+        reject({
+          status: 400,
+          text: 'Neither a page type request nor a verfication type request detected'
+        });
+      });
   });
 }
 
@@ -422,34 +423,25 @@ function isPageObject(params) {
   return true;
 }
 
-/**
- *  Validates the required parameters for running this action.
- *
- *  @param {JSON} params - Parameters passed into the action
- */
-function validateParameters(params) {
-  // Required: Facebook verification token
-  assert(params.verification_token, 'No verification token provided.');
-  // Required: Facebook app secret
-  assert(params.app_secret, 'No app secret provided.');
-}
-
 /** Checks if the HMAC key calculated using app secret and request payload is the
  * same as the key present in x-hub-signature header. For more information, refer to
  * https://developers.facebook.com/docs/messenger-platform/webhook-reference#security
  *
  * @param  {JSON} params - Parameters passed into the action
  */
-function verifyFacebookSignatureHeader(params) {
+function verifyFacebookSignatureHeader(params, auth) {
   assert(
     params.__ow_headers['x-hub-signature'],
     'x-hub-signature header not found.'
   );
   const xHubSignature = params.__ow_headers['x-hub-signature'];
-  const appSecret = params.app_secret;
+  const appSecret = auth.facebook.app_secret;
+
   // Construct the request payload. For more information, refer to
   // https://developers.facebook.com/docs/messenger-platform/webhook-reference#format
-  const requestPayload = pick(params, ['object', 'entry']);
+  const requestPayload = {};
+  requestPayload.object = params.object;
+  requestPayload.entry = Object.assign([], params.entry);
   const buffer = new Buffer(JSON.stringify(requestPayload));
 
   // Get the expected hash from the key i.e. if the key is sha1=1234
@@ -462,11 +454,224 @@ function verifyFacebookSignatureHeader(params) {
     .update(buffer, 'utf-8')
     .digest('hex');
 
-  assert.equal(
-    calculatedHash,
-    expectedHash,
-    'Verfication of facebook signature header failed. Please make sure you are passing the correct app secret'
+  assert.equal(calculatedHash, expectedHash, 'Verfication of facebook signature header failed. Please make sure you are passing the correct app secret');
+}
+
+/**
+ *  Gets the cloudant credentials (saved as package annotations)
+ *  from the current action's full name, derived from
+ *  the env var "__OW_ACTION_NAME".
+ *
+ *  @return - cloudant credentials to use for db read/write operations.
+ *  eg: {
+ *       cloudant_url: 'https://some-cloudant-url.com',
+ *       cloudant_auth_dbname: 'abc',
+ *       cloudant_auth_key: '123'
+ *     };
+ */
+function getCloudantCreds() {
+  return new Promise((resolve, reject) => {
+    // Get annotations of the current package.
+    const packageName = extractCurrentPackageName(process.env.__OW_ACTION_NAME);
+    getPackageAnnotations(packageName)
+      .then(annotations => {
+        // Construct a Cloudant creds json obj
+        const cloudantCreds = {};
+        annotations.forEach(a => {
+          cloudantCreds[a.key] = a.value;
+        });
+        checkCloudantCredentials(cloudantCreds);
+        resolve(cloudantCreds);
+      })
+      .catch(reject);
+  });
+}
+
+/**
+ *  Verifies that cloudant creds contain all the keys
+ *  necessary for db operations.
+ *
+ *  @cloudantCreds - {JSON} Cloudant credentials JSON
+ *  eg: {
+ *       cloudant_url: 'https://some-cloudant-url.com',
+ *       cloudant_auth_dbname: 'abc',
+ *       cloudant_auth_key: '123'
+ *     };
+ */
+function checkCloudantCredentials(cloudantCreds) {
+  // Verify that all required Cloudant credentials are present.
+  assert(
+    cloudantCreds[CLOUDANT_URL],
+    'cloudant_url absent in cloudant credentials.'
+  );
+  assert(
+    cloudantCreds[CLOUDANT_AUTH_DBNAME],
+    'cloudant_auth_dbname absent in cloudant credentials.'
+  );
+  assert(
+    cloudantCreds[CLOUDANT_AUTH_KEY],
+    'cloudant_auth_key absent in cloudant credentials.'
   );
 }
 
-module.exports = main;
+/**
+ *  Loads the auth info from the Cloudant auth db
+ *  using supplied Cloudant credentials.
+ *
+ *  @cloudantCreds - {JSON} Cloudant credentials JSON
+ *
+ *  @return auth information loaded from Cloudant
+ *  eg:
+ *   {
+ *     "conversation": {
+ *       "password": "xxxxxx",
+ *       "username": "xxxxxx",
+ *       "workspace_id": "xxxxxx"
+ *     },
+ *     "facebook": {
+ *       "app_secret": "xxxxxx",
+ *       "page_access_token": "xxxxxx",
+ *       "verification_token": "xxxxxx"
+ *     },
+ *     "slack": {
+ *       "client_id": "xxxxxx",
+ *       "client_secret": "xxxxxx",
+ *       "verification_token": "xxxxxx",
+ *       "access_token": "xxxxxx",
+ *       "bot_access_token": "xxxxxx"
+ *     }
+ *   }
+ */
+function loadAuth(cloudantCreds) {
+  return new Promise((resolve, reject) => {
+    const cloudantUrl = cloudantCreds[CLOUDANT_URL];
+    const cloudantAuthDbName = cloudantCreds[CLOUDANT_AUTH_DBNAME];
+    const cloudantAuthKey = cloudantCreds[CLOUDANT_AUTH_KEY];
+
+    createCloudantObj(cloudantUrl)
+      .then(cloudantObj => {
+        return retrieveDoc(
+          cloudantObj.use(cloudantAuthDbName),
+          cloudantAuthKey
+        );
+      })
+      .then(auth => {
+        resolve(auth);
+      })
+      .catch(err => {
+        reject(err);
+      });
+  });
+}
+
+/**
+ * Creates the Cloudant object using the Cloudant url specified
+ *
+ *  @cloudantUrl - {string} Cloudant url linked to the
+ *                 user's Cloudant instance.
+ *
+ * @return Cloudant object or, rejects with the exception from Cloudant
+ */
+function createCloudantObj(cloudantUrl) {
+  return new Promise((resolve, reject) => {
+    try {
+      const cloudant = Cloudant({
+        url: cloudantUrl,
+        plugin: 'retry',
+        retryAttempts: 5,
+        retryTimeout: 1000
+      });
+      resolve(cloudant);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+/**
+ * Retrieves the doc from the Cloudant db using the key provided.
+ *
+ *  @db - {Object} Cloudant db object
+ *  @key - {string} key to use for retrieving doc
+ *
+ *  @return doc or, rejects with an exception from Cloudant
+ */
+function retrieveDoc(db, key) {
+  return new Promise((resolve, reject) => {
+    db.get(
+      key,
+      {
+        // We need to add revision ids to prevent Cloudant update conflicts during writes
+        revs_info: true
+      },
+      (error, response) => {
+        if (error) {
+          if (error.statusCode === 404) {
+            // missing doc when it's a first time deployment.
+            resolve({});
+          }
+          reject(error);
+        }
+        resolve(response);
+      }
+    );
+  });
+}
+
+/**
+ *  Gets the annotations for the package specified.
+ *
+ *  @packageName  {string} Name of the package whose annotations are needed
+ *
+ *  @return - package annotations array
+ *  eg: [
+ *     {
+ *       key: 'cloudant_url',
+ *       value: 'https://some-cloudant-url'
+ *     },
+ *     {
+ *       key: 'cloudant_auth_dbname',
+ *       value: 'authdb'
+ *     },
+ *     {
+ *       key: 'cloudant_auth_key',
+ *       value: '123456'
+ *     }
+ *   ]
+ */
+function getPackageAnnotations(packageName) {
+  return new Promise((resolve, reject) => {
+    openwhisk().packages
+      .get(packageName)
+      .then(pkg => {
+        resolve(pkg.annotations);
+      })
+      .catch(reject);
+  });
+}
+
+/**
+ *  Gets the package name from the action name that lives in it.
+ *
+ *  @actionName  {string} Full name of the action from which
+ *               package name is to be extracted.
+ *
+ *  @return - package name
+ *  eg: full action name = '/org_space/pkg/action' then,
+ *      package name = 'pkg'
+ */
+function extractCurrentPackageName(actionName) {
+  return actionName.split('/')[2];
+}
+
+module.exports = {
+  main,
+  name: 'facebook/receive',
+  isURLVerificationEvent,
+  verifyFacebookSignatureHeader,
+  loadAuth,
+  getCloudantCreds,
+  checkCloudantCredentials,
+  createCloudantObj,
+  retrieveDoc
+};

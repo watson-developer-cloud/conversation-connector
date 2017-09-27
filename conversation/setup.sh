@@ -2,15 +2,14 @@
 
 export WSK=${WSK-wsk}
 
-BINDINGS=$1
+PACKAGE_NAME=$1
+CLOUDANT_URL=$2
+CLOUDANT_AUTH_DBNAME=$3
+CLOUDANT_AUTH_KEY=$4
 
-CONVO_USERNAME=`cat ${BINDINGS} | jq --raw-output '.conversation.username'`
-CONVO_PASSWORD=`cat ${BINDINGS} | jq --raw-output '.conversation.password'`
-CONVO_WORKSPACE_ID=`cat ${BINDINGS} | jq --raw-output '.conversation.workspace_id'`
+${WSK} package update $PACKAGE_NAME \
+  -a cloudant_url "${CLOUDANT_URL}" \
+  -a cloudant_auth_dbname "${CLOUDANT_AUTH_DBNAME}" \
+  -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}"
 
-${WSK} package update conversation \
-    -p username ${CONVO_USERNAME} \
-    -p password ${CONVO_PASSWORD} \
-    -p workspace_id ${CONVO_WORKSPACE_ID}
-
-${WSK} action update conversation/call-conversation call-conversation.js
+${WSK} action update $PACKAGE_NAME/call-conversation call-conversation.js

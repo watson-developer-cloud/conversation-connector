@@ -1,13 +1,15 @@
 const assert = require('assert');
 const Cloudant = require('cloudant');
-const omit = require('object.omit');
+const openwhisk = require('openwhisk');
+
+const CLOUDANT_URL = 'cloudant_url';
+const CLOUDANT_CONTEXT_DBNAME = 'cloudant_context_dbname';
+const CLOUDANT_CONTEXT_KEY = 'cloudant_context_key';
 
 /**
  *  This action is used to save the most recent Conversation context to the Cloudant context db.
  *  @params Parameters passed by normalize-for-channel:
  *    {
- *      "cloudant_url": "XXXXX", //context package binding used for hitting Cloudant
-        "dbname": "XXXXX", //context package binding specifies the context db name
         "raw_output_data": {
           "conversation": { //Conversation response forwarded over from normalize-for-slack.
             "entities": [],
@@ -69,9 +71,10 @@ const omit = require('object.omit');
             "type": "event_callback",
             "event_id": "Ev5RT8P21E"
           },
-        //cloudant_key(set by normalize-for-conversation)
         // specifies the doc key for read/writes to Cloudant context db.
-          "cloudant_key": "slack_T5GDNP8TT_1aff54e4-caf5-4dff-93ec-502126146c87_U5H2D0KQC_D5RNZFSU9"
+        // the key is generated in the "starter-code/normalize-channel-for-conversation" action
+        // using the raw_input_data fields and the conversation workspace_id
+        "cloudant_context_key": "slack_T5GDNP8TT_1aff5-4dff-93ec-502126146c87_U5H2D0KQC_D5RNZFSU9"
         }
  *    }
  *
@@ -81,28 +84,108 @@ function main(params) {
   return new Promise((resolve, reject) => {
     validateParams(params);
 
-    let returnParams = params;
-    const cloudantUrl = params.cloudant_url;
-    const cloudantKey = params.raw_input_data.cloudant_key;
-    const contextDb = params.dbname;
-
-    const cloudant = getCloudantObj(cloudantUrl);
-    const db = cloudant.use(contextDb);
-    setContext(db, cloudantKey, params.raw_output_data.conversation.context)
+    getCloudantCreds()
+      .then(cloudantCreds => {
+        const cloudantUrl = cloudantCreds[CLOUDANT_URL];
+        const cloudantContextDbName = cloudantCreds[CLOUDANT_CONTEXT_DBNAME];
+        const cloudantContextKey = params.raw_input_data[CLOUDANT_CONTEXT_KEY];
+        const db = createCloudantObj(cloudantUrl).use(cloudantContextDbName);
+        const context = Object.assign({}, params.raw_output_data.conversation.context);
+        return setContext(
+          db,
+          cloudantContextKey,
+          context
+        );
+      })
       .then(() => {
-        // must not flow further in the pipeline
-        returnParams = omit(returnParams, ['cloudant_url', 'dbname']);
-        validateResponseParams(returnParams);
-        resolve(returnParams);
+        resolve(params);
       })
       .catch(reject);
   });
 }
 
 /**
- * Saves the Conversation context in the Cloudant context db
- * @param Cloudant db object, Cloudant key, doc to save(this is the Convo context)
- * @return doc saved(Convo context)
+ *  Gets the annotations for the package specified.
+ *
+ *  @packageName  {string} Name of the package whose annotations are needed
+ *
+ *  @return - package annotations array
+ *  eg: [
+ *     {
+ *       key: 'cloudant_url',
+ *       value: 'https://some-cloudant-url'
+ *     },
+ *     {
+ *       key: 'cloudant_auth_dbname',
+ *       value: 'authdb'
+ *     },
+ *     {
+ *       key: 'cloudant_auth_key',
+ *       value: '123456'
+ *     }
+ *   ]
+ */
+function getPackageAnnotations(packageName) {
+  return new Promise((resolve, reject) => {
+    openwhisk().packages
+      .get(packageName)
+      .then(pkg => {
+        resolve(pkg.annotations);
+      })
+      .catch(reject);
+  });
+}
+
+/**
+ *  Gets the package name from the action name that lives in it.
+ *
+ *  @actionName  {string} Full name of the action from which
+ *               package name is to be extracted.
+ *
+ *  @return - package name
+ *  eg: full action name = '/org_space/pkg/action' then,
+ *      package name = 'pkg'
+ */
+function extractCurrentPackageName(actionName) {
+  return actionName.split('/')[2];
+}
+
+/**
+ *  Gets the cloudant credentials (saved as package annotations)
+ *  from the current action's full name, derived from
+ *  the env var "__OW_ACTION_NAME".
+ *
+ *  @return - cloudant credentials to use for db read/write operations.
+ *  eg: {
+ *       cloudant_url: 'https://some-cloudant-url.com',
+ *       cloudant_auth_dbname: 'abc',
+ *       cloudant_auth_key: '123'
+ *     };
+ */
+function getCloudantCreds() {
+  return new Promise((resolve, reject) => {
+    // Get annotations of the current package.
+    const packageName = extractCurrentPackageName(process.env.__OW_ACTION_NAME);
+    getPackageAnnotations(packageName)
+      .then(annotations => {
+        // Construct a Cloudant creds json obj
+        const cloudantCreds = {};
+        annotations.forEach(a => {
+          cloudantCreds[a.key] = a.value;
+        });
+        resolve(cloudantCreds);
+      })
+      .catch(reject);
+  });
+}
+
+/**
+ * Saves the Conversation context into the Cloudant context db
+ * @db - {Object} Cloudant db object
+ * @key - {string} Cloudant key(uniquely identifies the conversation)
+ * @doc - {JSON} context JSON to save
+ *
+ * @return context saved
  */
 function setContext(db, key, doc) {
   const nkey = normalize(key);
@@ -143,7 +226,10 @@ function setContext(db, key, doc) {
 
 /**
  * Inserts context doc in the Cloudant context db
- * @param db object, context key, doc to insert
+ * @db - {Object} Cloudant db object
+ * @key - {string} Cloudant key(uniquely identifies the conversation)
+ * @doc - {JSON} context JSON to save
+ *
  * @return doc inserted or, throws an exception from Cloudant
  */
 function insertContextInDb(db, key, doc) {
@@ -160,10 +246,13 @@ function insertContextInDb(db, key, doc) {
 
 /**
  * Creates the Cloudant object using the Cloudant url specified
- * @param Cloudant instance url
- * @return Cloudant object or, throws an exception from Cloudant
+ *
+ *  @cloudantUrl - {string} Cloudant url linked to the
+ *                 user's Cloudant instance.
+ *
+ * @return Cloudant object or, rejects with the exception from Cloudant
  */
-function getCloudantObj(cloudantUrl) {
+function createCloudantObj(cloudantUrl) {
   try {
     const cloudant = Cloudant({
       url: cloudantUrl,
@@ -191,22 +280,13 @@ function normalize(component) {
  * @param params
  */
 function validateParams(params) {
-  // Required: cloudant_url
-  assert(
-    params.cloudant_url,
-    'Cloudant db url absent or not bound to the package.'
-  );
-
-  // Required: dbname
-  assert(params.dbname, 'dbname absent or not bound to the package.');
-
   // Required: raw_input_data
   assert(params.raw_input_data, 'raw_input_data absent in params.');
 
   // Required: raw_input_data.cloudant_key
   assert(
-    params.raw_input_data.cloudant_key,
-    'cloudant_key absent in params.raw_input_data.'
+    params.raw_input_data[CLOUDANT_CONTEXT_KEY],
+    `${CLOUDANT_CONTEXT_KEY} absent in params.raw_input_data.`
   );
 
   // Required: raw_output_data
@@ -219,22 +299,10 @@ function validateParams(params) {
   );
 }
 
-/**
- *  Validates that we don't return any unwanted fields
- *
- *  @body The returning parameters
- */
-function validateResponseParams(returnParams) {
-  // cloudant_url must be absent in the response
-  assert(!returnParams.cloudant_url, 'cloudant_url present in the response.');
-
-  // dbname must be absent in the response
-  assert(!returnParams.dbname, 'dbname present in the response.');
-}
-
 module.exports = {
   main,
+  validateParams,
+  getCloudantCreds,
   setContext,
-  getCloudantObj,
-  validateResponseParams
+  createCloudantObj
 };
