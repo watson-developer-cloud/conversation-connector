@@ -19,3 +19,4 @@ ${WSK} package update $PACKAGE_NAME \
 
 ${WSK} action update $PACKAGE_NAME/receive ./receive/index.js -a web-export true
 ${WSK} action update $PACKAGE_NAME/post ./post/index.js
+${WSK} action update ${PACKAGE_NAME}/batched_messages ./batched_messages/index.js

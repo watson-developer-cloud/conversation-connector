@@ -11,8 +11,7 @@ process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/acti
 
 const scSlackDeploy = require('./../../../../channels/slack/deploy/index.js');
 
-const slackBindings = require('./../../../resources/bindings/slack-bindings.json')
-  .slack;
+const slackBindings = require('./../../../resources/bindings/slack-bindings.json').slack;
 
 const errorBadHmacState = 'Security hash does not match hash from the server.';
 const errorMissingSlackCode = 'No code provided in params.';
@@ -22,8 +21,7 @@ const errorNoBotUserId = 'No bot ID found in http request.';
 const errorNoResponseBody = 'No response body found in http request.';
 const errorNoVerificationState = 'No verification state provided.';
 const errorMissingCloudantUrl = 'cloudant_url absent in cloudant credentials.';
-const errorMissingCloudantAuthDbName =
-  'cloudant_auth_dbname absent in cloudant credentials.';
+const errorMissingCloudantAuthDbName = 'cloudant_auth_dbname absent in cloudant credentials.';
 const resultMessage = 'Authorized successfully!';
 
 describe('Slack Deploy Unit Tests: main()', () => {
@@ -283,8 +281,7 @@ describe('Slack Deploy Unit Tests: validateAndPreprocessParameters()', () => {
     try {
       const cleanedParams = func({
         code: '122',
-        state:
-          '{%22signature%22:%22xxx%22,%22pipeline_name%22:%22slack-flexible-pipeline%22,%22redirect_uri%22:%22https://xxxx/deploy.http%22}'
+        state: '{%22signature%22:%22xxx%22,%22pipeline_name%22:%22slack-flexible-pipeline%22,%22redirect_uri%22:%22https://xxxx/deploy.http%22}'
       });
       assert(
         cleanedParams && cleanedParams.state && cleanedParams.state.signature

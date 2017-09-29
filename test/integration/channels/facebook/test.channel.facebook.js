@@ -11,6 +11,17 @@ const pipelineName = process.env.__TEST_PIPELINE_NAME;
 
 const facebookWebhook = `${pipelineName}_facebook/receive`;
 const facebookSubPipeline = `${pipelineName}_facebook/integration-pipeline`;
+const facebookBatchedMessageAction = `${pipelineName}_facebook/batched_messages`;
+const activationId = 'xxxxxx';
+const actionName = 'yyyyyy';
+
+/** Function allows tests to sleep for certain amount of time
+*/
+function sleep(time) {
+  return new Promise(resolve => {
+    return setTimeout(resolve, time);
+  });
+}
 
 describe('Facebook channel integration tests', () => {
   const ow = openwhisk();
@@ -18,74 +29,60 @@ describe('Facebook channel integration tests', () => {
   let facebookAttachmentParams = {};
   let facebookBatchedMessageParams = {};
 
-  const expectedTextMsgResult = {
+  const expectedReceiveResult = {
     text: 200,
-    failedActionInvocations: [],
-    successfulActionInvocations: [
-      {
-        activationId: '',
-        successResponse: {
-          params: {
-            batched_messages: `${pipelineName}_facebook/batched_messages`,
-            message: {
-              text: 'hello, world!'
-            },
-            recipient: {
-              id: facebookBindings.sender.id
-            }
-          },
-          text: 200,
-          url: 'https://graph.facebook.com/v2.6/me/messages'
-        }
-      }
-    ]
+    activationId,
+    actionName,
+    message: `Response code 200 above only tells you that receive action was invoked successfully. However, it does not really say if ${actionName} was invoked successfully. Please use ${activationId} to get more details about this invocation.`
   };
 
-  const expectedAttachmentResult = {
-    text: 200,
-    failedActionInvocations: [],
-    successfulActionInvocations: [
-      {
-        activationId: '',
-        successResponse: {
-          params: {
-            batched_messages: `${pipelineName}_facebook/batched_messages`,
-            message: {
-              attachment: {
-                type: 'template',
-                payload: {
-                  elements: [
-                    {
-                      title: 'Welcome to Hogwarts T-Shirt Store',
-                      buttons: [
-                        {
-                          type: 'postback',
-                          title: 'Enter T-Shirt Store',
-                          payload: 'List all t-shirts'
-                        }
-                      ],
-                      subtitle: 'I can help you find a t-shirt',
-                      image_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDQKvGUWTu5hStYHbjH8J3fZi6JgYqw6WY3CrfjB680uLjy2FF9A'
-                    }
-                  ],
-                  template_type: 'generic',
-                  image_aspect_ratio: 'square'
-                }
-              }
-            },
-            recipient: {
-              id: facebookBindings.sender.id
-            }
-          },
-          text: 200,
-          url: 'https://graph.facebook.com/v2.6/me/messages'
-        }
+  const expectedPostResult = {
+    params: {
+      message: {
+        text: 'hello, world!'
+      },
+      recipient: {
+        id: facebookBindings.sender.id
       }
-    ]
+    },
+    text: 200,
+    url: 'https://graph.facebook.com/v2.6/me/messages'
+  };
+
+  const expectedPostAttachmentResult = {
+    text: 200,
+    url: 'https://graph.facebook.com/v2.6/me/messages',
+    params: {
+      message: {
+        attachment: {
+          type: 'template',
+          payload: {
+            elements: [
+              {
+                title: 'Welcome to Hogwarts T-Shirt Store',
+                buttons: [
+                  {
+                    type: 'postback',
+                    title: 'Enter T-Shirt Store',
+                    payload: 'List all t-shirts'
+                  }
+                ],
+                subtitle: 'I can help you find a t-shirt',
+                image_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDQKvGUWTu5hStYHbjH8J3fZi6JgYqw6WY3CrfjB680uLjy2FF9A'
+              }
+            ],
+            template_type: 'generic',
+            image_aspect_ratio: 'square'
+          }
+        }
+      },
+      recipient: {
+        id: facebookBindings.sender.id
+      }
+    }
   };
 
   const expectedBatchedResult = {
-    text: 200,
     failedActionInvocations: [
       {
         errorMessage: 'Recipient id: 185643828639058 , Sender id: undefined -- Action invocation failed, API returned error code. Check syntax errors? Recepient id not provided.',
@@ -97,7 +94,6 @@ describe('Facebook channel integration tests', () => {
         successResponse: {
           text: 200,
           params: {
-            batched_messages: `${pipelineName}_facebook/batched_messages`,
             recipient: facebookBindings.sender,
             message: { text: 'hi' }
           },
@@ -109,7 +105,6 @@ describe('Facebook channel integration tests', () => {
         successResponse: {
           text: 200,
           params: {
-            batched_messages: `${pipelineName}_facebook/batched_messages`,
             recipient: facebookBindings.sender,
             message: { text: 'hi' }
           },
@@ -123,6 +118,7 @@ describe('Facebook channel integration tests', () => {
   beforeEach(done => {
     facebookTextParams = {
       sub_pipeline: facebookSubPipeline,
+      batched_messages: facebookBatchedMessageAction,
       __ow_headers: {
         'x-hub-signature': facebookBindings['x-hub-signature']
       },
@@ -146,6 +142,7 @@ describe('Facebook channel integration tests', () => {
 
     facebookAttachmentParams = {
       sub_pipeline: facebookSubPipeline,
+      batched_messages: facebookBatchedMessageAction,
       __ow_headers: {
         'x-hub-signature': 'sha1=eb4412b17e32da9656bb3e3551094d531438b6da'
       },
@@ -189,6 +186,7 @@ describe('Facebook channel integration tests', () => {
 
     facebookBatchedMessageParams = {
       sub_pipeline: facebookSubPipeline,
+      batched_messages: facebookBatchedMessageAction,
       __ow_headers: {
         'x-hub-signature': 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738'
       },
@@ -247,13 +245,29 @@ describe('Facebook channel integration tests', () => {
       .then(
         success => {
           try {
-            expectedTextMsgResult.successfulActionInvocations[
-              0
-            ].activationId = success.successfulActionInvocations[
-              0
-            ].activationId;
-            assert.deepEqual(success, expectedTextMsgResult);
-            return done();
+            const modifiedExpectedResult = Object.assign(
+              {},
+              expectedReceiveResult
+            );
+            // Modify the expected response to incorporate the action name as it's
+            // picked up dynamically depending upon type of incoming params
+            modifiedExpectedResult.actionName = facebookSubPipeline;
+            modifiedExpectedResult.message = modifiedExpectedResult.message.replace(
+              actionName,
+              facebookSubPipeline
+            );
+            // Modify the expected response to incorporate the dynamically generated
+            // activation ids
+            modifiedExpectedResult.activationId = success.activationId;
+            modifiedExpectedResult.message = modifiedExpectedResult.message.replace(
+              activationId,
+              success.activationId
+            );
+            assert.deepEqual(success, modifiedExpectedResult);
+
+            // Return the activation id of the subpipeline invocation
+            const successActivationId = success.activationId;
+            return successActivationId;
           } catch (e) {
             return done(e);
           }
@@ -261,10 +275,46 @@ describe('Facebook channel integration tests', () => {
         error => {
           return done(error);
         }
-      );
+      )
+      .then(successActivationId => {
+        // Sleep for 10s to ensure the activation has been created
+        sleep(10000).then(() => {
+          // Invoke the subpipeline activation
+          ow.activations
+            .get({
+              activationId: successActivationId
+            })
+            .then(
+              result => {
+                try {
+                  if (result.response.result) {
+                    assert.deepEqual(
+                      result.response.result,
+                      expectedPostResult
+                    );
+                    return done();
+                  }
+                  assert(false, 'Openwhisk Action did not return a reponse');
+                  return done();
+                } catch (e) {
+                  return done(e);
+                }
+              },
+              error => {
+                return done(error);
+              }
+            )
+            .catch(e => {
+              return done(e);
+            });
+        });
+      })
+      .catch(e => {
+        return e;
+      });
   })
-    .timeout(8000)
-    .retries(4);
+    .timeout(40000)
+    .retries(1);
 
   it('validate facebook channel package works for attachments', done => {
     ow.actions
@@ -277,13 +327,29 @@ describe('Facebook channel integration tests', () => {
       .then(
         success => {
           try {
-            expectedAttachmentResult.successfulActionInvocations[
-              0
-            ].activationId = success.successfulActionInvocations[
-              0
-            ].activationId;
-            assert.deepEqual(success, expectedAttachmentResult);
-            return done();
+            const modifiedExpectedResult = Object.assign(
+              {},
+              expectedReceiveResult
+            );
+            // Modify the expected response to incorporate the action name as it's
+            // picked up dynamically depending upon type of incoming params
+            modifiedExpectedResult.actionName = facebookSubPipeline;
+            modifiedExpectedResult.message = modifiedExpectedResult.message.replace(
+              actionName,
+              facebookSubPipeline
+            );
+            // Modify the expected response to incorporate the dynamically generated
+            // activation ids
+            modifiedExpectedResult.activationId = success.activationId;
+            modifiedExpectedResult.message = modifiedExpectedResult.message.replace(
+              activationId,
+              success.activationId
+            );
+            assert.deepEqual(success, modifiedExpectedResult);
+
+            // Return the activation id of the subpipeline invocation
+            const successActivationId = success.activationId;
+            return successActivationId;
           } catch (e) {
             return done(e);
           }
@@ -291,12 +357,46 @@ describe('Facebook channel integration tests', () => {
         error => {
           return done(error);
         }
-      );
+      )
+      .then(successActivationId => {
+        // Sleep for 10s to ensure the activation has been created
+        sleep(10000).then(() => {
+          // Invoke the subpipeline activation
+          ow.activations
+            .get({
+              activationId: successActivationId,
+              bocking: true
+            })
+            .then(
+              result => {
+                try {
+                  if (result.response.result) {
+                    assert.deepEqual(
+                      result.response.result,
+                      expectedPostAttachmentResult
+                    );
+                    return done();
+                  }
+                  assert(false, 'Openwhisk Action did not return a reponse');
+                  return done();
+                } catch (e) {
+                  return done(e);
+                }
+              },
+              error => {
+                return done(error);
+              }
+            );
+        });
+      })
+      .catch(e => {
+        return e;
+      });
   })
-    .timeout(8000)
-    .retries(4);
+    .timeout(40000)
+    .retries(1);
 
-  it('validate facebook channel package works for batched messages', done => {
+  it('validate facebook channel package works for batched Messages', done => {
     ow.actions
       .invoke({
         name: facebookWebhook,
@@ -307,21 +407,28 @@ describe('Facebook channel integration tests', () => {
       .then(
         success => {
           try {
-            expectedBatchedResult.successfulActionInvocations[
-              0
-            ].activationId = success.successfulActionInvocations[
-              0
-            ].activationId;
-            expectedBatchedResult.successfulActionInvocations[
-              1
-            ].activationId = success.successfulActionInvocations[
-              1
-            ].activationId;
-            expectedBatchedResult.failedActionInvocations[
-              0
-            ].activationId = success.failedActionInvocations[0].activationId;
-            assert.deepEqual(success, expectedBatchedResult);
-            return done();
+            const modifiedExpectedResult = Object.assign(
+              {},
+              expectedReceiveResult
+            );
+            // Modify the expected response to incorporate the action name as it's
+            // picked up dynamically depending upon type of incoming params
+            modifiedExpectedResult.actionName = facebookBatchedMessageAction;
+            modifiedExpectedResult.message = modifiedExpectedResult.message.replace(
+              actionName,
+              facebookBatchedMessageAction
+            );
+            // Modify the expected response to incorporate the dynamically generated
+            // activation ids
+            modifiedExpectedResult.activationId = success.activationId;
+            modifiedExpectedResult.message = modifiedExpectedResult.message.replace(
+              activationId,
+              success.activationId
+            );
+            assert.deepEqual(success, modifiedExpectedResult);
+            // Return the activation id of the batched messages action invocation
+            const successActivationId = success.activationId;
+            return successActivationId;
           } catch (e) {
             return done(e);
           }
@@ -329,8 +436,55 @@ describe('Facebook channel integration tests', () => {
         error => {
           return done(error);
         }
-      );
+      )
+      .then(successActivationId => {
+        // Sleep for 10s to ensure the activation has been created
+        sleep(10000).then(() => {
+          // Invoke the batched messages action activation
+          ow.activations
+            .get({
+              activationId: successActivationId,
+              bocking: true
+            })
+            .then(
+              result => {
+                try {
+                  const res = result.response.result;
+                  if (res) {
+                    expectedBatchedResult.successfulActionInvocations[
+                      0
+                    ].activationId = res.successfulActionInvocations[
+                      0
+                    ].activationId;
+                    expectedBatchedResult.successfulActionInvocations[
+                      1
+                    ].activationId = res.successfulActionInvocations[
+                      1
+                    ].activationId;
+                    expectedBatchedResult.failedActionInvocations[
+                      0
+                    ].activationId = res.failedActionInvocations[
+                      0
+                    ].activationId;
+                    assert.deepEqual(res, expectedBatchedResult);
+                    return done();
+                  }
+                  assert(false, 'Openwhisk Action did not return a reponse');
+                  return done();
+                } catch (e) {
+                  return done(e);
+                }
+              },
+              error => {
+                return done(error);
+              }
+            );
+        });
+      })
+      .catch(e => {
+        return e;
+      });
   })
-    .timeout(8000)
-    .retries(4);
+    .timeout(40000)
+    .retries(1);
 });

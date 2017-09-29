@@ -6,23 +6,17 @@ const nock = require('nock');
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
 const conversation = require('../../../conversation/call-conversation');
-const conversationBindings = require('../../resources/bindings/conversation-bindings.json')
-  .conversation;
+const conversationBindings = require('../../resources/bindings/conversation-bindings.json').conversation;
 
 const badWorkspaceId = 'bad_workspace_id';
 
-const errorNoConversationInput =
-  'No message supplied to send to the Conversation service.';
+const errorNoConversationInput = 'No message supplied to send to the Conversation service.';
 const errorNoProvider = 'No channel raw input data found.';
 const errorNoConversationObjInAuth = 'conversation object absent in auth data.';
-const errorNoConversationUsernameInAuth =
-  'conversation username absent in auth.conversation';
-const errorNoConversationPassInAuth =
-  'conversation password absent in auth.conversation';
-const errorNoConversationWorkspaceIdInAuth =
-  'conversation workspace_id absent in auth.conversation';
-const errorIncorrectConversationWorkspaceIdInAuth =
-  `URL workspaceid parameter ${badWorkspaceId} is not a valid GUID.`;
+const errorNoConversationUsernameInAuth = 'conversation username absent in auth.conversation';
+const errorNoConversationPassInAuth = 'conversation password absent in auth.conversation';
+const errorNoConversationWorkspaceIdInAuth = 'conversation workspace_id absent in auth.conversation';
+const errorIncorrectConversationWorkspaceIdInAuth = `URL workspaceid parameter ${badWorkspaceId} is not a valid GUID.`;
 const conversationErrorMsg = 'Internal Server Error';
 
 describe('conversation unit tests: validateParams()', () => {

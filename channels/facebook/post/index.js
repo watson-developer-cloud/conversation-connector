@@ -313,7 +313,8 @@ function extractFacebookParams(params) {
     'verification_token',
     'raw_input_data',
     'raw_output_data',
-    'sub_pipeline'
+    'sub_pipeline',
+    'batched_messages'
   ]);
 
   return facebookParams;

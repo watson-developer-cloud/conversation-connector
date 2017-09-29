@@ -8,11 +8,9 @@ const assert = require('assert');
 const openwhisk = require('openwhisk');
 const cloudantBindings = require('./../../resources/bindings/cloudant-bindings.json');
 
-const jsonParams = require('../../resources/payloads/test.integration.context.json')
-  .contextJsons;
+const jsonParams = require('../../resources/payloads/test.integration.context.json').contextJsons;
 
-const clearContextDb = require('./../../utils/cloudant-utils.js')
-  .clearContextDb;
+const clearContextDb = require('./../../utils/cloudant-utils.js').clearContextDb;
 
 const pipelineName = process.env.__TEST_PIPELINE_NAME;
 
@@ -28,10 +26,7 @@ describe('context package integration tests', () => {
 
     // Expected response from the system.
     const expectedResult = jsonParams.singleTurn.response;
-    clearContextDb(
-      cloudantBindings.database.context.name,
-      cloudantBindings.url
-    )
+    clearContextDb(cloudantBindings.database.context.name, cloudantBindings.url)
       .then(() => {
         return ow.actions.invoke({
           name: actionName,
@@ -56,10 +51,7 @@ describe('context package integration tests', () => {
     const expAfterTurn1 = jsonParams.multiTurn.responses[0];
     const expAfterTurn2 = jsonParams.multiTurn.responses[1];
 
-    clearContextDb(
-      cloudantBindings.database.context.name,
-      cloudantBindings.url
-    )
+    clearContextDb(cloudantBindings.database.context.name, cloudantBindings.url)
       .then(() => {
         return ow.actions.invoke({
           name: actionName,

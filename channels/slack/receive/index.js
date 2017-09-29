@@ -90,13 +90,11 @@ function extractSlackParameters(params) {
  * @return {Boolean}      - true only if a duplicate message was detected
  */
 function isDuplicateMessage(params) {
-  return (
-    params.__ow_headers &&
+  return params.__ow_headers &&
     params.__ow_headers['x-slack-retry-reason'] &&
     params.__ow_headers['x-slack-retry-num'] &&
     params.__ow_headers['x-slack-retry-reason'] === 'http_timeout' &&
-    params.__ow_headers['x-slack-retry-num'] > 0
-  );
+    params.__ow_headers['x-slack-retry-num'] > 0;
 }
 
 /**
@@ -117,8 +115,7 @@ function isUrlVerification(params) {
  */
 function isBotMessage(params) {
   const slackEvent = params.event;
-  const botId =
-    (slackEvent && slackEvent.bot_id) ||
+  const botId = (slackEvent && slackEvent.bot_id) ||
     (slackEvent && slackEvent.message && slackEvent.message.bot_id);
   return botId;
 }
@@ -129,8 +126,7 @@ function isBotMessage(params) {
  * @param  {JSON} params - the parameters passed into the action
  */
 function validateParameters(params) {
-  const token =
-    params.token ||
+  const token = params.token ||
     (params.payload &&
       JSON.parse(params.payload) &&
       JSON.parse(params.payload).token);
@@ -147,8 +143,7 @@ function validateParameters(params) {
  *  @return updated Slack params containing the token required for posting
  */
 function verifyUserIdentity(params, auth) {
-  const verificationTokenProvided =
-    params.token ||
+  const verificationTokenProvided = params.token ||
     (params.payload &&
       JSON.parse(params.payload) &&
       JSON.parse(params.payload).token);

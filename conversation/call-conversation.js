@@ -73,8 +73,7 @@ function main(params) {
               conversation: response,
               raw_input_data: params.raw_input_data
             };
-            conversationOutput.raw_input_data.conversation =
-              params.conversation;
+            conversationOutput.raw_input_data.conversation = params.conversation;
             resolve(conversationOutput);
           }
         });

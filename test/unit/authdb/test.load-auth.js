@@ -34,10 +34,8 @@ const actions = [
 ];
 
 const errorNoCloudantUrl = 'cloudant_url absent in cloudant credentials.';
-const errorNoCloudantAuthDbName =
-  'cloudant_auth_dbname absent in cloudant credentials.';
-const errorNoCloudantAuthKey =
-  'cloudant_auth_key absent in cloudant credentials.';
+const errorNoCloudantAuthDbName = 'cloudant_auth_dbname absent in cloudant credentials.';
+const errorNoCloudantAuthKey = 'cloudant_auth_key absent in cloudant credentials.';
 const errorBadCloudantUrl = 'invalid url';
 
 describe('Auth Db:: Loading Auth Pre-requisites', () => {

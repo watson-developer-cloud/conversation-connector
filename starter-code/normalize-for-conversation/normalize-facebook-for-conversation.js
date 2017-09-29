@@ -71,13 +71,13 @@ function getTextFromPayload(params) {
   return new Promise((resolve, reject) => {
     // 1. Message Type Event
     // Extract text from message event to send it to Conversation
-    const messageEventPayload =
-      params.facebook.message && params.facebook.message.text;
+    const messageEventPayload = params.facebook.message &&
+      params.facebook.message.text;
 
     // 2. Postback type event. Usually detected on button clicks
     // Extract text (postback payload) from postback event to send it to Conversation
-    const postbackEventPayload =
-      params.facebook.postback && params.facebook.postback.payload;
+    const postbackEventPayload = params.facebook.postback &&
+      params.facebook.postback.payload;
 
     /**
      * You can add code to handle other facebook events HERE
@@ -114,11 +114,11 @@ function validateParameters(params) {
  * @return {string}      - cloudant database key
  */
 function generateCloudantKey(params, auth) {
-  const fbSenderId =
-    params.facebook && params.facebook.sender && params.facebook.sender.id;
+  const fbSenderId = params.facebook &&
+    params.facebook.sender &&
+    params.facebook.sender.id;
   const fbWorkspaceId = auth.conversation.workspace_id;
-  const fbRecipientId =
-    params.facebook &&
+  const fbRecipientId = params.facebook &&
     params.facebook.recipient &&
     params.facebook.recipient.id;
 

@@ -16,6 +16,7 @@ ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_slack/post"
 
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_facebook/receive"
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_facebook/post"
+${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_facebook/batched_messages"
 
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/pre-conversation"
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/post-conversation"

@@ -90,12 +90,11 @@ function main(params) {
         const cloudantContextDbName = cloudantCreds[CLOUDANT_CONTEXT_DBNAME];
         const cloudantContextKey = params.raw_input_data[CLOUDANT_CONTEXT_KEY];
         const db = createCloudantObj(cloudantUrl).use(cloudantContextDbName);
-        const context = Object.assign({}, params.raw_output_data.conversation.context);
-        return setContext(
-          db,
-          cloudantContextKey,
-          context
+        const context = Object.assign(
+          {},
+          params.raw_output_data.conversation.context
         );
+        return setContext(db, cloudantContextKey, context);
       })
       .then(() => {
         resolve(params);

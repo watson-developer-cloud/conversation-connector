@@ -6,15 +6,13 @@ const nock = require('nock');
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
 const sc = require('../../../context/load-context.js');
-const paramsJson = require('../../resources/payloads/test.unit.context.json')
-  .loadContextJson;
+const paramsJson = require('../../resources/payloads/test.unit.context.json').loadContextJson;
 const Cloudant = require('cloudant');
 
 const invalidCloudantUrl = 'invalid-url';
 
 const errorNoRawInputData = 'params.raw_input_data absent in params.';
-const errorNoCloudantContextKey =
-  'cloudant_context_key absent in params.raw_input_data.';
+const errorNoCloudantContextKey = 'cloudant_context_key absent in params.raw_input_data.';
 const errorNoConversationObj = 'conversation object absent in params.';
 
 describe('Load Context Unit Tests: validateParams()', () => {
@@ -295,8 +293,7 @@ describe('Load Context Unit Tests: main()', () => {
     };
     const mockCloudant = nock(cloudantUrl)
       .get(
-        `/${cloudantContextDbName}/${params.raw_input_data
-          .cloudant_context_key}`
+        `/${cloudantContextDbName}/${params.raw_input_data.cloudant_context_key}`
       )
       .query(() => {
         return true;

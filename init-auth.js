@@ -90,8 +90,9 @@ function saveAuth(params) {
           });
         } else {
           // Save only deployment Channel info(based on name) from pipeline object.
-          newAuth[pipeline.channel.name] =
-            pipeline.channel[pipeline.channel.name];
+          newAuth[pipeline.channel.name] = pipeline.channel[
+            pipeline.channel.name
+          ];
         }
         return insertDoc(db, cloudantAuthKey, newAuth);
       })

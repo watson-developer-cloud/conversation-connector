@@ -2,80 +2,51 @@ const crypto = require('crypto');
 const openwhisk = require('openwhisk');
 const assert = require('assert');
 const Cloudant = require('cloudant');
+const pick = require('object.pick');
 
 const CLOUDANT_URL = 'cloudant_url';
 const CLOUDANT_AUTH_DBNAME = 'cloudant_auth_dbname';
 const CLOUDANT_AUTH_KEY = 'cloudant_auth_key';
 
 /* BACKGROUND:
- *
  * ------------- Assumption --------------------
  *   One workspace -> One App -> One Page/Bot
  * ---------------------------------------------
+ *
  * It must be noted that the code assumes that at any point of time, the user can link a
  * single convervation workspace to a single facebook app and a user can subscribe to only
  * one page within the facebook app.
  *
- *
  * Receive action is the WEBHOOK and facebook can essentially make POST and GET requests to it.
  * (i) When facebook tries to verify the webhook (URL verification event), then it makes
- * a GET request to it. Receive action in turn returns the [hub.challenge] to facebook
+ * a GET request to it. Receive action in turn returns [hub.challenge] to facebook
  * (ii) If user sends a message on the messenger, then facebook makes a POST request to the
- * webhook in which case the receive action invokes the openwhisk pipeline ( which essentially
- * posts the response from conversation bot to facebook messenger).
+ * webhook in which case the receive action invokes an openwhisk action ( which essentially
+ * posts the response from watson conversation bot to facebook messenger).
  *
- * Here's the openwhisk pipeline (named  "facebook-flexible-pipeline")  ----
- *   normalize-facebook-for-conversation -> load-context -> pre-conversation -> call-conversation ->
- *   normalize-conversation-for-facebook -> post-conversation -> save-context -> post
+ * Following diagram explains what we are trying to do in the code:
  *
+ * Here's a openwhisk sequence (named  "sub_pipeline")  ----
+ *   starter-code/normalize-facebook-for-conversation -> context/load-context ->
+ *   starter-code/pre-conversation -> conversation/call-conversation ->
+ *   starter-code/normalize-conversation-for-facebook -> starter-code/post-conversation ->
+ *   context/save-context -> facebook/post
  *
- *                          (M1)
- *                         ------->facebook-flexible-pipeline
- *                        |
- *                        | (M2)
- * receive [M1, M2, M3] -- ------->facebook-flexible-pipeline
- *                        |
- *                        | (M3)
- *                         ------->facebook-flexible-pipeline
+ *                                                            M1
+ * facebook/receive  -- PATH 1:    [if entries.length < 1] --------> sub_pipeline
+ *                                    |                                       N1
+ *                                    |                                      ----> sub_pipeline
+ *                                    |                                     | N2
+ *                      PATH 2:     [else] ---> facebook/batched-messages - -----> sub_pipeline
+ *                                                                          | N3
+ *                                                                           ----> sub_pipeline
  *
- *
- *  Notice, for a every message in the array, we invoke "facebook-flexible-pipeline" so that
- *  each message type event can be handled individually.
- *
- *
- * IMPLEMENTATION DETAILS:
- *
- * At the time of heavy load, facebook tends to batch multiple incoming requests together
- * Say, a user has a facebook app A, and has linked page P1 to it. Also, users U1 and U2 are
- * chatting with page P1. Then in a worst case scenariao, we can have following type of messages
- * in the batched payload ->
- * (1) Message 1 from U1 to P1 at time T1
- * (2) Message 2 from U1 to P1 at time T2
- * (3) Message 1 from U2 to P1 at time T3
- * (4) Message 2 from U2 to P1 at time T4
- * and so on
- *
- * Implementation wise, we can simply loop over the 4 messages and handle them serially.
- * However, imagine there's a case we have 200000 batched messages then looping over the 200000
- * cases will be inefficient. So, the idea is that we organize these batched requests in a way
- * so that we are able to handle each of the 'n' cases in a most efficient way.
- *
- * From the above use-case, we'd want to construct the following table
- * ----------------------------------------------------------------
- * |   U1 - P1                      |      U2 - P1                 |
- * ----------------------------------------------------------------
- * | Message 1 from U1 at time T1   | Message 1 from U2 at time T3 |
- * ----------------------------------------------------------------
- * | Message 2 from U1 at time T2   | Message 2 from U2 at time T4 |
- * ----------------------------------------------------------------
- *
- * Essentially, here we can execute ->
- * (1) Columns U1-P1 and U2-P1 in parallel
- * (2) Messages 1 and 2 for U1-P1 serially. Notice, the ordering of two messages. They are sorted
- * based on timestamps.
- * (3) Messages 1 and 2 for U2-P1 serially. Notice, the ordering of two messages. They are sorted
- * based on timestamps.
- *
+ * Let's say if entries = [M1], then PATH 1 is taken and if entries = [N1, N2, N3], then
+ * PATH 2 is taken.
+ * The idea is that if the payload coming from facebook contains more than 1 messages or
+ * entries then receive action invokes batched-messages action which in turn invokes the
+ * sub_pipeline. However, if there's just one entry then the receive action invokes the
+ * sub_pipeline directly.
  */
 
 /**
@@ -89,7 +60,13 @@ const CLOUDANT_AUTH_KEY = 'cloudant_auth_key';
 
 function main(params) {
   return new Promise((resolve, reject) => {
-    getCloudantCreds()
+    try {
+      validateParameters(params);
+    } catch (e) {
+      reject(e.message);
+    }
+
+    return getCloudantCreds()
       .then(cloudantCreds => {
         return loadAuth(cloudantCreds);
       })
@@ -99,7 +76,7 @@ function main(params) {
         // This action simply passes the challenge passed by facebook during verification
         if (isURLVerificationEvent(params, auth)) {
           // Challege value is returned
-          resolve({ text: params['hub.challenge'] });
+          return { text: params['hub.challenge'] };
 
           // When a request is coming from a facebook page, then facebook makes a POST request to
           // the provided webhook endpoint (which is the receive action)
@@ -108,289 +85,96 @@ function main(params) {
           // x-hub-signature header which basically contains SHA1 key. In order to make sure, that
           // the request is coming from facebook, it is important to calculate the HMAC key using
           // app-secret and the request payload and compare it against the x-hub-signature header.
-          verifyFacebookSignatureHeader(params, auth);
-
-          // React to all the events/messages present in the entries array.
-          resolve(runBatchedEntriesInParallel(params));
+          try {
+            verifyFacebookSignatureHeader(params, auth);
+          } catch (e) {
+            reject(e.message);
+          }
+          // Get the appropriate payload for action invocation i.e. depending on whether it's a
+          // a batched message or not we construct the appropriate payload
+          const [actionParams, actionName] = getPayloadForActionInvocation(
+            params
+          );
+          // Invoke appropriate openwhisk action
+          return invokeAction(actionParams, actionName);
         }
         // Neither page nor verification type request is detected
-        reject({
+        return reject({
           status: 400,
           text: 'Neither a page type request nor a verfication type request detected'
         });
-      });
-  });
-}
-
-/**
- * Function runs certain batched entries in parallel. Refer to IMPLEMENTATION DETAILS
- * at top of the file for more information
- * @param {*} params - params coming into the recieve action
- * @return {JSON} - returns a "200" to facebook and also, the error messages for those
- * pipelines that weren't invoked successfully. Sample return JSON may look something
- * like this:
- * {
-      text: 200,
-      failedActionInvocations: [],
-      successfulActionInvocations: [
-        {
-          activationId: "2747c146f7e34f97b6cb1183f53xxxxx",
-          successResponse: {
-            params: {
-              message: {
-                text: "Hello! I'm doing good. I'm here to help you. Just say the word."
-              },
-              page_id: 12345667,
-              recipient: {
-                id: 1433556667
-              },
-              workspace_id: "08e17ca1-5b33-487a-83c9-xxxxxxxxxx"
-            },
-            text: 200,
-            url: "https://graph.facebook.com/v2.6/me/messages"
-          }
-        }
-      ]
-    }
- */
-function runBatchedEntriesInParallel(params) {
-  // Organize batched requests so that they are grouped into parallel and serial entries
-  // Each parallel entry is an array of serial entries
-  const parallelEntries = organizeBatchedEntries(params);
-
-  // Get sub-pipeline name
-  const subPipelineName = params.sub_pipeline;
-
-  const promises = [];
-  const keys = Object.keys(parallelEntries);
-  // For all serial entries within a parallel entry, handle them serially
-  for (let i = 0; i < keys.length; i += 1) {
-    const responses = [];
-    promises.push(
-      runBatchedEntriesInSeries(
-        parallelEntries[keys[i]],
-        responses,
-        0,
-        subPipelineName
-      )
-    );
-  }
-
-  return Promise.all(promises).then(results => {
-    // Everytime facebook pings the "receive" endpoint/webhook, it expects a "200" string/text
-    // response in return. In openwhisk, if we'd want to return a string response, then it's
-    // necessary that we add a field "text" and the response "200" as the value. The field "text"
-    // tells openwhisk that this endpoint must return a "text" response.
-    // We also return a field "failedActionInvocations" which essentially returns the errors
-    // for the pipelines that throw an error and "successfulActionInvocations" which returns
-    // the response from the pipelines that were invoked successfully. These fields are only needed
-    // for debugging purposes just in case the user would want to know why the invocation of
-    // pipeline failed for certain entries in the batched messages array.
-    return {
-      text: 200,
-
-      failedActionInvocations: results
-        .reduce(
-          (k, l) => {
-            return k.concat(l);
-          },
-          []
-        )
-        .filter(e => {
-          return e.failedInvocation;
-        })
-        .map(f => {
-          return f.failedInvocation;
-        }),
-
-      successfulActionInvocations: results
-        .reduce(
-          (k, l) => {
-            return k.concat(l);
-          },
-          []
-        )
-        .filter(e => {
-          return e.successfulInvocation;
-        })
-        .map(f => {
-          return f.successfulInvocation;
-        })
-    };
-  });
-}
-
-/**
- * This function essentially invokes the subpipeline serially for all entries
- * @param {JSON} params  - JSON returned from organizeBatchedEntries function
- * @param {JSON} responses - Array of results received from sub-pipeline invocation
- * @param {var} index - The index of the serial entry for which the pipeline is to
- * be invoked
- * @param {var} subPipelineName - Name of the openwhisk pipeline
- * @return {JSON} responses - Array of results received from sub-pipeline invocation
- */
-function runBatchedEntriesInSeries(params, responses, index, subPipelineName) {
-  if (index < params.length) {
-    const payload = params[index];
-    return invokePipeline(payload, subPipelineName)
+      })
       .then(result => {
-        responses.push(result);
-        return runBatchedEntriesInSeries(
-          params,
-          responses,
-          index + 1,
-          subPipelineName
-        );
+        resolve(result);
       })
       .catch(e => {
-        responses.push(e);
-        return runBatchedEntriesInSeries(
-          params,
-          responses,
-          index + 1,
-          subPipelineName
-        );
+        reject(e);
       });
-  }
-  return responses;
+  });
 }
 
 /**
- * This function essentially organizes the batched messages and constructs the table illustrated
- * IMPLEMENTATION DETAILS at top of the file.
- * @param  {JSON} params - Parameters passed into this action
- * @return {JSON} parallelEntries - A JSON object consisting of messages array
- * {
-  "163792304621xxxx_26844073030xxxx": [
-    {
-      "sender": { "id": "163792304621xxxx" },
-      "recipient": { "id": "26844073030xxxx" },
-      "timestamp": 1501786719608,
-      "message": {
-        "mid": "mid.$cAACu1giyQ85j2rwNfVdqXbEfzghg",
-        "seq": 3054,
-        "text": "find a gas station"
-      }
-    },
-    {
-      "sender": { "id": "163792304621xxxx" },
-      "recipient": { "id": "26844073030xxxx" },
-      "timestamp": 1501786719609,
-      "message": {
-        "mid": "mid.$cAACu1giyQ85j2rwNfVdqXbEfzghg",
-        "seq": 3054,
-        "text": "first"
-      }
-    }
-  ],
-  "2234526xxxx_268440730xxxx": [
-    {
-      "sender": { "id": "2234526xxxx" },
-      "recipient": { "id": "26844073030xxxx" },
-      "timestamp": 1501786719610,
-      "message": {
-        "mid": "mid.$cAACu1giyQ85j2rwNfVdqXbEfzghg",
-        "seq": 3054,
-        "text": "hello, world!"
-      }
-    }
-  ]
+ * Get the appropriate payload for action invocation i.e. depending
+ * on whether it's a batched message or not we construct the appropriate payload
+ * @param {JSON} params Params coming into this action
+ * @return actionParams, actionName
  */
-function organizeBatchedEntries(params) {
-  // Retrieve all entries from the array and flatten it
-  const entries = params.entry.reduce(
-    (k, l) => {
-      return k.concat(l.messaging);
-    },
-    []
-  );
-  // Create a dictionary to store parallel entries. Each parallel entry
-  // is an array of serial entries.
-  const parallelEntries = {};
-  // Loop through all the batched entries
-  entries.map(entry => {
-    // If a parallel entry for a specific sender and recipient id does not exist
-    // create an empty array to store all the serial entries for a specific
-    // parallel entry
-    if (!parallelEntries[`${entry.sender.id}_${entry.recipient.id}`]) {
-      parallelEntries[`${entry.sender.id}_${entry.recipient.id}`] = [];
-    }
-    // Push the serial entry into the parallel entry array
-    return parallelEntries[`${entry.sender.id}_${entry.recipient.id}`].push(
-      entry
-    );
-  });
-
-  const keys = Object.keys(parallelEntries);
-  // Loop through all the keys inside the parallelEntries dictionary
-  keys.map(key => {
-    // Sort the serial entries for a specific parallel entry based on
-    // timestamp
-    return parallelEntries[key].sort((a, b) => {
-      return a.timestamp - b.timestamp;
-    });
-  });
-  return parallelEntries;
-}
-
-/**
- * Function invokes the pipeline sequence
- *  [
-        "starter-code/normalize-facebook-for-conversation",
-        "context/load-context",
-        "starter-code/pre-conversation",
-        "conversation/call-conversation",
-        "starter-code/normalize-conversation-for-facebook",
-        "starter-code/post-conversation",
-        "context/save-context",
-        "facebook/post"
-      ]
- * @param {JSON} params
- *  {
-      "sender": { "id": "1637923046xxxxxx" },
-      "recipient": { "id": "268440730xxxxxx" },
-      "timestamp": 1501786719609,
-      "message": {
-        "mid": "mid.$cAACu1giyQ85j2rwNfVdqxxxxxxxx",
-        "seq": 3054,
-        "text": "find a restaurant"
-      }
-    }
- * @param {var} subPipelineName - Name of the openwhisk pipeline
- * @return {JSON} Result of openwhisk pipeline/action invocation
- */
-function invokePipeline(params, subPipelineName) {
-  const ow = openwhisk();
-  return new Promise((resolve, reject) => {
-    // Add the provider name i.e. facebook to the params
-    const payload = {
-      facebook: params,
+function getPayloadForActionInvocation(params) {
+  let actionName;
+  let actionParams;
+  // Check if it's a batched message
+  if (isBatchedMessage(params)) {
+    // Set action params and action name for batched messages invocation
+    actionParams = params;
+    actionName = params.batched_messages;
+  } else {
+    // Set action params and action name for subpipeline invocation
+    actionParams = {
+      facebook: params.entry[0].messaging[0],
       provider: 'facebook'
     };
+    actionName = params.sub_pipeline;
+  }
+  // Return action params and action name for the action that is to be invoked
+  return [actionParams, actionName];
+}
 
-    // Invoke the pipeline sequence
-    return ow.actions
+/**
+ * Function invokes an openwhisk action
+ * @param {JSON} actionParams Parameters required to invoke an action
+ * @param {JSON} actionName Name of the action
+ */
+function invokeAction(actionParams, actionName) {
+  const ow = openwhisk();
+  return new Promise((resolve, reject) => {
+    ow.actions
       .invoke({
-        name: subPipelineName,
-        params: payload,
-        blocking: true
+        name: actionName,
+        params: actionParams
       })
-      .then(res => {
+      .then(result => {
+        // Everytime facebook pings the "receive" endpoint/webhook, it expects a
+        // "200" string/text response in return. In openwhisk, if we'd want to return
+        // a string response, then it's necessary that we add a field "text" and the
+        // response "200" as the value. The field "text" tells openwhisk that this
+        // endpoint must return a "text" response.
+        // Response code 200 only tells us that receive was able to execute it's code
+        // successfully but it doesn't really tell us if the sub-pipeline or the
+        // batched-messages pipeline that are invoked as a part of it returned a successful
+        // response or not. Hence, we return the activation id of the appropriate action so
+        // that the user can retrieve it's details for debugging purposes.
         resolve({
-          // Build a response for successful invocation
-          successfulInvocation: {
-            successResponse: res && res.response && res.response.result,
-            activationId: res.activationId
-          }
+          text: 200,
+          activationId: result.activationId,
+          actionName,
+          message: `Response code 200 above only tells you that receive action was invoked successfully. However, it does not really say if ${actionName} was invoked successfully. Please use ${result.activationId} to get more details about this invocation.`
         });
       })
-      .catch(e => {
+      .catch(() => {
         reject({
-          // Build a response for failed invocation
-          failedInvocation: {
-            errorMessage: `Recipient id: ${params.recipient.id} , Sender id: ${params.sender.id} -- ${e.message}`,
-            activationId: e.error.activationId
-          }
+          text: 400,
+          actionName,
+          message: `There was an issue invoking ${actionName}. Please make sure this action exists in your namespace`
         });
       });
   });
@@ -401,10 +185,10 @@ function invokePipeline(params, subPipelineName) {
  * @param  {JSON} params - Parameters passed into the action
  * @return {boolean} - true or false
  */
-function isURLVerificationEvent(params) {
+function isURLVerificationEvent(params, auth) {
   if (
     params['hub.mode'] !== 'subscribe' ||
-    params['hub.verify_token'] !== params.verification_token
+    params['hub.verify_token'] !== auth.facebook.verification_token
   ) {
     return false;
   }
@@ -423,6 +207,36 @@ function isPageObject(params) {
   return true;
 }
 
+/**
+ * Checks if it's a batched messages i.e. contains more than one
+ * message entry
+ * @param {*} params
+ */
+function isBatchedMessage(params) {
+  if (params.entry.length > 1 || params.entry[0].messaging.length > 1) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ *  Validates the required parameters for running this action.
+ *
+ *  @params The parameters passed into the action
+ */
+function validateParameters(params) {
+  // Required: Subpipeline name
+  assert(
+    params.sub_pipeline,
+    "Subpipeline name does not exist. Please make sure your openwhisk channel package has the binding 'sub_pipeline'"
+  );
+  // Required: Batched Message Action name
+  assert(
+    params.batched_messages,
+    "Batched Messages action name does not exist. Please make sure your openwhisk channel package has the binding 'batched_messages'"
+  );
+}
+
 /** Checks if the HMAC key calculated using app secret and request payload is the
  * same as the key present in x-hub-signature header. For more information, refer to
  * https://developers.facebook.com/docs/messenger-platform/webhook-reference#security
@@ -439,9 +253,7 @@ function verifyFacebookSignatureHeader(params, auth) {
 
   // Construct the request payload. For more information, refer to
   // https://developers.facebook.com/docs/messenger-platform/webhook-reference#format
-  const requestPayload = {};
-  requestPayload.object = params.object;
-  requestPayload.entry = Object.assign([], params.entry);
+  const requestPayload = pick(params, ['object', 'entry']);
   const buffer = new Buffer(JSON.stringify(requestPayload));
 
   // Get the expected hash from the key i.e. if the key is sha1=1234
@@ -454,7 +266,11 @@ function verifyFacebookSignatureHeader(params, auth) {
     .update(buffer, 'utf-8')
     .digest('hex');
 
-  assert.equal(calculatedHash, expectedHash, 'Verfication of facebook signature header failed. Please make sure you are passing the correct app secret');
+  assert.equal(
+    calculatedHash,
+    expectedHash,
+    'Verfication of facebook signature header failed. Please make sure you are passing the correct app secret'
+  );
 }
 
 /**

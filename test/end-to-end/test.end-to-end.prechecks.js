@@ -3,8 +3,7 @@
 const assert = require('assert');
 const openwhisk = require('openwhisk');
 
-const safeExtractErrorMessage = require('./../utils/helper-methods.js')
-  .safeExtractErrorMessage;
+const safeExtractErrorMessage = require('./../utils/helper-methods.js').safeExtractErrorMessage;
 
 const pipelineName = process.env.__TEST_PIPELINE_NAME;
 

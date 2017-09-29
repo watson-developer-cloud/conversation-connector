@@ -221,23 +221,28 @@ describe('Facebook Post Unit Tests', () => {
 
   it('validate error when no recipient Id provided', () => {
     delete postParams.recipient;
-    func = facebookPost.validateParameters;
-    try {
-      func(postParams);
-    } catch (e) {
-      assert.equal('AssertionError', e.name);
-      assert.equal(e.message, errorNoRecipientId);
-    }
+    func = facebookPost.main;
+
+    return func(postParams).then(
+      result => {
+        assert(false, result);
+      },
+      error => {
+        assert.equal(error, errorNoRecipientId);
+      }
+    );
   });
 
   it('validate error when no message text provided', () => {
     delete postParams.message;
-    func = facebookPost.validateParameters;
-    try {
-      func(postParams);
-    } catch (e) {
-      assert.equal('AssertionError', e.name);
-      assert.equal(e.message, errorNoMessageText);
-    }
+    func = facebookPost.main;
+    return func(postParams).then(
+      result => {
+        assert(false, result);
+      },
+      error => {
+        assert.equal(error, errorNoMessageText);
+      }
+    );
   });
 });

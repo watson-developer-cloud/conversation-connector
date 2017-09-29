@@ -9,8 +9,7 @@ const nock = require('nock');
 
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
-const conversationBindings = require('../../../resources/bindings/conversation-bindings.json')
-  .conversation;
+const conversationBindings = require('../../../resources/bindings/conversation-bindings.json').conversation;
 const scNormFacebookForConvo = require('./../../../../starter-code/normalize-for-conversation/normalize-facebook-for-conversation.js');
 
 const errorBadSupplier = "Provider not supplied or isn't Facebook.";

@@ -146,7 +146,10 @@ describe('End-to-End tests: with Slack package', () => {
       token: slackBindings.verification_token
     };
 
-    clearContextDb(cloudantBindings.database.context.name, cloudantBindings.url);
+    clearContextDb(
+      cloudantBindings.database.context.name,
+      cloudantBindings.url
+    );
   });
 
   // Under validated circumstances, the channel (mocked parameters here) will send parameters

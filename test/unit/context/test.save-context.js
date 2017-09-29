@@ -6,20 +6,16 @@ const nock = require('nock');
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
 const sc = require('../../../context/save-context.js');
-const paramsJson = require('../../resources/payloads/test.unit.context.json')
-  .saveContextJson;
+const paramsJson = require('../../resources/payloads/test.unit.context.json').saveContextJson;
 const Cloudant = require('cloudant');
 
 const invalidCloudantUrl = 'invalid-url';
 
-const errorInvalidUrl =
-  'Cloudant object creation failed. Error from Cloudant: Error: invalid url.';
+const errorInvalidUrl = 'Cloudant object creation failed. Error from Cloudant: Error: invalid url.';
 const errorNoRawInputData = 'raw_input_data absent in params.';
-const errorNoCloudantContextKey =
-  'cloudant_context_key absent in params.raw_input_data.';
+const errorNoCloudantContextKey = 'cloudant_context_key absent in params.raw_input_data.';
 const errorNoRawOutputData = 'raw_output_data absent in params.';
-const errorNoConversationObj =
-  'conversation object absent in params.raw_output_data.';
+const errorNoConversationObj = 'conversation object absent in params.raw_output_data.';
 
 describe('Save Context Unit Tests: main()', () => {
   let params = {};

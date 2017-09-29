@@ -7,8 +7,7 @@
 const assert = require('assert');
 const nock = require('nock');
 
-const slackBindings = require('./../../../resources/bindings/slack-bindings.json')
-  .slack;
+const slackBindings = require('./../../../resources/bindings/slack-bindings.json').slack;
 
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 

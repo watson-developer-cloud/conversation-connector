@@ -31,10 +31,7 @@ function main(params) {
           raw_input_data: {
             slack: params.slack,
             provider: 'slack',
-            cloudant_context_key: generateCloudantKey(
-              params,
-              auth
-            )
+            cloudant_context_key: generateCloudantKey(params, auth)
           }
         });
       });
@@ -295,7 +292,10 @@ function getSlackInputMessage(params) {
  * @return {string}      - cloudant database key
  */
 function generateCloudantKey(params, auth) {
-  assert(auth.conversation && auth.conversation.workspace_id, 'auth.conversation.workspace_id absent!');
+  assert(
+    auth.conversation && auth.conversation.workspace_id,
+    'auth.conversation.workspace_id absent!'
+  );
 
   const slackEvent = params.slack.event;
   const slackPayload = params.slack.payload && JSON.parse(params.slack.payload);

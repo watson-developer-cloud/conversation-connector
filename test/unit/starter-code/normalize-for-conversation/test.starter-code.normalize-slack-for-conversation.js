@@ -9,8 +9,7 @@ const nock = require('nock');
 
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
-const conversationBindings = require('../../../resources/bindings/conversation-bindings.json')
-  .conversation;
+const conversationBindings = require('../../../resources/bindings/conversation-bindings.json').conversation;
 
 const scNormSlackForConvo = require('./../../../../starter-code/normalize-for-conversation/normalize-slack-for-conversation.js');
 
