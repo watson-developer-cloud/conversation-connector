@@ -65,7 +65,7 @@
             "conversation": {
               "entities": [],
               "context": {
-                "conversation_id": "364be902-40ac-421c-ac6c-04069d7ea14d",
+                "conversation_id": "1",
                 "system": {
                   "branch_exited_reason": "completed",
                   "dialog_request_counter": 1,
@@ -109,7 +109,7 @@
               "access_token": "xoxp-186464790945-187081019828-196275302867-9dcd597b2590c1f371dcf938f4eXXXXX",
               "team_id": "TXXXXXXXX",
               "event": {
-                "channel": "D024BE91L",
+                "channel": "D024BE91M",
                 "ts": "1355517523.000005",
                 "text": "",
                 "type": "message",
@@ -126,7 +126,7 @@
               "event_id": "Ev08MFMKH6"
             },
             "provider": "slack",
-            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
+            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91M"
           }
         },
         {
@@ -141,7 +141,7 @@
               "access_token": "xoxp-186464790945-187081019828-196275302867-9dcd597b2590c1f371dcf938f4eXXXXX",
               "team_id": "TXXXXXXXX",
               "event": {
-                "channel": "D024BE91L",
+                "channel": "D024BE91M",
                 "ts": "1355517523.000005",
                 "text": "Turn on lights",
                 "type": "message",
@@ -158,7 +158,7 @@
               "event_id": "Ev08MFMKH6"
             },
             "provider": "slack",
-            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
+            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91M"
           }
         }
       ],
@@ -170,7 +170,7 @@
               "access_token": "xoxp-186464790945-187081019828-196275302867-9dcd597b2590c1f371dcf938f4eXXXXX",
               "team_id": "TXXXXXXXX",
               "event": {
-                "channel": "D024BE91L",
+                "channel": "D024BE91M",
                 "ts": "1355517523.000005",
                 "text": "",
                 "type": "message",
@@ -187,15 +187,15 @@
               "event_id": "Ev08MFMKH6"
             },
             "provider": "slack",
-            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
+            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91M"
           },
-          "channel": "D024BE91L",
+          "channel": "D024BE91M",
           "text": "Hi. It looks like a nice drive today. What would you like me to do?  ",
           "raw_output_data": {
             "conversation": {
               "entities": [],
               "context": {
-                "conversation_id": "364be902-40ac-421c-ac6c-04069d7ea14d",
+                "conversation_id": "2",
                 "system": {
                   "branch_exited_reason": "completed",
                   "dialog_request_counter": 1,
@@ -231,7 +231,7 @@
               "access_token": "xoxp-186464790945-187081019828-196275302867-9dcd597b2590c1f371dcf938f4eXXXXX",
               "team_id": "TXXXXXXXX",
               "event": {
-                "channel": "D024BE91L",
+                "channel": "D024BE91M",
                 "ts": "1355517523.000005",
                 "text": "Turn on lights",
                 "type": "message",
@@ -248,15 +248,15 @@
               "event_id": "Ev08MFMKH6"
             },
             "provider": "slack",
-            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L"
+            "cloudant_context_key": "slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91M"
           },
-          "channel": "D024BE91L",
+          "channel": "D024BE91M",
           "text": "Ok. Turning on the lights.",
           "raw_output_data": {
             "conversation": {
               "entities": [],
               "context": {
-                "conversation_id": "364be902-40ac-421c-ac6c-04069d7ea14d",
+                "conversation_id": "2",
                 "system": {
                   "branch_exited_reason": "completed",
                   "dialog_request_counter": 2,

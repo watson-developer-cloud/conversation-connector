@@ -16,6 +16,17 @@ function main(params) {
   // Add a mock response like it would come back from call-conversation.
   // Add provider-specific fields which normalize-conversation-for-channel would add.
   let rawOutputData;
+  let conversationId;
+  if (
+    params.raw_input_data.cloudant_context_key ===
+    'slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91M'
+  ) {
+    // This corresponds to the first turn of a multi-turn request so
+    // set the conversation id accordingly.
+    conversationId = '2';
+  } else {
+    conversationId = '1';
+  }
   if (Object.keys(params.conversation.context).length > 0) {
     // If the Conversation context is not empty, it's not the first turn.
     // Respond with a dummy payload for a second turn.
@@ -24,7 +35,7 @@ function main(params) {
       conversation: {
         entities: [],
         context: {
-          conversation_id: '364be902-40ac-421c-ac6c-04069d7ea14d',
+          conversation_id: conversationId,
           system: {
             branch_exited_reason: 'completed',
             dialog_request_counter: 2,
@@ -50,11 +61,12 @@ function main(params) {
     };
   } else {
     // Context is empty so reply with a dummy welcome message.
+
     rawOutputData = {
       conversation: {
         entities: [],
         context: {
-          conversation_id: '364be902-40ac-421c-ac6c-04069d7ea14d',
+          conversation_id: conversationId,
           system: {
             branch_exited_reason: 'completed',
             dialog_request_counter: 1,

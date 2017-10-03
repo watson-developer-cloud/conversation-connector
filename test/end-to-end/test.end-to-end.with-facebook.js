@@ -5,12 +5,10 @@ const openwhisk = require('openwhisk');
 
 const safeExtractErrorMessage = require('./../utils/helper-methods.js').safeExtractErrorMessage;
 const facebookBindings = require('./../resources/bindings/facebook-bindings.json').facebook;
-const cloudantBindings = require('./../resources/bindings/cloudant-bindings.json');
-
-const clearContextDb = require('./../utils/cloudant-utils.js').clearContextDb;
 
 const carDashboardReplyWelcome = 'Hi. It looks like a nice drive today. What would you like me to do?  ';
 const carDashboardReplyLights = "I'll turn on the lights for you.";
+const carDashboardReplyHelp = 'Hello! What can I help you with?';
 
 const pipelineName = process.env.__TEST_PIPELINE_NAME;
 
@@ -52,6 +50,7 @@ describe('End-to-End tests: Facebook prerequisites', () => {
 
 describe('End-to-End tests: Facebook as channel package', () => {
   const ow = openwhisk();
+
   const actionFacebookPipeline = 'test-pipeline-facebook';
   const actionFacebookBatchedMessages = `${pipelineName}_facebook/batched_messages`;
   const facebookWebhook = `${pipelineName}_facebook/receive`;
@@ -329,7 +328,7 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
           ow.activations
             .get({
               activationId: successActivationId,
-              bocking: true
+              blocking: true
             })
             .then(
               result => {
@@ -376,59 +375,42 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
     .retries(1);
 });
 
-// --------------------SKIPPED CONTEXT TESTS BELOW ----------------------------//
-
-describe.skip('End-to-End tests: Facebook context package works', () => {
+describe('End-to-End tests: Facebook context package works', () => {
   const ow = openwhisk();
+
   const facebookWebhook = `${pipelineName}_facebook/receive`;
   const contextPipeline = 'test-pipeline-context-facebook';
   let params = {};
 
   const expAfterTurn1 = {
-    text: 200,
-    failedActionInvocations: [],
-    successfulActionInvocations: [
-      {
-        successResponse: {
-          text: 200,
-          params: {
-            batched_messages: `${pipelineName}_facebook/batched_messages`,
-            recipient: { id: facebookBindings.sender.id },
-            message: {
-              text: carDashboardReplyWelcome
-            }
-          },
-          url: 'https://graph.facebook.com/v2.6/me/messages'
-        },
-        activationId: ''
+    params: {
+      message: {
+        text: carDashboardReplyWelcome
+      },
+      recipient: {
+        id: facebookBindings.sender.id
       }
-    ]
+    },
+    text: 200,
+    url: 'https://graph.facebook.com/v2.6/me/messages'
   };
 
   const expAfterTurn2 = {
-    text: 200,
-    failedActionInvocations: [],
-    successfulActionInvocations: [
-      {
-        successResponse: {
-          text: 200,
-          params: {
-            batched_messages: `${pipelineName}_facebook/batched_messages`,
-            recipient: { id: facebookBindings.sender.id },
-            message: {
-              text: carDashboardReplyLights
-            }
-          },
-          url: 'https://graph.facebook.com/v2.6/me/messages'
-        },
-        activationId: ''
+    params: {
+      message: {
+        text: carDashboardReplyLights
+      },
+      recipient: {
+        id: facebookBindings.sender.id
       }
-    ]
+    },
+    text: 200,
+    url: 'https://graph.facebook.com/v2.6/me/messages'
   };
 
   beforeEach(() => {
     params = {
-      sub_pipeline: '',
+      sub_pipeline: contextPipeline,
       __ow_headers: {
         'x-hub-signature': 'sha1=7022aaa4676f7355e712d2427e204ff3f7be0e91'
       },
@@ -454,80 +436,159 @@ describe.skip('End-to-End tests: Facebook context package works', () => {
   // Under validated circumstances, context package should load and save context
   // to complete a single-turn conversation successfully.
   it('context pipeline works for single Conversation turn', () => {
-    return clearContextDb(
-      cloudantBindings.database.context.name,
-      cloudantBindings.url
-    ).then(() => {
-      params.sub_pipeline = contextPipeline;
-      return ow.actions
-        .invoke({
-          name: facebookWebhook,
-          result: true,
-          blocking: true,
-          params
-        })
-        .then(
-          result => {
-            expAfterTurn1.successfulActionInvocations[
-              0
-            ].activationId = result.successfulActionInvocations[0].activationId;
-            return assert.deepEqual(result, expAfterTurn1);
-          },
-          error => {
-            return assert(false, safeExtractErrorMessage(error));
+    let actId1 = 'xxxxx';
+    return ow.actions
+      .invoke({
+        name: facebookWebhook,
+        result: true,
+        blocking: true,
+        params
+      })
+      .then(
+        success => {
+          try {
+            // Get activation of the subpipeline invocation
+            actId1 = success.activationId;
+            return sleep(10000);
+          } catch (e) {
+            return assert(false, safeExtractErrorMessage(e));
           }
-        );
-    });
-  })
-    .timeout(8000)
-    .retries(4);
+        },
+        error => {
+          return assert(false, safeExtractErrorMessage(error));
+        }
+      )
+      .then(() => {
+        // After the wait, get the response of the activation
+        return ow.activations.get({
+          activationId: actId1,
+          blocking: true
+        });
+      })
+      .then(
+        actResult => {
+          try {
+            if (actResult.response.result) {
+              return assert.deepEqual(actResult.response.result, expAfterTurn1);
+            }
+            return assert(false, 'Openwhisk Action did not return a reponse');
+          } catch (e) {
+            return assert(false, safeExtractErrorMessage(e));
+          }
+        },
+        error => {
+          return assert(false, safeExtractErrorMessage(error));
+        }
+      )
+      .catch(e => {
+        return e;
+      });
+  }).timeout(40000);
 
   // Under validated circumstances, context package should load and save context
   // to complete a multi-turn conversation successfully.
   it('context pipeline works for multiple Conversation turns', () => {
-    return clearContextDb(
-      cloudantBindings.database.context.name,
-      cloudantBindings.url
-    ).then(() => {
-      params.sub_pipeline = contextPipeline;
-      return ow.actions
-        .invoke({
+    let actId1 = 'xxxxx';
+    let actId2 = 'yyyyy';
+    expAfterTurn1.params.message.text = carDashboardReplyHelp;
+
+    return ow.actions
+      .invoke({
+        name: facebookWebhook,
+        result: true,
+        blocking: true,
+        params
+      })
+      .then(
+        success => {
+          try {
+            // Get activation of the subpipeline invocation
+            actId1 = success.activationId;
+            return sleep(10000);
+          } catch (e) {
+            return assert(false, safeExtractErrorMessage(e));
+          }
+        },
+        error => {
+          return assert(false, safeExtractErrorMessage(error));
+        }
+      )
+      .then(() => {
+        // After the wait, get the response of the activation
+        return ow.activations.get({
+          activationId: actId1,
+          blocking: true
+        });
+      })
+      .then(
+        actResult => {
+          try {
+            if (actResult.response.result) {
+              return assert.deepEqual(actResult.response.result, expAfterTurn1);
+            }
+            return assert(false, 'Openwhisk Action did not return a reponse');
+          } catch (e) {
+            return assert(false, safeExtractErrorMessage(e));
+          }
+        },
+        error => {
+          return assert(false, safeExtractErrorMessage(error));
+        }
+      )
+      .then(() => {
+        // Change the input text for the second turn.
+        params.entry[0].messaging[0].message.text = 'Turn on the lights';
+        // Change the signature header value for the second turn.
+        params.__ow_headers[
+          'x-hub-signature'
+        ] = 'sha1=dc7583f847527eccd75defd236e8daa302abb448';
+        // Invoke the context pipeline sequence again.
+        // The context package should read the updated context from the previous turn.
+        return ow.actions.invoke({
           name: facebookWebhook,
           result: true,
           blocking: true,
           params
-        })
-        .then(result => {
-          expAfterTurn1.successfulActionInvocations[
-            0
-          ].activationId = result.successfulActionInvocations[0].activationId;
-          assert.deepEqual(result, expAfterTurn1);
-          // Change the input text for the second turn.
-          params.entry[0].messaging[0].message.text = 'Turn on the lights';
-          // Change the signature header value for the second turn.
-          params.__ow_headers[
-            'x-hub-signature'
-          ] = 'sha1=dc7583f847527eccd75defd236e8daa302abb448';
-          // Invoke the context pipeline sequence again.
-          // The context package should read the updated context from the previous turn.
-          return ow.actions.invoke({
-            name: facebookWebhook,
-            result: true,
-            blocking: true,
-            params
-          });
-        })
-        .then(result => {
-          expAfterTurn2.successfulActionInvocations[
-            0
-          ].activationId = result.successfulActionInvocations[0].activationId;
-          return assert.deepEqual(result, expAfterTurn2);
-        })
-        .catch(err => {
-          return assert(false, safeExtractErrorMessage(err));
         });
-    });
-  })
-    .timeout(8000)
-    .retries(4);
+      })
+      .then(
+        success => {
+          try {
+            // Get activation of the subpipeline invocation
+            actId2 = success.activationId;
+            return sleep(10000);
+          } catch (e) {
+            return assert(false, safeExtractErrorMessage(e));
+          }
+        },
+        error => {
+          return assert(false, safeExtractErrorMessage(error));
+        }
+      )
+      .then(() => {
+        // After the wait, get the response of the activation
+        return ow.activations.get({
+          activationId: actId2,
+          blocking: true
+        });
+      })
+      .then(
+        actResult => {
+          try {
+            if (actResult.response.result) {
+              return assert.deepEqual(actResult.response.result, expAfterTurn2);
+            }
+            return assert(false, 'Openwhisk Action did not return a reponse');
+          } catch (e) {
+            return assert(false, safeExtractErrorMessage(e));
+          }
+        },
+        error => {
+          return assert(false, safeExtractErrorMessage(error));
+        }
+      )
+      .catch(e => {
+        return e;
+      });
+  }).timeout(60000);
 });

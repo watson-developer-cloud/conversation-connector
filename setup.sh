@@ -34,6 +34,15 @@ changeWhiskKey(){
   wsk property set --auth "${WSK_AUTH_KEY}"
 }
 
+# Deletes a cloudant database
+# $1 - cloudant_url
+# $2 - database_name
+deleteCloudantDb(){
+  echo "Deleting cloudant database $2"
+  curl -s -XDELETE "$1/$2" | grep -v "error"
+}
+
+
 PROVIDERS_FILE='providers.json'
 MODE="run"
 
@@ -68,6 +77,8 @@ WSK_API_HOST=`${WSK} property get --apihost | tr "\t" "\n" | tail -n 1`
 CLOUDANT_INSTANCE_NAME='convoflex'
 CLOUDANT_INSTANCE_KEY='bot-key'
 CLOUDANT_AUTH_DBNAME='authdb'
+CLOUDANT_CONTEXT_DBNAME='contextdb'
+CLOUDANT_URL=''
 
 pipeline_name=''
 
@@ -88,7 +99,7 @@ else
       echo 'ERROR: Pipeline name missing.'
     fi
     # Setup context package    
-    cd context; ./setup.sh ${pipeline_name}_context $CLOUDANT_INSTANCE_NAME $CLOUDANT_INSTANCE_KEY; cd ..
+    cd context; ./setup.sh ${pipeline_name}_context $CLOUDANT_INSTANCE_NAME $CLOUDANT_INSTANCE_KEY $CLOUDANT_CONTEXT_DBNAME; cd ..
 
     # Set up the auth db with the same Cloudant instance created by context
     CLOUDANT_CREDS="`cf service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} 2>&1 | grep -v Getting`"
@@ -165,6 +176,10 @@ if [ $MODE == "test" ]; then
   ./run_suite.sh
   RETCODE=$?
   ./clean.sh ${pipeline_name}
+
+  # Delete the Cloudant dbs-contextdb and authdb once tests complete
+  deleteCloudantDb ${CLOUDANT_URL} ${CLOUDANT_CONTEXT_DBNAME}
+  deleteCloudantDb ${CLOUDANT_URL} ${CLOUDANT_AUTH_DBNAME}
 
   # Unset environment variables used for test
   unset __OW_API_HOST

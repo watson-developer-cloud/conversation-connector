@@ -5,8 +5,7 @@ export WSK=${WSK-wsk}
 PACKAGE_NAME=$1
 CLOUDANT_INSTANCE_NAME=$2
 CLOUDANT_INSTANCE_KEY=$3
-
-CLOUDANT_CONTEXT_DBNAME='contextdb'
+CLOUDANT_CONTEXT_DBNAME=$4
 
 # Create Cloudant instance called '${CLOUDANT_INSTANCE_NAME}' in the user's' org/space (assumed to be the same as the current org/space for now)
 echo "Setting up cloudant"

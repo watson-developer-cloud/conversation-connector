@@ -6,34 +6,28 @@
 
 const assert = require('assert');
 const openwhisk = require('openwhisk');
-const cloudantBindings = require('./../../resources/bindings/cloudant-bindings.json');
 
 const jsonParams = require('../../resources/payloads/test.integration.context.json').contextJsons;
-
-const clearContextDb = require('./../../utils/cloudant-utils.js').clearContextDb;
 
 const pipelineName = process.env.__TEST_PIPELINE_NAME;
 
 const actionName = `${pipelineName}_context/integration-pipeline`;
 
 describe('context package integration tests', () => {
-  // Setup the ow module for the upcoming calls
   const ow = openwhisk();
-
-  it.skip('validate actions work properly for single turn', () => {
+  it('validate actions work properly for single turn', () => {
     // Get the json params for the single turn case.
     const params = jsonParams.singleTurn.request;
 
     // Expected response from the system.
     const expectedResult = jsonParams.singleTurn.response;
-    clearContextDb(cloudantBindings.database.context.name, cloudantBindings.url)
-      .then(() => {
-        return ow.actions.invoke({
-          name: actionName,
-          blocking: true,
-          result: true,
-          params
-        });
+
+    return ow.actions
+      .invoke({
+        name: actionName,
+        blocking: true,
+        result: true,
+        params
       })
       .then(success => {
         assert.deepEqual(success, expectedResult);
@@ -41,9 +35,9 @@ describe('context package integration tests', () => {
       .catch(err => {
         assert(false, err);
       });
-  });
+  }).timeout(10000);
 
-  it.skip('validate actions work properly for multiple turns', () => {
+  it('validate actions work properly for multiple turns', () => {
     // Get the json params for the multi turn case.
     let params = jsonParams.multiTurn.requests[0];
 
@@ -51,14 +45,12 @@ describe('context package integration tests', () => {
     const expAfterTurn1 = jsonParams.multiTurn.responses[0];
     const expAfterTurn2 = jsonParams.multiTurn.responses[1];
 
-    clearContextDb(cloudantBindings.database.context.name, cloudantBindings.url)
-      .then(() => {
-        return ow.actions.invoke({
-          name: actionName,
-          blocking: true,
-          result: true,
-          params
-        });
+    return ow.actions
+      .invoke({
+        name: actionName,
+        blocking: true,
+        result: true,
+        params
       })
       .then(result => {
         assert.deepEqual(result, expAfterTurn1);
@@ -81,5 +73,5 @@ describe('context package integration tests', () => {
       .catch(err => {
         assert(false, err);
       });
-  });
+  }).timeout(20000);
 });

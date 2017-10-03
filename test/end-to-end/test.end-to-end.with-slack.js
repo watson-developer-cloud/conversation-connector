@@ -4,10 +4,8 @@ const assert = require('assert');
 const openwhisk = require('openwhisk');
 
 const safeExtractErrorMessage = require('./../utils/helper-methods.js').safeExtractErrorMessage;
-const clearContextDb = require('./../utils/cloudant-utils.js').clearContextDb;
 
 const slackBindings = require('./../resources/bindings/slack-bindings.json').slack;
-const cloudantBindings = require('./../resources/bindings/cloudant-bindings.json');
 
 const carDashboardReplyWelcome = 'Hi. It looks like a nice drive today. What would you like me to do?  ';
 const carDashboardReplyLights = "I'll turn on the lights for you.";
@@ -145,11 +143,6 @@ describe('End-to-End tests: with Slack package', () => {
       callback_id: 'shirt_size',
       token: slackBindings.verification_token
     };
-
-    clearContextDb(
-      cloudantBindings.database.context.name,
-      cloudantBindings.url
-    );
   });
 
   // Under validated circumstances, the channel (mocked parameters here) will send parameters
@@ -177,72 +170,70 @@ describe('End-to-End tests: with Slack package', () => {
 
   // Under validated circumstances, context package should load and save context
   // to complete a single-turn conversation successfully.
-  it.skip('context pipeline works for single Conversation turn', () => {
-    return clearContextDb(
-      cloudantBindings.database.context.name,
-      cloudantBindings.url
-    ).then(() => {
-      return ow.actions
-        .invoke({
-          name: contextPipeline,
-          result: true,
-          blocking: true,
-          params
-        })
-        .then(
-          result => {
-            return assert.deepEqual(result, expectedResult);
-          },
-          error => {
-            return assert(false, safeExtractErrorMessage(error));
-          }
-        );
-    });
-  });
+  it('context pipeline works for single Conversation turn', () => {
+    return ow.actions
+      .invoke({
+        name: contextPipeline,
+        result: true,
+        blocking: true,
+        params
+      })
+      .then(
+        result => {
+          return assert.deepEqual(result, expectedResult);
+        },
+        error => {
+          return assert(false, safeExtractErrorMessage(error));
+        }
+      );
+  })
+    .timeout(10000)
+    .retries(4);
 
   // Under validated circumstances, context package should load and save context
   // to complete a multi-turn conversation successfully.
-  it.skip('context pipeline works for multiple Conversation turns', () => {
-    return clearContextDb(
-      cloudantBindings.database.context.name,
-      cloudantBindings.url
-    ).then(() => {
-      return ow.actions
-        .invoke({
+  it('context pipeline works for multiple Conversation turns', () => {
+    const updatedParams = Object.assign({}, params);
+
+    updatedParams.event.user = 'UXXXXXXXXX1';
+
+    return ow.actions
+      .invoke({
+        name: contextPipeline,
+        result: true,
+        blocking: true,
+        params: updatedParams
+      })
+      .then(result => {
+        assert.deepEqual(result, expectedResult);
+
+        // Change the input text for the second turn.
+        updatedParams.event.text = 'Turn on the lights';
+
+        // Invoke the context pipeline sequence again.
+        // The context package should read the updated context from the previous turn.
+        return ow.actions.invoke({
           name: contextPipeline,
           result: true,
           blocking: true,
-          params
-        })
-        .then(result => {
-          assert.deepEqual(result, expectedResult);
-
-          // Change the input text for the second turn.
-          params.event.text = 'Turn on the lights';
-
-          // Invoke the context pipeline sequence again.
-          // The context package should read the updated context from the previous turn.
-          return ow.actions.invoke({
-            name: contextPipeline,
-            result: true,
-            blocking: true,
-            params
-          });
-        })
-        .then(result => {
-          return assert.deepEqual(result, expAfterTurn2);
-        })
-        .catch(err => {
-          return assert(false, safeExtractErrorMessage(err));
+          params: updatedParams
         });
-    });
-  });
+      })
+      .then(result => {
+        return assert.deepEqual(result, expAfterTurn2);
+      })
+      .catch(err => {
+        return assert(false, safeExtractErrorMessage(err));
+      });
+  })
+    .timeout(20000)
+    .retries(4);
 
   // Using a context database, if the user sends a text message that triggers an interactive
   //  response from Conversation, that response should accurately be converted to a
   //  Slack attached message. (In a clean database, the first message is always a welcome
   //  message, so the second message is the message to validate.)
-  it.skip(
+  it(
     'validate when conversation is text input to attached message output',
     () => {
       expectedResult.text = buttonMessageResponse;
@@ -273,13 +264,15 @@ describe('End-to-End tests: with Slack package', () => {
           assert(false, safeExtractErrorMessage(error));
         });
     }
-  );
+  )
+    .timeout(20000)
+    .retries(4);
 
   // This is a continutaion from the previous test case. If the user triggers an attached message
   //  response, then the response sent from Conversation is used to replace the buttons row that
   //  the user clicks. Here, only the third message is validated. (See the previous test case for
   //  validation on the first two messages.)
-  it.skip(
+  it(
     'validate when conversation is attached message response input to message update output',
     () => {
       expectedResult.text = buttonMessageInputText;
@@ -322,5 +315,7 @@ describe('End-to-End tests: with Slack package', () => {
           return assert(false, error);
         });
     }
-  );
+  )
+    .timeout(20000)
+    .retries(4);
 });
