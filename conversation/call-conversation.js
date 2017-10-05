@@ -59,8 +59,8 @@ function main(params) {
           username: auth.conversation.username,
           password: auth.conversation.password,
           url: params.url,
-          version: 'v1',
-          version_date: '2017-04-21'
+          version: params.version,
+          version_date: params.version_date
         });
         const payload = Object.assign({}, params.conversation);
         payload.workspace_id = auth.conversation.workspace_id;

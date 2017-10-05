@@ -49,15 +49,14 @@ describe('conversation integration tests', () => {
 
         // After getting the context, call Conversation again to get the true response to the user's
         // query (and not just the welcome message)
-        return ow.actions
-          .invoke({ name, blocking, result, params })
-          .then(response2 => {
-            assert.equal(
-              response2.conversation.output.text[0],
-              'Hi. It looks like a nice drive today. What would you like me to do?  ',
-              'response from conversation does not contain expected answer'
-            );
-          });
+        return ow.actions.invoke({ name, blocking, result, params });
+      })
+      .then(response2 => {
+        assert.equal(
+          response2.conversation.output.text[0],
+          'Hi. It looks like a nice drive today. What would you like me to do?  ',
+          'response from conversation does not contain expected answer'
+        );
       })
       .catch(e => {
         assert(false, e);

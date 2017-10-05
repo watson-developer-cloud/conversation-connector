@@ -10,6 +10,8 @@ CLOUDANT_AUTH_KEY=$4
 ${WSK} package update $PACKAGE_NAME \
   -a cloudant_url "${CLOUDANT_URL}" \
   -a cloudant_auth_dbname "${CLOUDANT_AUTH_DBNAME}" \
-  -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}"
+  -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}" \
+  -p version "v1" \
+  -p version_date "2017-04-21"
 
 ${WSK} action update $PACKAGE_NAME/call-conversation call-conversation.js

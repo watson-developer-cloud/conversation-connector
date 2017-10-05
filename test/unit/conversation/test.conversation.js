@@ -19,7 +19,7 @@ const errorNoConversationWorkspaceIdInAuth = 'conversation workspace_id absent i
 const errorIncorrectConversationWorkspaceIdInAuth = `URL workspaceid parameter ${badWorkspaceId} is not a valid GUID.`;
 const conversationErrorMsg = 'Internal Server Error';
 
-describe('conversation unit tests: validateParams()', () => {
+describe('conversation unit tests', () => {
   let params = {};
   let func;
   let auth;
@@ -82,7 +82,6 @@ describe('conversation unit tests: validateParams()', () => {
   };
 
   before(() => {
-    nock.disableNetConnect();
     nock(convoUrl)
       .post(
         `/v1/workspaces/${conversationBindings.workspace_id}/message?version=${conversationBindings.version_date}`
@@ -104,6 +103,8 @@ describe('conversation unit tests: validateParams()', () => {
 
   beforeEach(() => {
     params = {
+      version: conversationBindings.version,
+      version_date: conversationBindings.version_date,
       conversation: {
         input: {
           text: 'Turn on lights'
