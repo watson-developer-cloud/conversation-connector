@@ -7,21 +7,87 @@
 const assert = require('assert');
 const openwhisk = require('openwhisk');
 
-const jsonParams = require('../../resources/payloads/test.integration.context.json').contextJsons;
+const envParams = process.env;
 
-const pipelineName = process.env.__TEST_PIPELINE_NAME;
+const pipelineName = envParams.__TEST_PIPELINE_NAME;
 
 const actionName = `${pipelineName}_context/integration-pipeline`;
 
 describe('context package integration tests', () => {
   const ow = openwhisk();
+
+  let params;
+  let expectedResult;
+
+  beforeEach(() => {
+    params = {
+      conversation: {
+        input: {
+          text: ''
+        }
+      },
+      raw_input_data: {
+        slack: {
+          bot_access_token: 'xoxb-197154261526-JFcrTQgmN9pubm8nYMcXXXXX',
+          access_token: 'xoxp-186464790945-187081019828-196275302867-9dcd597b2590c1f371dcf938f4eXXXXX',
+          team_id: 'TXXXXXXXX',
+          event: {
+            channel: 'D024BE91L',
+            ts: '1355517523.000005',
+            text: '',
+            type: 'message',
+            user: 'U2147483697'
+          },
+          api_app_id: 'AXXXXXXXXX',
+          authed_users: ['UXXXXXXX1', 'UXXXXXXX2'],
+          event_time: 1234567890,
+          token: 'XXYYZZ',
+          type: 'event_callback',
+          event_id: 'Ev08MFMKH6'
+        },
+        provider: 'slack',
+        cloudant_context_key: 'slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91L'
+      }
+    };
+
+    expectedResult = {
+      raw_input_data: params.raw_input_data,
+      channel: params.raw_input_data.slack.event.channel,
+      text: 'Hi. It looks like a nice drive today. What would you like me to do?  ',
+      raw_output_data: {
+        conversation: {
+          entities: [],
+          context: {
+            conversation_id: '1',
+            system: {
+              branch_exited_reason: 'completed',
+              dialog_request_counter: 1,
+              branch_exited: true,
+              dialog_turn_counter: 1,
+              dialog_stack: [
+                {
+                  dialog_node: 'root'
+                }
+              ]
+            }
+          },
+          intents: [],
+          output: {
+            text: [
+              'Hi. It looks like a nice drive today. What would you like me to do?  '
+            ],
+            nodes_visited: ['node_1_1473880041309'],
+            log_messages: []
+          },
+          input: {
+            text: ''
+          }
+        }
+      }
+    };
+  });
+
   it('validate actions work properly for single turn', () => {
-    // Get the json params for the single turn case.
-    const params = jsonParams.singleTurn.request;
-
-    // Expected response from the system.
-    const expectedResult = jsonParams.singleTurn.response;
-
     return ow.actions
       .invoke({
         name: actionName,
@@ -35,15 +101,17 @@ describe('context package integration tests', () => {
       .catch(err => {
         assert(false, err);
       });
-  }).timeout(10000);
+  })
+    .timeout(15000)
+    .retries(4);
 
   it('validate actions work properly for multiple turns', () => {
     // Get the json params for the multi turn case.
-    let params = jsonParams.multiTurn.requests[0];
+    params.raw_input_data.slack.event.channel = 'D024BE91L';
+    params.raw_input_data.cloudant_context_key = 'slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91M';
 
     // The expected responses from the system.
-    const expAfterTurn1 = jsonParams.multiTurn.responses[0];
-    const expAfterTurn2 = jsonParams.multiTurn.responses[1];
+    expectedResult.raw_output_data.conversation.context.conversation_id = '2';
 
     return ow.actions
       .invoke({
@@ -53,10 +121,22 @@ describe('context package integration tests', () => {
         params
       })
       .then(result => {
-        assert.deepEqual(result, expAfterTurn1);
+        assert.deepEqual(result, expectedResult);
 
-        // Update params for the second call turn of requests.
-        params = jsonParams.multiTurn.requests[1];
+        // Update params text for the second turn.
+        params.conversation.input.text = 'Turn on lights';
+
+        // Update the expected JSON for the second turn.
+        expectedResult.text = 'Ok. Turning on the lights.';
+        expectedResult.raw_output_data.conversation.context.system.dialog_request_counter = 2;
+        expectedResult.raw_output_data.conversation.context.system.dialog_turn_counter = 2;
+        expectedResult.raw_output_data.conversation.output.text[
+          0
+        ] = expectedResult.text;
+        expectedResult.raw_output_data.conversation.output.nodes_visited[
+          0
+        ] = 'node_2_1473880041309';
+        expectedResult.raw_output_data.conversation.input.text = params.conversation.input.text;
 
         // Invoke the context sequence actions again.
         // The context package should read the updated context from the previous turn.
@@ -68,10 +148,12 @@ describe('context package integration tests', () => {
         });
       })
       .then(result => {
-        assert.deepEqual(result, expAfterTurn2);
+        assert.deepEqual(result, expectedResult);
       })
       .catch(err => {
         assert(false, err);
       });
-  }).timeout(20000);
+  })
+    .timeout(20000)
+    .retries(4);
 });

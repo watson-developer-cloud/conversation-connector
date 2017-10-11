@@ -35,10 +35,3 @@ ${WSK} package delete "/${WSK_NAMESPACE}/${PIPNAME}_slack"
 ${WSK} package delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code"
 ${WSK} package delete "/${WSK_NAMESPACE}/${PIPNAME}_context"
 ${WSK} package delete "/${WSK_NAMESPACE}/${PIPNAME}_conversation"
-
-if [ $PIPNAME != "testflex" ]; then
-	# Delete pipeline sequence action
-	${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}"
-fi
-
-${WSK} action delete "/${WSK_NAMESPACE}/init-auth"

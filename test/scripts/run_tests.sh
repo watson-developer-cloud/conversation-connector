@@ -1,258 +1,273 @@
 #!/usr/bin/env bash
 
 export WSK=${WSK-wsk}
+export CF=${CF-cf}
 
 echo "Running Convo-Flexible-Bot test suite."
-echo "!!!Do NOT kill this process halfway as this will break the OpenWhisk parameter bindings!!!"
-echo "   ...but if you do, simply run './setup.sh' from the root directory again."
-echo -e "\n"
 
-# When running the test manually, return to the root directory first
-if [ `pwd | tr "/" "\n" | tail -n 1` == "test" ]; then
-  cd ..
-fi
+CLOUDANT_URL=''
+CLOUDANT_AUTH_DBNAME='authdb'
+CLOUDANT_CONTEXT_DBNAME='contextdb'
+AUTH_DOC=''
+RETCODE=0
 
-# Check the test system credential files exist
-SLACK_PARAM_FILE='./test/resources/slack-bindings.json'
-if [ ! -f $SLACK_PARAM_FILE ]; then
-  echo "Slack test parameters file $SLACK_PARAM_FILE not found."
-  exit 1
-fi
-FACEBOOK_PARAM_FILE='./test/resources/facebook-bindings.json'
-if [ ! -f $FACEBOOK_PARAM_FILE ]; then
-  echo "Slack test parameters file $FACEBOOK_PARAM_FILE not found."
-  exit 1
-fi
-OPENWHISK_PARAM_FILE='./test/resources/openwhisk-bindings.json'
-if [ ! -f $OPENWHISK_PARAM_FILE ]; then
-  echo "OpenWhisk test parameters file $OPENWHISK_PARAM_FILE not found."
-  exit 1
-fi
-CONVERSATION_PARAM_FILE='./test/resources/conversation-bindings.json'
-if [ ! -f $CONVERSATION_PARAM_FILE ]; then
-  echo "Conversation test parameters file $CONVERSATION_PARAM_FILE not found."
-  exit 1
-fi
+### MAIN
+main() {
+  loadEnvVars
+  processCfLogin
+  changeWhiskKey
+  createCloudantInstanceDatabases
+  createWhiskArtifacts
+  setupTestArtifacts
+  runTestSuite
+  destroyTestArtifacts
+  destroyWhiskArtifactsAndDatabases
+  echo 'Done.'
+}
 
-CLOUDANT_PARAM_FILE='./test/resources/cloudant-bindings.json'
-if [ ! -f $CLOUDANT_PARAM_FILE ]; then
-  echo "Cloudant test parameters file $CLOUDANT_PARAM_FILE not found."
-  exit 1
-fi
+### Loads the test environment variables
+loadEnvVars() {
+  echo 'Loading env variables from test/resources/.env'
+  # Read the master test creds file.
+  export $(cat test/resources/.env | xargs)
+}
 
-WSK_PROD_HOST=`wsk property get --apihost | tr "\t" "\n" | tail -n 1`
-WSK_PROD_KEY=`wsk property get --auth | tr "\t" "\n" | tail -n 1`
-
-# Store the prod credential bindings
-SLACK_PROD_BINDINGS=`wsk package get slack | grep -v 'got package' | jq '.parameters[]'`
-SLACK_PROD_ACCESS_TOKEN=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="access_token") | .value'`
-SLACK_PROD_BOT_ACCESS_TOKEN=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="bot_access_token") | .value'`
-SLACK_PROD_BOT_USER_ID=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="bot_user_id") | .value'`
-SLACK_PROD_CLIENT_ID=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="client_id") | .value'`
-SLACK_PROD_CLIENT_SECRET=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="client_secret") | .value'`
-SLACK_PROD_REDIRECT_URI=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="redirect_uri") | .value'`
-SLACK_PROD_STARTER_CODE_ACTION_NAME=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="starter_code_action_name") | .value'`
-SLACK_PROD_VERIFICATION_TOKEN=`echo $SLACK_PROD_BINDINGS | jq --raw-output 'select(.key=="verification_token") | .value'`
-
-FACEBOOK_PROD_BINDINGS=`wsk package get facebook | grep -v 'got package' | jq '.parameters[]'`
-FACEBOOK_PROD_PAGE_ACCESS_TOKEN=`echo $FACEBOOK_PROD_BINDINGS | jq --raw-output 'select(.key=="page_access_token") | .value'`
-FACEBOOK_PROD_APP_SECRET=`echo $FACEBOOK_PROD_BINDINGS | jq --raw-output 'select(.key=="app_secret") | .value'`
-FACEBOOK_PROD_VERIFICATION_TOKEN=`echo $FACEBOOK_PROD_BINDINGS | jq --raw-output 'select(.key=="verification_token") | .value'`
-
-STARTERCODE_PROD_BINDINGS=`wsk package get starter-code | grep -v 'got package' | jq '.parameters[]'`
-STARTERCODE_PROD_WORKSPACEID=`echo $STARTERCODE_PROD_BINDINGS | jq --raw-output 'select(.key=="workspace_id") | .value'`
-
-CONVERSATION_PROD_BINDINGS=`wsk package get conversation | grep -v 'got package' | jq '.parameters[]'`
-CONVERSATION_PROD_USERNAME=`echo $CONVERSATION_PROD_BINDINGS | jq --raw-output 'select(.key=="username") | .value'`
-CONVERSATION_PROD_PASSWORD=`echo $CONVERSATION_PROD_BINDINGS | jq --raw-output 'select(.key=="password") | .value'`
-CONVERSATION_PROD_WORKSPACEID=`echo $CONVERSATION_PROD_BINDINGS | jq --raw-output 'select(.key=="workspace_id") | .value'`
-
-CLOUDANT_PROD_BINDINGS=`wsk package get context | grep -v 'got package' | jq '.parameters[]'`
-CLOUDANT_PROD_URL=`echo $CLOUDANT_PROD_BINDINGS | jq --raw-output 'select(.key=="cloudant_url") | .value'`
-CLOUDANT_PROD_DBNAME=`echo $CLOUDANT_PROD_BINDINGS | jq --raw-output 'select(.key=="dbname") | .value'`
-
-# Grab test credential parameters
-SLACK_TEST_ACCESS_TOKEN=`cat $SLACK_PARAM_FILE | jq --raw-output '.slack.access_token'`
-SLACK_TEST_BOT_ACCESS_TOKEN=`cat $SLACK_PARAM_FILE | jq --raw-output '.slack.bot_access_token'`
-SLACK_TEST_STARTER_CODE_ACTION_NAME=`cat $SLACK_PARAM_FILE | jq --raw-output '.slack.starter_code_action_name'`
-SLACK_TEST_REDIRECT_URI=`cat $SLACK_PARAM_FILE | jq --raw-output '.slack.redirect_uri'`
-SLACK_TEST_BOT_USER_ID=`cat $SLACK_PARAM_FILE | jq --raw-output '.slack.bot_user_id'`
-SLACK_TEST_CLIENT_ID=`cat $SLACK_PARAM_FILE | jq --raw-output '.slack.client_id'`
-SLACK_TEST_CLIENT_SECRET=`cat $SLACK_PARAM_FILE | jq --raw-output '.slack.client_secret'`
-SLACK_TEST_VERIFICATION_TOKEN=`cat $SLACK_PARAM_FILE | jq --raw-output '.slack.verification_token'`
-
-FACEBOOK_TEST_PAGE_ACCESS_TOKEN=`cat $FACEBOOK_PARAM_FILE | jq --raw-output '.facebook.page_access_token'`
-FACEBOOK_TEST_APP_SECRET=`cat $FACEBOOK_PARAM_FILE | jq --raw-output '.facebook.app_secret'`
-FACEBOOK_TEST_VERIFICATION_TOKEN=`cat $FACEBOOK_PARAM_FILE | jq --raw-output '.facebook.verification_token'`
-
-OPENWHISK_TEST_API_HOST=`cat $OPENWHISK_PARAM_FILE | jq --raw-output '.openwhisk.apihost'`
-OPENWHISK_TEST_API_KEY=`cat $OPENWHISK_PARAM_FILE | jq --raw-output '.openwhisk.api_key'`
-OPENWHISK_TEST_NAMESPACE=`cat $OPENWHISK_PARAM_FILE | jq --raw-output '.openwhisk.namespace'`
-
-CONVERSATION_TEST_USERNAME=`cat $CONVERSATION_PARAM_FILE | jq --raw-output '.conversation.username'`
-CONVERSATION_TEST_PASSWORD=`cat $CONVERSATION_PARAM_FILE | jq --raw-output '.conversation.password'`
-CONVERSATION_TEST_WORKSPACEID=`cat $CONVERSATION_PARAM_FILE | jq --raw-output '.conversation.workspace_id'`
-
-CLOUDANT_TEST_URL=`cat $CLOUDANT_PARAM_FILE | jq --raw-output '.database.cloudant_url'`
-CLOUDANT_TEST_DBNAME=`cat $CLOUDANT_PARAM_FILE | jq --raw-output '.database.dbname'`
-
-STARTERCODE_TEST_WORKSPACEID=`cat $CONVERSATION_PARAM_FILE | jq --raw-output '.conversation.workspace_id'`
-
-# Change OpenWhisk client credentials to use test space credentials
-${WSK} property set --apihost ${OPENWHISK_TEST_API_HOST} --auth ${OPENWHISK_TEST_API_KEY} | grep -v 'ok'
-
-# Upload OpenWhisk credentials into user's env-variables so npm can be used without credentials
-export __OW_API_HOST="${OPENWHISK_TEST_API_HOST}"
-export __OW_API_KEY="${OPENWHISK_TEST_API_KEY}"
-export __OW_NAMESPACE="${OPENWHISK_TEST_NAMESPACE}"
-
-# Update each package to bind test credentials parameters
-${WSK} package update slack \
-  -p access_token "$SLACK_TEST_ACCESS_TOKEN" \
-  -p bot_access_token "$SLACK_TEST_BOT_ACCESS_TOKEN" \
-  -p redirect_uri "$SLACK_TEST_REDIRECT_URI" \
-  -p bot_user_id "$SLACK_TEST_BOT_USER_ID" \
-  -p client_id "a$SLACK_TEST_CLIENT_ID" \
-  -p client_secret "$SLACK_TEST_CLIENT_SECRET" \
-  -p verification_token "$SLACK_TEST_VERIFICATION_TOKEN" \
-  | grep -v 'updated package'
-
-${WSK} package update facebook \
-  -p page_access_token "$FACEBOOK_TEST_PAGE_ACCESS_TOKEN" \
-  -p app_secret "$FACEBOOK_TEST_APP_SECRET" \
-  -p verification_token "$FACEBOOK_TEST_VERIFICATION_TOKEN" \
-  | grep -v 'updated package'
-
-${WSK} package update starter-code \
-  -p workspace_id "$STARTERCODE_TEST_WORKSPACEID" \
-  | grep -v 'updated package'
-
-${WSK} package update conversation \
-  -p username "$CONVERSATION_TEST_USERNAME" \
-  -p password "$CONVERSATION_TEST_PASSWORD" \
-  -p workspace_id "$CONVERSATION_TEST_WORKSPACEID" \
-  | grep -v 'updated package'
-
-${WSK} package update context \
-  -p cloudant_url "$CLOUDANT_TEST_URL" \
-  -p dbname "$CLOUDANT_TEST_DBNAME" \
-  | grep -v 'updated package'
-
-# Update all actions specified by tests
-${WSK} action update slack/receive ./channels/slack/receive/index.js | grep -v 'ok'
-${WSK} action update slack/post ./channels/slack/post/index.js | grep -v 'ok'
-${WSK} action update slack/deploy ./channels/slack/deploy/index.js | grep -v 'ok'
-
-${WSK} action update facebook/receive ./channels/facebook/receive/index.js | grep -v 'ok'
-${WSK} action update facebook/post ./channels/facebook/post/index.js | grep -v 'ok'
-
-${WSK} action update starter-code/pre-conversation ./starter-code/pre-conversation.js | grep -v 'ok'
-${WSK} action update starter-code/post-conversation ./starter-code/post-conversation.js | grep -v 'ok'
-${WSK} action update starter-code/normalize-slack-for-conversation ./starter-code/normalize-for-conversation/normalize-slack-for-conversation.js | grep -v 'ok'
-${WSK} action update starter-code/normalize-conversation-for-slack ./starter-code/normalize-for-channel/normalize-conversation-for-slack.js | grep -v 'ok'
-${WSK} action update starter-code/normalize-facebook-for-conversation ./starter-code/normalize-for-conversation/normalize-facebook-for-conversation.js | grep -v 'ok'
-${WSK} action update starter-code/normalize-conversation-for-facebook ./starter-code/normalize-for-channel/normalize-conversation-for-facebook.js | grep -v 'ok'
-
-${WSK} action update conversation/call-conversation ./conversation/call-conversation.js | grep -v 'ok'
-
-${WSK} action update context/load-context ./context/load-context.js | grep -v 'ok'
-${WSK} action update context/save-context ./context/save-context.js | grep -v 'ok'
-
-# Run setup scripts needed to build "mock" actions for integration tests
-SETUP_SCRIPT='./test/integration/conversation/setup.sh'
-if [ -f $SETUP_SCRIPT ]; then
-  bash $SETUP_SCRIPT
-fi
-SETUP_SCRIPT='./test/integration/starter-code/setup.sh'
-if [ -f $SETUP_SCRIPT ]; then
-  bash $SETUP_SCRIPT
-fi
-for folder in './test/integration/channels'/*; do
-  if [ -d $folder ]; then
-    SETUP_SCRIPT="$folder/setup.sh"
-    if [ -f $SETUP_SCRIPT ]; then
-      bash $SETUP_SCRIPT
-    fi
+### CHECK OR PROCESS CF LOGIN
+processCfLogin() {
+  echo 'Logging into Bluemix using cf...'
+  #Login to Bluemix
+  if [ -n ${__TEST_BX_CF_KEY} ]; then
+    ${CF} login -a ${__TEST_BX_API_HOST} -u apikey -p ${__TEST_BX_CF_KEY} -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE}
+  else
+    echo 'CF not logged in, and missing ${__TEST_BX_CF_KEY}'
+    exit 1
   fi
-done
-SETUP_SCRIPT='./test/integration/context/setup.sh'
-if [ -f $SETUP_SCRIPT ]; then
-  bash $SETUP_SCRIPT
-fi
-SETUP_SCRIPT='./test/end-to-end/setup.sh'
-if [ -f $SETUP_SCRIPT ]; then
-  bash $SETUP_SCRIPT
-fi
+}
 
-# Test script
-if [ "$1" == "test" ]; then
-  ./node_modules/.bin/mocha test --recursive
-elif [ "$1" == "coverage" ]; then
+# Switches the Openwhisk namespace based on the current Bluemix org/space
+# where user has logged in.
+changeWhiskKey() {
+  echo 'Syncing wsk namespace with CF namespace...'
+  WSK_NAMESPACE="`${CF} target | grep 'Org:' | awk '{print $2}'`_`${CF} target | grep 'Space:' | awk '{print $2}'`"
+  if [ "${WSK_NAMESPACE}" == `${WSK} namespace list | tail -n +2 | head -n 1` ]; then
+    return
+  fi
+  TARGET=`${CF} target | grep 'API endpoint:' | awk '{print $3}'`
+  WSK_API_HOST="https://openwhisk.${TARGET#*.}"
+
+  ACCESS_TOKEN=`cat ~/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`
+  REFRESH_TOKEN=`cat ~/.cf/config.json | jq -r .RefreshToken`
+
+  WSK_CREDENTIALS=`curl -s -X POST -H 'Content-Type: application/json' -d '{"accessToken": "'$ACCESS_TOKEN'", "refreshToken": "'$REFRESH_TOKEN'"}' ${WSK_API_HOST}/bluemix/v2/authenticate`
+  WSK_API_KEY=`echo ${WSK_CREDENTIALS} | jq -r ".namespaces[] | select(.name==\"${WSK_NAMESPACE}\") | [.uuid, .key] | join(\":\")"`
+
+  ${WSK} property set --apihost ${WSK_API_HOST} --auth "${WSK_API_KEY}" --namespace ${WSK_NAMESPACE}
+}
+
+### CHECK OR CREATE CLOUDANT-LITE DATABASE INSTANCE, CREATE AUTH DATABASE
+createCloudantInstanceDatabases() {
+  echo 'Checking for or creating cloudant instance...'
+  CLOUDANT_INSTANCE_NAME='convoflex'
+  CLOUDANT_INSTANCE_KEY='bot-key'
+
+  ${CF} service ${CLOUDANT_INSTANCE_NAME} > /dev/null
+  if [ "$?" != "0" ]; then
+    ${CF} create-service cloudantNoSQLDB Lite convoflex
+  fi
+  ${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} > /dev/null
+  if [ "$?" != "0" ]; then
+    ${CF} create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
+  fi
+  CLOUDANT_URL=`${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +2 | jq -r .url`
+
+  for i in {1..10}; do
+    e=`curl -s -XPUT ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME} | jq -er .error`
+    if [ "$?" == "0" ]; then
+      if [ "$e" == "conflict" -o "$e" == "file_exists" ]; then
+        break
+      fi
+      echo "create auth database returned with error [$e], retrying..."
+      sleep 5
+    else
+      break
+    fi
+  done
+
+  for i in {1..10}; do
+    e=`curl -s -XPUT ${CLOUDANT_URL}/${CLOUDANT_CONTEXT_DBNAME} | jq -er .error`
+    if [ "$?" == "0" ]; then
+      if [ "$e" == "conflict" -o "$e" == "file_exists" ]; then
+        break
+      fi
+      echo "create context database returned with error [$e], retrying..."
+      sleep 5
+    else
+      break
+    fi
+  done
+  echo 'Created Cloudant Auth and Context dbs.'
+}
+
+### CREATE AUTHENTICATION DATABASE DOCUMENT
+createAuthDoc() {
+  AUTH_DOC=$(node -e 'const params = process.env;
+  const doc = {
+    slack: {
+      client_id: params.__TEST_SLACK_CLIENT_ID,
+      client_secret: params.__TEST_SLACK_CLIENT_SECRET,
+      verification_token: params.__TEST_SLACK_VERIFICATION_TOKEN,
+      access_token: params.__TEST_SLACK_ACCESS_TOKEN,
+      bot_access_token: params.__TEST_SLACK_BOT_ACCESS_TOKEN
+    },
+    facebook: {
+      app_secret: params.__TEST_FACEBOOK_APP_SECRET,
+      verification_token: params.__TEST_FACEBOOK_VERIFICATION_TOKEN,
+      page_access_token: params.__TEST_FACEBOOK_PAGE_ACCESS_TOKEN
+    },
+    conversation: {
+      username: params.__TEST_CONVERSATION_USERNAME,
+      password: params.__TEST_CONVERSATION_PASSWORD,
+      workspace_id: params.__TEST_CONVERSATION_WORKSPACE_ID
+    }
+  };
+
+  console.log(JSON.stringify(doc));
+  ')
+}
+
+### Create all Whisk artifacts needed for running the test suite
+createWhiskArtifacts() {
+  echo 'Creating Whisk packages and actions...'
+
+  # Generate the pipeline auth key
+  PIPELINE_AUTH_KEY=`uuidgen`
+
+  ## UPDATE ALL RELEVANT RESOURCES
+  cd starter-code; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
+  cd conversation; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
+  cd context; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
+
+  cd channels;
+  cd facebook; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
+  cd slack; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..;cd ..;
+
+  ## CREATE CREDENTIALS DOCUMENT IN AUTH DATABASE
+  createAuthDoc # creates the Auth doc JSON and stores it into $AUTH_DOC
+  for i in {1..10}; do
+    e=`curl -s -XPUT -d $AUTH_DOC ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME}/${PIPELINE_AUTH_KEY} | jq -er .error`
+    if [ "$?" == "0" ]; then
+      if [ "$e" == "conflict" -o "$e" == "file_exists" ]; then
+        break
+      fi
+      echo "create auth database document returned with error [${e}], retrying..."
+      sleep 5
+    else
+      break
+    fi
+  done
+
+  echo "Your Cloudant Auth DB URL is: ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME}/${PIPELINE_AUTH_KEY}"
+
+  ## INJECT ANNOTATIONS INTO ALL PACKAGES
+  for line in `wsk package list | grep "/${__TEST_PIPELINE_NAME}_"`; do
+    # this creates issues if the package name contains spaces
+    resource=`echo $line | awk '{print $1}'`
+    package=${resource##*/}
+
+    ${WSK} package update $package \
+      -a cloudant_auth_key "${PIPELINE_AUTH_KEY}" \
+      -a cloudant_url "${CLOUDANT_URL}" \
+      -a cloudant_auth_dbname "${CLOUDANT_AUTH_DBNAME}" \
+      -a cloudant_context_dbname "${CLOUDANT_CONTEXT_DBNAME}" &> /dev/null
+  done
+}
+
+setupTestArtifacts() {
+  echo 'Running test setup scripts...'
+  # Run setup scripts needed to build "mock" actions for integration tests
+  SETUP_SCRIPT='./test/integration/conversation/setup.sh'
+  if [ -f $SETUP_SCRIPT ]; then
+    bash $SETUP_SCRIPT $__TEST_PIPELINE_NAME
+  fi
+  SETUP_SCRIPT='./test/integration/starter-code/setup.sh'
+  if [ -f $SETUP_SCRIPT ]; then
+    bash $SETUP_SCRIPT $__TEST_PIPELINE_NAME
+  fi
+  for folder in './test/integration/channels'/*; do
+    if [ -d $folder ]; then
+      SETUP_SCRIPT="$folder/setup.sh"
+      if [ -f $SETUP_SCRIPT ]; then
+        bash $SETUP_SCRIPT $__TEST_PIPELINE_NAME
+      fi
+    fi
+  done
+  SETUP_SCRIPT='./test/integration/context/setup.sh'
+  if [ -f $SETUP_SCRIPT ]; then
+    bash $SETUP_SCRIPT $__TEST_PIPELINE_NAME
+  fi
+
+  SETUP_SCRIPT='./test/end-to-end/setup.sh'
+  if [ -f $SETUP_SCRIPT ]; then
+    bash $SETUP_SCRIPT $__TEST_PIPELINE_NAME
+  fi
+
+  # Export the Openwhisk credentials for tests
+  export __OW_API_KEY=`${WSK} property get --auth | tr "\t" "\n" | tail -n 1`
+  export __OW_NAMESPACE=`${WSK} namespace list | tail -n +2 | head -n 1`
+}
+
+destroyTestArtifacts() {
+  echo 'Running test breakdown scripts...'
+  # Run breakdown scripts that deletes the "mock" actions for integration tests
+  BREAKDOWN_SCRIPT='./test/integration/conversation/breakdown.sh'
+  if [ -f $BREAKDOWN_SCRIPT ]; then
+    bash $BREAKDOWN_SCRIPT $__TEST_PIPELINE_NAME
+  fi
+  BREAKDOWN_SCRIPT='./test/integration/starter-code/breakdown.sh'
+  if [ -f $BREAKDOWN_SCRIPT ]; then
+    bash $BREAKDOWN_SCRIPT $__TEST_PIPELINE_NAME
+  fi
+  for folder in './test/integration/channels'/*; do
+    if [ -d $folder ]; then
+      BREAKDOWN_SCRIPT="$folder/breakdown.sh"
+      if [ -f $BREAKDOWN_SCRIPT ]; then
+        bash $BREAKDOWN_SCRIPT $__TEST_PIPELINE_NAME
+      fi
+    fi
+  done
+  BREAKDOWN_SCRIPT='./test/integration/context/breakdown.sh'
+  if [ -f $BREAKDOWN_SCRIPT ]; then
+    bash $BREAKDOWN_SCRIPT $__TEST_PIPELINE_NAME
+  fi
+  BREAKDOWN_SCRIPT='./test/end-to-end/breakdown.sh'
+  if [ -f $BREAKDOWN_SCRIPT ]; then
+    bash $BREAKDOWN_SCRIPT $__TEST_PIPELINE_NAME
+  fi
+}
+
+destroyWhiskArtifactsAndDatabases() {
+  # Clean up wsk artifacts-packages and actions
+  ./test/scripts/clean.sh ${__TEST_PIPELINE_NAME}
+
+  # Delete the Cloudant dbs-contextdb and authdb once tests complete
+  deleteCloudantDb ${CLOUDANT_URL} ${CLOUDANT_CONTEXT_DBNAME}
+  deleteCloudantDb ${CLOUDANT_URL} ${CLOUDANT_AUTH_DBNAME}
+}
+
+runTestSuite() {
+  # Run tests with coverage
   istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive -R spec
-elif [ "$1" ]; then
-  ./node_modules/.bin/mocha $1
-fi
-RETCODE=$?
+  RETCODE=$?
+}
 
-# Run breakdown scripts that deletes the "mock" actions for integration tests
-BREAKDOWN_SCRIPT='./test/integration/conversation/breakdown.sh'
-if [ -f $BREAKDOWN_SCRIPT ]; then
-  bash $BREAKDOWN_SCRIPT
-fi
-BREAKDOWN_SCRIPT='./test/integration/starter-code/breakdown.sh'
-if [ -f $BREAKDOWN_SCRIPT ]; then
-  bash $BREAKDOWN_SCRIPT
-fi
-for folder in './test/integration/channels'/*; do
-  if [ -d $folder ]; then
-    BREAKDOWN_SCRIPT="$folder/breakdown.sh"
-    if [ -f $BREAKDOWN_SCRIPT ]; then
-      bash $BREAKDOWN_SCRIPT
-    fi
-  fi
-done
-BREAKDOWN_SCRIPT='./test/integration/context/breakdown.sh'
-if [ -f $BREAKDOWN_SCRIPT ]; then
-  bash $BREAKDOWN_SCRIPT
-fi
-BREAKDOWN_SCRIPT='./test/end-to-end/breakdown.sh'
-if [ -f $BREAKDOWN_SCRIPT ]; then
-  bash $BREAKDOWN_SCRIPT
-fi
+# Deletes a cloudant database
+# $1 - cloudant_url
+# $2 - database_name
+deleteCloudantDb(){
+  echo "Deleting cloudant database $2"
+  curl -s -XDELETE "$1/$2" | grep -v "error"
+}
 
-# Revert to prod OpenWhisk space
-${WSK} property set --apihost ${WSK_PROD_HOST} --auth ${WSK_PROD_KEY} | grep -v 'ok'
-
-# Revert to prod credentials bindings
-${WSK} package update slack \
-  -p access_token "$SLACK_PROD_ACCESS_TOKEN" \
-  -p bot_access_token "$SLACK_PROD_BOT_ACCESS_TOKEN" \
-  -p redirect_uri "$SLACK_PROD_REDIRECT_URI" \
-  -p bot_user_id "$SLACK_PROD_BOT_USER_ID" \
-  -p client_id "$SLACK_PROD_CLIENT_ID" \
-  -p client_secret "$SLACK_PROD_CLIENT_SECRET" \
-  -p verification_token "$SLACK_PROD_VERIFICATION_TOKEN" \
-  | grep -v 'updated package'
-
-${WSK} package update facebook \
-  -p page_access_token "$FACEBOOK_PROD_PAGE_ACCESS_TOKEN" \
-  -p app_secret "$FACEBOOK_PROD_APP_SECRET" \
-  -p verification_token "$FACEBOOK_PROD_VERIFICATION_TOKEN" \
-  | grep -v 'updated package'
-
-${WSK} package update starter-code \
-  -p workspace_id "$STARTERCODE_PROD_WORKSPACEID" \
-  | grep -v 'updated package'
-
-${WSK} package update conversation \
-  -p username "$CONVERSATION_PROD_USERNAME" \
-  -p password "$CONVERSATION_PROD_PASSWORD" \
-  -p workspace_id "$CONVERSATION_PROD_WORKSPACEID" \
-  | grep -v 'updated package'
-
-${WSK} package update context \
-  -p cloudant_url "$CLOUDANT_PROD_URL" \
-  -p dbname "$CLOUDANT_PROD_DBNAME" \
-  | grep -v 'updated package'
+main
 
 exit $RETCODE

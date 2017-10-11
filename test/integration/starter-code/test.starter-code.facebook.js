@@ -6,9 +6,10 @@
 
 const assert = require('assert');
 const openwhisk = require('openwhisk');
-const facebookBindings = require('./../../resources/bindings/facebook-bindings.json').facebook;
 
-const pipelineName = process.env.__TEST_PIPELINE_NAME;
+const envParams = process.env;
+
+const pipelineName = envParams.__TEST_PIPELINE_NAME;
 
 describe('starter-code integration tests for facebook', () => {
   const ow = openwhisk();
@@ -20,8 +21,12 @@ describe('starter-code integration tests for facebook', () => {
   beforeEach(() => {
     params = {
       facebook: {
-        sender: facebookBindings.sender,
-        recipient: facebookBindings.recipient,
+        sender: {
+          id: envParams.__TEST_FACEBOOK_SENDER_ID
+        },
+        recipient: {
+          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+        },
         message: {
           text: 'hello, world!'
         }
@@ -30,7 +35,9 @@ describe('starter-code integration tests for facebook', () => {
     };
 
     expectedResult = {
-      recipient: facebookBindings.sender,
+      recipient: {
+        id: envParams.__TEST_FACEBOOK_SENDER_ID
+      },
       raw_input_data: {
         facebook: params.facebook,
         provider: 'facebook',

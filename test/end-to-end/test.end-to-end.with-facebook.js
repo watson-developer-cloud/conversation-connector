@@ -4,13 +4,14 @@ const assert = require('assert');
 const openwhisk = require('openwhisk');
 
 const safeExtractErrorMessage = require('./../utils/helper-methods.js').safeExtractErrorMessage;
-const facebookBindings = require('./../resources/bindings/facebook-bindings.json').facebook;
 
 const carDashboardReplyWelcome = 'Hi. It looks like a nice drive today. What would you like me to do?  ';
 const carDashboardReplyLights = "I'll turn on the lights for you.";
 const carDashboardReplyHelp = 'Hello! What can I help you with?';
 
-const pipelineName = process.env.__TEST_PIPELINE_NAME;
+const envParams = process.env;
+
+const pipelineName = envParams.__TEST_PIPELINE_NAME;
 
 /** Function allows tests to sleep for certain amount of time
 */
@@ -69,7 +70,7 @@ describe('End-to-End tests: Facebook as channel package', () => {
         text: carDashboardReplyWelcome
       },
       recipient: {
-        id: facebookBindings.sender.id
+        id: envParams.__TEST_FACEBOOK_SENDER_ID
       }
     },
     text: 200,
@@ -86,12 +87,16 @@ describe('End-to-End tests: Facebook as channel package', () => {
       object: 'page',
       entry: [
         {
-          id: facebookBindings.sender.id,
+          id: envParams.__TEST_FACEBOOK_SENDER_ID,
           time: 1458692752478,
           messaging: [
             {
-              sender: facebookBindings.sender,
-              recipient: facebookBindings.recipient,
+              sender: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
               message: {
                 text: 'hello, world!'
               }
@@ -211,7 +216,9 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
         successResponse: {
           text: 200,
           params: {
-            recipient: facebookBindings.sender,
+            recipient: {
+              id: envParams.__TEST_FACEBOOK_SENDER_ID
+            },
             message: { text: carDashboardReplyWelcome }
           },
           url: 'https://graph.facebook.com/v2.6/me/messages'
@@ -222,7 +229,9 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
         successResponse: {
           text: 200,
           params: {
-            recipient: facebookBindings.sender,
+            recipient: {
+              id: envParams.__TEST_FACEBOOK_SENDER_ID
+            },
             message: { text: carDashboardReplyWelcome }
           },
           url: 'https://graph.facebook.com/v2.6/me/messages'
@@ -242,20 +251,26 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
       object: 'page',
       entry: [
         {
-          id: facebookBindings.recipient.id,
+          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
           time: 1458692752478,
           messaging: [
             {
               sender: '12345',
-              recipient: facebookBindings.recipient,
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
               timestamp: 1458692752467,
               message: {
                 text: 'hi'
               }
             },
             {
-              sender: facebookBindings.sender,
-              recipient: facebookBindings.recipient,
+              sender: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
               timestamp: 1458692752468,
               message: {
                 text: 'hi'
@@ -264,12 +279,16 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
           ]
         },
         {
-          id: facebookBindings.recipient.id,
+          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
           time: 1458692752489,
           messaging: [
             {
-              sender: facebookBindings.sender,
-              recipient: facebookBindings.recipient,
+              sender: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
               timestamp: 1458692752488,
               message: {
                 text: 'hi'
@@ -388,7 +407,7 @@ describe('End-to-End tests: Facebook context package works', () => {
         text: carDashboardReplyWelcome
       },
       recipient: {
-        id: facebookBindings.sender.id
+        id: envParams.__TEST_FACEBOOK_SENDER_ID
       }
     },
     text: 200,
@@ -401,7 +420,7 @@ describe('End-to-End tests: Facebook context package works', () => {
         text: carDashboardReplyLights
       },
       recipient: {
-        id: facebookBindings.sender.id
+        id: envParams.__TEST_FACEBOOK_SENDER_ID
       }
     },
     text: 200,
@@ -417,12 +436,16 @@ describe('End-to-End tests: Facebook context package works', () => {
       object: 'page',
       entry: [
         {
-          id: facebookBindings.sender.id,
+          id: envParams.__TEST_FACEBOOK_SENDER_ID,
           time: 1458692752478,
           messaging: [
             {
-              sender: facebookBindings.sender,
-              recipient: facebookBindings.recipient,
+              sender: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
               message: {
                 text: 'hello, world!'
               }

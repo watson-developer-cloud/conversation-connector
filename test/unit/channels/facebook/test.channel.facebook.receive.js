@@ -11,9 +11,15 @@ const nock = require('nock');
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
 
-process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+const envParams = process.env;
 
-const facebookBindings = require('./../../../resources/bindings/facebook-bindings.json').facebook;
+process.env.__OW_ACTION_NAME = `/${envParams.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+
+const apiHost = envParams.__OW_API_HOST;
+const apiKey = envParams.__OW_API_KEY;
+const namespace = envParams.__OW_NAMESPACE;
+const packageName = envParams.__OW_ACTION_NAME.split('/')[2];
+
 const facebookOpenwhiskResources = require('./../../../resources/payloads/test.unit.facebook.receive.json');
 
 const facebookReceive = require('./../../../../channels/facebook/receive/index.js');
@@ -48,11 +54,6 @@ describe('Facebook Receive Unit Tests', () => {
   const cloudantUrl = 'https://some-cloudant-url.com';
   const cloudantAuthDbName = 'abc';
   const cloudantAuthKey = '123';
-
-  const apiHost = process.env.__OW_API_HOST;
-  const apiKey = process.env.__OW_API_KEY;
-  const namespace = process.env.__OW_NAMESPACE;
-  const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
 
   const subPipelineActionName = 'facebook-flexible-pipeline';
   const batchedMessageActionName = 'batched_messages';
@@ -96,19 +97,23 @@ describe('Facebook Receive Unit Tests', () => {
 
     messageParams = {
       __ow_headers: {
-        'x-hub-signature': facebookBindings['x-hub-signature']
+        'x-hub-signature': envParams.__TEST_FACEBOOK_X_HUB_SIGNATURE
       },
-      verification_token: facebookBindings.verification_token,
-      app_secret: facebookBindings.app_secret,
+      verification_token: envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN,
+      app_secret: envParams.__TEST_FACEBOOK_APP_SECRET,
       object: 'page',
       entry: [
         {
-          id: facebookBindings.recipient.id,
+          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
           time: 1458692752478,
           messaging: [
             {
-              sender: facebookBindings.sender,
-              recipient: facebookBindings.recipient,
+              sender: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
               message: {
                 text: 'hello, world!'
               }
@@ -133,24 +138,30 @@ describe('Facebook Receive Unit Tests', () => {
       __ow_headers: {
         'x-hub-signature': 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738'
       },
-      verification_token: facebookBindings.verification_token,
+      verification_token: envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN,
       object: 'page',
       entry: [
         {
-          id: facebookBindings.recipient.id,
+          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
           time: 1458692752478,
           messaging: [
             {
               sender: '12345',
-              recipient: facebookBindings.recipient,
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
               timestamp: 1458692752467,
               message: {
                 text: 'hi'
               }
             },
             {
-              sender: facebookBindings.sender,
-              recipient: facebookBindings.recipient,
+              sender: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
               timestamp: 1458692752468,
               message: {
                 text: 'hi'
@@ -159,12 +170,16 @@ describe('Facebook Receive Unit Tests', () => {
           ]
         },
         {
-          id: facebookBindings.recipient.id,
+          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
           time: 1458692752489,
           messaging: [
             {
-              sender: facebookBindings.sender,
-              recipient: facebookBindings.recipient,
+              sender: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
               timestamp: 1458692752488,
               message: {
                 text: 'hi'
@@ -186,7 +201,7 @@ describe('Facebook Receive Unit Tests', () => {
       sub_pipeline: 'facebook-flexible-pipeline',
       batched_messages: 'batched_messages',
       'hub.mode': 'subscribe',
-      'hub.verify_token': facebookBindings.verification_token,
+      'hub.verify_token': envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN,
       'hub.challenge': 'challenge_token'
     };
 
@@ -196,9 +211,9 @@ describe('Facebook Receive Unit Tests', () => {
 
     auth = {
       facebook: {
-        app_secret: facebookBindings.app_secret,
-        verification_token: facebookBindings.verification_token,
-        page_access_token: facebookBindings.page_access_token
+        app_secret: envParams.__TEST_FACEBOOK_APP_SECRET,
+        verification_token: envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN,
+        page_access_token: envParams.__TEST_FACEBOOK_PAGE_ACCESS_TOKEN
       }
     };
   });

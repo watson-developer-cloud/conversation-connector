@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "./setup.sh test",
-    "coverage": "./test/run_tests.sh coverage"
+    "test": "./test/scripts/run_tests.sh"
   },
   "repository": {
     "type": "git",

@@ -2,15 +2,13 @@
 
 export WSK=${WSK-wsk}
 
-PACKAGE_NAME=$1
-CLOUDANT_URL=$2
-CLOUDANT_AUTH_DBNAME=$3
-CLOUDANT_AUTH_KEY=$4
+# Pipeline name
+# eg: my-flex-pipeline_
+PIPELINE_NAME=$1
 
-${WSK} package update $PACKAGE_NAME \
-  -a cloudant_url "${CLOUDANT_URL}" \
-  -a cloudant_auth_dbname "${CLOUDANT_AUTH_DBNAME}" \
-  -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}"
+PACKAGE_NAME="${PIPELINE_NAME}starter-code"
+
+${WSK} package update $PACKAGE_NAME
 
 for file in `find . -type f -name '*.js'`; do
   file_basename=`basename ${file}`

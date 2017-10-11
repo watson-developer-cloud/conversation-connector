@@ -3,9 +3,9 @@
 const assert = require('assert');
 const openwhisk = require('openwhisk');
 
-const packageBindings = require('../../resources/bindings/conversation-bindings.json').conversation;
+const envParams = process.env;
 
-const pipelineName = process.env.__TEST_PIPELINE_NAME;
+const pipelineName = envParams.__TEST_PIPELINE_NAME;
 
 describe('conversation integration tests', () => {
   // Setup the ow module for the upcoming calls
@@ -32,7 +32,13 @@ describe('conversation integration tests', () => {
 
     // merge the two objects, deep copying packageBindings so it doesn't get changed between tests
     // and we only have to read it once
-    params = Object.assign(params, JSON.parse(JSON.stringify(packageBindings)));
+    params = Object.assign(params, {
+      username: envParams.__TEST_CONVERSATION_USERNAME,
+      password: envParams.__TEST_CONVERSATION_PASSWORD,
+      workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID,
+      version_date: envParams.__TEST_CONVERSATION_VERSION_DATE,
+      version: envParams.__TEST_CONVERSATION_VERSION
+    });
   });
 
   it('call using OpenWhisk module ', () => {
@@ -61,5 +67,7 @@ describe('conversation integration tests', () => {
       .catch(e => {
         assert(false, e);
       });
-  }).timeout(16000);
+  })
+    .timeout(20000)
+    .retries(4);
 });

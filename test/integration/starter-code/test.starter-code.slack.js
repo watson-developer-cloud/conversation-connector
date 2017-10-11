@@ -9,7 +9,9 @@ const openwhisk = require('openwhisk');
 
 const chatPostUrl = 'https://slack.com/api/chat.postMessage';
 
-const pipelineName = process.env.__TEST_PIPELINE_NAME;
+const envParams = process.env;
+
+const pipelineName = envParams.__TEST_PIPELINE_NAME;
 
 const inputText = 'Turn on lights';
 const outputText = 'Output text from mock-convo.';

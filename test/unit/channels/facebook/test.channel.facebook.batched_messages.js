@@ -10,7 +10,6 @@ const assert = require('assert');
 const nock = require('nock');
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
-const facebookBindings = require('./../../../resources/bindings/facebook-bindings.json').facebook;
 const facebookOpenwhiskResources = require('./../../../resources/payloads/test.unit.facebook.receive.json');
 
 const errorNoSubpipelineName = "Subpipeline name does not exist. Please make sure your openwhisk channel package has the binding 'sub_pipeline'";
@@ -24,9 +23,11 @@ describe('Facebook Batched Messages Unit Tests', () => {
   let openwhiskStub;
   let mockFacebookBatchedMessages;
 
-  const apiHost = process.env.__OW_API_HOST;
-  const apiKey = process.env.__OW_API_KEY;
-  const namespace = process.env.__OW_NAMESPACE;
+  const envParams = process.env;
+
+  const apiHost = envParams.__OW_API_HOST;
+  const apiKey = envParams.__OW_API_KEY;
+  const namespace = envParams.__OW_NAMESPACE;
 
   const owUrl = `https://${apiHost}/api/v1/namespaces`;
 
@@ -64,9 +65,9 @@ describe('Facebook Batched Messages Unit Tests', () => {
               message: {
                 text: "Hello! I'm doing good. I'm here to help you. Just say the word."
               },
-              page_id: facebookBindings.recipient.id,
+              page_id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
               recipient: {
-                id: facebookBindings.sender.id
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
               },
               workspace_id: '08e17ca1-5b33-487a-83c9-xxxxxxxxxx'
             },
@@ -82,25 +83,31 @@ describe('Facebook Batched Messages Unit Tests', () => {
       __ow_headers: {
         'x-hub-signature': 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738'
       },
-      verification_token: facebookBindings.verification_token,
-      app_secret: facebookBindings.app_secret,
+      verification_token: envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN,
+      app_secret: envParams.__TEST_FACEBOOK_APP_SECRET,
       object: 'page',
       entry: [
         {
-          id: facebookBindings.recipient.id,
+          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
           time: 1458692752478,
           messaging: [
             {
               sender: '12345',
-              recipient: facebookBindings.recipient,
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
               timestamp: 1458692752467,
               message: {
                 text: 'hi'
               }
             },
             {
-              sender: facebookBindings.sender,
-              recipient: facebookBindings.recipient,
+              sender: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
               timestamp: 1458692752468,
               message: {
                 text: 'hi'
@@ -109,12 +116,16 @@ describe('Facebook Batched Messages Unit Tests', () => {
           ]
         },
         {
-          id: facebookBindings.recipient.id,
+          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
           time: 1458692752489,
           messaging: [
             {
-              sender: facebookBindings.sender,
-              recipient: facebookBindings.recipient,
+              sender: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
               timestamp: 1458692752488,
               message: {
                 text: 'hi'

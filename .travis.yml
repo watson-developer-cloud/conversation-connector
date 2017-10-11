@@ -16,7 +16,8 @@ install:
   - npm install
 script:
   - eslint .
-  - npm run test
+  - npm test
+  - node ./node_modules/.bin/istanbul check-coverage --statements 90 --branches 90 --lines 90 --functions 90
 env:
   global:
     WSK_HOST=openwhisk.ng.bluemix.net

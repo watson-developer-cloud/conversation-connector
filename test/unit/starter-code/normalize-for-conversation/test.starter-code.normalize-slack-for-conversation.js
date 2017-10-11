@@ -7,9 +7,9 @@
 const assert = require('assert');
 const nock = require('nock');
 
-process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+const envParams = process.env;
 
-const conversationBindings = require('../../../resources/bindings/conversation-bindings.json').conversation;
+process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
 const scNormSlackForConvo = require('./../../../../starter-code/normalize-for-conversation/normalize-slack-for-conversation.js');
 
@@ -83,7 +83,7 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
       raw_input_data: {
         slack: textMessageParams.slack,
         provider: 'slack',
-        cloudant_context_key: `slack_TXXXXXXXX_${conversationBindings.workspace_id}_U2147483697_CXXXXXXXXX`
+        cloudant_context_key: `slack_TXXXXXXXX_${envParams.__TEST_CONVERSATION_WORKSPACE_ID}_U2147483697_CXXXXXXXXX`
       }
     };
 
@@ -121,7 +121,7 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
 
     auth = {
       conversation: {
-        workspace_id: conversationBindings.workspace_id
+        workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
       }
     };
   });

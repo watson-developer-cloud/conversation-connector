@@ -5,8 +5,6 @@ const openwhisk = require('openwhisk');
 
 const safeExtractErrorMessage = require('./../utils/helper-methods.js').safeExtractErrorMessage;
 
-const slackBindings = require('./../resources/bindings/slack-bindings.json').slack;
-
 const carDashboardReplyWelcome = 'Hi. It looks like a nice drive today. What would you like me to do?  ';
 const carDashboardReplyLights = "I'll turn on the lights for you.";
 
@@ -14,7 +12,9 @@ const buttonMessageInputText = 'Buy me a shirt please.';
 const buttonMessageResponse = 'What shirt size would you like?';
 const updateMessageResponse = "I'll buy a small shirt for you.";
 
-const pipelineName = process.env.__TEST_PIPELINE_NAME;
+const envParams = process.env;
+
+const pipelineName = envParams.__TEST_PIPELINE_NAME;
 
 /**
  * Slack prerequisites test suite verifies the Slack package is properly deployed in OpenWhisk
@@ -57,21 +57,21 @@ describe('End-to-End tests: with Slack package', () => {
   let attachmentPayload;
 
   const expAfterTurn2 = {
-    channel: slackBindings.channel,
+    channel: envParams.__TEST_SLACK_CHANNEL,
     text: carDashboardReplyLights,
     as_user: 'true',
-    token: slackBindings.bot_access_token,
+    token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
     ts: 'XXXXXXXXX.XXXXXX'
   };
 
   beforeEach(() => {
     params = {
-      token: slackBindings.verification_token,
+      token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
       team_id: 'TXXXXXXXX',
       api_app_id: 'AXXXXXXXX',
       event: {
         type: 'message',
-        channel: slackBindings.channel,
+        channel: envParams.__TEST_SLACK_CHANNEL,
         user: 'UXXXXXXXXXX',
         text: 'Message coming from end to end test.',
         ts: 'XXXXXXXXX.XXXXXX'
@@ -83,10 +83,10 @@ describe('End-to-End tests: with Slack package', () => {
     };
 
     expectedResult = {
-      channel: slackBindings.channel,
+      channel: envParams.__TEST_SLACK_CHANNEL,
       text: carDashboardReplyWelcome,
       as_user: 'true',
-      token: slackBindings.bot_access_token,
+      token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
       ts: 'XXXXXXXXX.XXXXXX'
     };
 
@@ -131,7 +131,7 @@ describe('End-to-End tests: with Slack package', () => {
       },
       channel: {
         name: 'test_channel',
-        id: slackBindings.channel
+        id: envParams.__TEST_SLACK_CHANNEL
       },
       user: {
         name: 'test_user',
@@ -141,7 +141,7 @@ describe('End-to-End tests: with Slack package', () => {
         text: buttonMessageInputText
       },
       callback_id: 'shirt_size',
-      token: slackBindings.verification_token
+      token: envParams.__TEST_SLACK_VERIFICATION_TOKEN
     };
   });
 

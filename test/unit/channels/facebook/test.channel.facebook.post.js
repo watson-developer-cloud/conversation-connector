@@ -7,10 +7,15 @@
 const assert = require('assert');
 const nock = require('nock');
 
-process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+const envParams = process.env;
+
+const apiHost = envParams.__OW_API_HOST;
+const namespace = envParams.__OW_NAMESPACE;
+
+process.env.__OW_ACTION_NAME = `/${envParams.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+const packageName = envParams.__OW_ACTION_NAME.split('/')[2];
 
 const facebookPost = require('./../../../../channels/facebook/post/index.js');
-const facebookBindings = require('./../../../resources/bindings/facebook-bindings.json').facebook;
 
 const defaultPostUrl = 'https://graph.facebook.com/v2.6/me/messages';
 const badUri = 'badlink.hi';
@@ -30,10 +35,6 @@ describe('Facebook Post Unit Tests', () => {
   const cloudantUrl = 'https://some-cloudant-url.com';
   const cloudantAuthDbName = 'abc';
   const cloudantAuthKey = '123';
-
-  const apiHost = process.env.__OW_API_HOST;
-  const namespace = process.env.__OW_NAMESPACE;
-  const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
 
   const owUrl = `https://${apiHost}/api/v1/namespaces`;
   const expectedOW = {
@@ -60,24 +61,28 @@ describe('Facebook Post Unit Tests', () => {
       message: {
         text: 'Hello, World!'
       },
-      recipient: facebookBindings.sender
+      recipient: {
+        id: envParams.__TEST_FACEBOOK_SENDER_ID
+      }
     }
   };
 
   beforeEach(() => {
     postParams = {
-      page_access_token: facebookBindings.page_access_token,
+      page_access_token: envParams.__TEST_FACEBOOK_PAGE_ACCESS_TOKEN,
       message: {
         text: 'Hello, World!'
       },
-      recipient: facebookBindings.sender
+      recipient: {
+        id: envParams.__TEST_FACEBOOK_SENDER_ID
+      }
     };
 
     auth = {
       facebook: {
-        app_secret: facebookBindings.app_secret,
-        verification_token: facebookBindings.verification_token,
-        page_access_token: facebookBindings.page_access_token
+        app_secret: envParams.__TEST_FACEBOOK_APP_SECRET,
+        verification_token: envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN,
+        page_access_token: envParams.__TEST_FACEBOOK_PAGE_ACCESS_TOKEN
       }
     };
   });
@@ -87,7 +92,6 @@ describe('Facebook Post Unit Tests', () => {
     const mockOW = nock(owUrl)
       .get(`/${namespace}/packages/${packageName}`)
       .reply(200, expectedOW);
-
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
       .query(() => {
@@ -184,8 +188,8 @@ describe('Facebook Post Unit Tests', () => {
 
     const badAuth = {
       facebook: {
-        app_secret: facebookBindings.app_secret,
-        verification_token: facebookBindings.verification_token
+        app_secret: envParams.__TEST_FACEBOOK_APP_SECRET,
+        verification_token: envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN
       }
     };
 

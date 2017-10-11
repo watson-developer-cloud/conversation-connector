@@ -3,10 +3,11 @@
 const assert = require('assert');
 const nock = require('nock');
 
+const envParams = process.env;
+
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
 const conversation = require('../../../conversation/call-conversation');
-const conversationBindings = require('../../resources/bindings/conversation-bindings.json').conversation;
 
 const badWorkspaceId = 'bad_workspace_id';
 
@@ -84,15 +85,15 @@ describe('conversation unit tests', () => {
   before(() => {
     nock(convoUrl)
       .post(
-        `/v1/workspaces/${conversationBindings.workspace_id}/message?version=${conversationBindings.version_date}`
+        `/v1/workspaces/${envParams.__TEST_CONVERSATION_WORKSPACE_ID}/message?version=${envParams.__TEST_CONVERSATION_VERSION_DATE}`
       )
       .reply(200, convoResponse)
       .post(
-        `/v1/workspaces/${conversationBindings.workspace_id}/message?version=${conversationBindings.version_date}`
+        `/v1/workspaces/${envParams.__TEST_CONVERSATION_WORKSPACE_ID}/message?version=${envParams.__TEST_CONVERSATION_VERSION_DATE}`
       )
       .reply(500, convoErrorResponse)
       .post(
-        `/v1/workspaces/${badWorkspaceId}/message?version=${conversationBindings.version_date}`
+        `/v1/workspaces/${badWorkspaceId}/message?version=${envParams.__TEST_CONVERSATION_VERSION_DATE}`
       )
       .reply(500, convoIncorrectWorkspaceIdResponse);
   });
@@ -103,8 +104,8 @@ describe('conversation unit tests', () => {
 
   beforeEach(() => {
     params = {
-      version: conversationBindings.version,
-      version_date: conversationBindings.version_date,
+      version: envParams.__TEST_CONVERSATION_VERSION,
+      version_date: envParams.__TEST_CONVERSATION_VERSION_DATE,
       conversation: {
         input: {
           text: 'Turn on lights'
@@ -122,9 +123,9 @@ describe('conversation unit tests', () => {
 
     auth = {
       conversation: {
-        username: conversationBindings.username,
-        password: conversationBindings.password,
-        workspace_id: conversationBindings.workspace_id
+        username: envParams.__TEST_CONVERSATION_USERNAME,
+        password: envParams.__TEST_CONVERSATION_PASSWORD,
+        workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
       }
     };
   });
@@ -160,9 +161,9 @@ describe('conversation unit tests', () => {
 
     const authResp = {
       conversation: {
-        username: conversationBindings.username,
-        password: conversationBindings.password,
-        workspace_id: conversationBindings.workspace_id
+        username: envParams.__TEST_CONVERSATION_USERNAME,
+        password: envParams.__TEST_CONVERSATION_PASSWORD,
+        workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
       }
     };
     const mockCloudantGet = nock(cloudantUrl)
@@ -236,9 +237,9 @@ describe('conversation unit tests', () => {
 
     const authResp = {
       conversation: {
-        username: conversationBindings.username,
-        password: conversationBindings.password,
-        workspace_id: conversationBindings.workspace_id
+        username: envParams.__TEST_CONVERSATION_USERNAME,
+        password: envParams.__TEST_CONVERSATION_PASSWORD,
+        workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
       }
     };
     const mockCloudantGet = nock(cloudantUrl)

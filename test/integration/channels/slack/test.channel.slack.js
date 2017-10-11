@@ -5,9 +5,10 @@
  */
 const assert = require('assert');
 const openwhisk = require('openwhisk');
-const slackBindings = require('./../../../resources/bindings/slack-bindings.json').slack;
 
-const pipelineName = process.env.__TEST_PIPELINE_NAME;
+const envParams = process.env;
+
+const pipelineName = envParams.__TEST_PIPELINE_NAME;
 
 const outputText = 'Message coming from Slack integration test.';
 
@@ -21,12 +22,12 @@ describe('Slack channel integration tests', () => {
 
   beforeEach(() => {
     params = {
-      token: slackBindings.verification_token,
+      token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
       team_id: 'TXXXXXXXX',
       api_app_id: 'AXXXXXXXX',
       event: {
         type: 'message',
-        channel: slackBindings.channel,
+        channel: envParams.__TEST_SLACK_CHANNEL,
         user: 'UXXXXXXXXXX',
         text: outputText,
         ts: 'XXXXXXXXX.XXXXXX'
@@ -39,9 +40,9 @@ describe('Slack channel integration tests', () => {
 
     expectedResults = {
       as_user: 'true',
-      channel: slackBindings.channel,
+      channel: envParams.__TEST_SLACK_CHANNEL,
       text: outputText,
-      token: slackBindings.bot_access_token
+      token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
     };
 
     attachmentData = [
@@ -85,7 +86,7 @@ describe('Slack channel integration tests', () => {
       },
       channel: {
         name: 'test_channel',
-        id: slackBindings.channel
+        id: envParams.__TEST_SLACK_CHANNEL
       },
       user: {
         name: 'test_user',
@@ -95,7 +96,7 @@ describe('Slack channel integration tests', () => {
         text: outputText
       },
       callback_id: 'test_integration_options',
-      token: slackBindings.verification_token
+      token: envParams.__TEST_SLACK_VERIFICATION_TOKEN
     };
   });
 

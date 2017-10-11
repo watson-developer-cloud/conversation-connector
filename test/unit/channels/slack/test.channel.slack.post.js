@@ -7,10 +7,11 @@
 const assert = require('assert');
 const nock = require('nock');
 
-process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+const envParams = process.env;
+
+process.env.__OW_ACTION_NAME = `/${envParams.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
 const slackPost = require('./../../../../channels/slack/post/index.js');
-const slackBindings = require('./../../../resources/bindings/slack-bindings.json').slack;
 
 const text = 'Message coming from slack/post unit test.';
 const badUri = 'badlink.hi';
@@ -56,25 +57,25 @@ describe('Slack Post Unit Tests', () => {
 
   beforeEach(() => {
     options = {
-      channel: slackBindings.channel,
-      bot_access_token: slackBindings.bot_access_token,
+      channel: envParams.__TEST_SLACK_CHANNEL,
+      bot_access_token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
       text
     };
 
     expectedResult = {
       as_user: 'true',
       text: 'Message coming from slack/post unit test.',
-      channel: slackBindings.channel,
-      token: slackBindings.bot_access_token
+      channel: envParams.__TEST_SLACK_CHANNEL,
+      token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
     };
 
     auth = {
       slack: {
-        client_id: slackBindings.client_id,
-        client_secret: slackBindings.client_secret,
-        verification_token: slackBindings.verification_token,
-        access_token: slackBindings.access_token,
-        bot_access_token: slackBindings.bot_access_token
+        client_id: envParams.__TEST_SLACK_CLIENT_ID,
+        client_secret: envParams.__TEST_SLACK_CLIENT_SECRET,
+        verification_token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
+        access_token: envParams.__TEST_SLACK_ACCESS_TOKEN,
+        bot_access_token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
       }
     };
   });

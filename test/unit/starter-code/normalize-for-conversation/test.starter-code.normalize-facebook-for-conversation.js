@@ -7,9 +7,10 @@
 const assert = require('assert');
 const nock = require('nock');
 
+const envParams = process.env;
+
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
-const conversationBindings = require('../../../resources/bindings/conversation-bindings.json').conversation;
 const scNormFacebookForConvo = require('./../../../../starter-code/normalize-for-conversation/normalize-facebook-for-conversation.js');
 
 const errorBadSupplier = "Provider not supplied or isn't Facebook.";
@@ -93,7 +94,7 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
       raw_input_data: {
         facebook: textMsgParams.facebook,
         provider: 'facebook',
-        cloudant_context_key: `facebook_user_id_${conversationBindings.workspace_id}_page_id`
+        cloudant_context_key: `facebook_user_id_${envParams.__TEST_CONVERSATION_WORKSPACE_ID}_page_id`
       }
     };
 
@@ -106,13 +107,13 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
       raw_input_data: {
         facebook: buttonClickParams.facebook,
         provider: 'facebook',
-        cloudant_context_key: `facebook_user_id_${conversationBindings.workspace_id}_page_id`
+        cloudant_context_key: `facebook_user_id_${envParams.__TEST_CONVERSATION_WORKSPACE_ID}_page_id`
       }
     };
 
     auth = {
       conversation: {
-        workspace_id: conversationBindings.workspace_id
+        workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
       }
     };
   });

@@ -7,11 +7,11 @@
 const assert = require('assert');
 const nock = require('nock');
 
-process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+const envParams = process.env;
+
+process.env.__OW_ACTION_NAME = `/${envParams.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
 const scSlackDeploy = require('./../../../../channels/slack/deploy/index.js');
-
-const slackBindings = require('./../../../resources/bindings/slack-bindings.json').slack;
 
 const errorBadHmacState = 'Security hash does not match hash from the server.';
 const errorMissingSlackCode = 'No code provided in params.';
@@ -59,26 +59,29 @@ describe('Slack Deploy Unit Tests: main()', () => {
 
   beforeEach(() => {
     params = {
-      state: slackBindings.state,
-      client_id: slackBindings.client_id,
-      client_secret: slackBindings.client_secret,
-      redirect_uri: slackBindings.redirect_uri,
+      state: {
+        signature: envParams.__TEST_SLACK_STATE_SIGNATURE,
+        redirect_uri: envParams.__TEST_SLACK_STATE_REDIRECT_URI
+      },
+      client_id: envParams.__TEST_SLACK_CLIENT_ID,
+      client_secret: envParams.__TEST_SLACK_CLIENT_SECRET,
+      redirect_uri: envParams.__TEST_SLACK_STATE_REDIRECT_URI,
       code: 'code'
     };
 
     returnedResult = {
-      access_token: slackBindings.access_token,
+      access_token: envParams.__TEST_SLACK_ACCESS_TOKEN,
       scope: 'bot,chat:write:bot',
       team_name: 'Converastion Whisk Test Bot',
       team_id: 'XXXXXXXXXX',
       incoming_webhook: {
         url: 'https://hooks.slack.com/TXXXXX/XXXXXXXXXX',
-        channel: slackBindings.channel,
+        channel: envParams.__TEST_SLACK_CHANNEL,
         configuration_url: 'https://teamname.slack.com/services/BXXXX'
       },
       bot: {
-        bot_user_id: slackBindings.bot_user_id,
-        bot_access_token: slackBindings.bot_access_token
+        bot_user_id: envParams.__TEST_SLACK_BOT_USER_ID,
+        bot_access_token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
       }
     };
     initAuth = {

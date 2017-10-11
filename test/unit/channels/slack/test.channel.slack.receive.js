@@ -7,9 +7,9 @@
 const assert = require('assert');
 const nock = require('nock');
 
-const slackBindings = require('./../../../resources/bindings/slack-bindings.json').slack;
+const envParams = process.env;
 
-process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+process.env.__OW_ACTION_NAME = `/${envParams.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
 const slackReceive = require('./../../../../channels/slack/receive/index.js');
 
@@ -56,30 +56,30 @@ describe('Slack Receive Unit Tests', () => {
 
   beforeEach(() => {
     messageParams = {
-      token: slackBindings.verification_token,
+      token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
       event: {
         text: 'Message coming from slack/receive unit test.',
         type: 'message',
-        channel: slackBindings.channel
+        channel: envParams.__TEST_SLACK_CHANNEL
       },
       type: 'event_callback'
     };
 
     messageResult = {
       slack: {
-        token: slackBindings.verification_token,
+        token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
         type: 'event_callback',
         event: {
           text: 'Message coming from slack/receive unit test.',
           type: 'message',
-          channel: slackBindings.channel
+          channel: envParams.__TEST_SLACK_CHANNEL
         }
       },
       provider: 'slack'
     };
 
     challengeParams = {
-      token: slackBindings.verification_token,
+      token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
       type: 'url_verification',
       challenge: 'challenge_token'
     };
@@ -98,7 +98,7 @@ describe('Slack Receive Unit Tests', () => {
         }
       ],
       callback_id: 'test_callback_id',
-      token: slackBindings.verification_token
+      token: envParams.__TEST_SLACK_VERIFICATION_TOKEN
     };
 
     payloadParams = {
@@ -114,9 +114,9 @@ describe('Slack Receive Unit Tests', () => {
 
     auth = {
       slack: {
-        client_id: slackBindings.client_id,
-        client_secret: slackBindings.client_secret,
-        verification_token: slackBindings.verification_token
+        client_id: envParams.__TEST_SLACK_CLIENT_ID,
+        client_secret: envParams.__TEST_SLACK_CLIENT_SECRET,
+        verification_token: envParams.__TEST_SLACK_VERIFICATION_TOKEN
       }
     };
   });
