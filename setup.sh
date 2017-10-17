@@ -33,10 +33,15 @@ done
 
 ### MAIN
 main() {
-  checkDependencies
-  checkProvidersExist
-  processCfLogin
-  changeWhiskKey
+  if [ -z "$BUTTON_DEPLOY" ]; then
+    # If the deploy is done via the deploy to bluemix button, we don't need a providers file and login
+    # is handled by the devops pipeline architecture. Similar wsk namespace targetting is done in
+    # pipeline-DEPLOY.sh
+    checkDependencies
+    checkProvidersExist
+    processCfLogin
+    changeWhiskKey
+  fi
   if [ "${NO_NAME}" == "0" ]; then createCloudantInstanceDatabases
   else createSupplierResources; fi
   createPipelines
@@ -152,14 +157,23 @@ createSupplierResources() {
 ### LOOP THROUGH PIPELINE ARRAY AND INITIALIZE ALL ACTIONS
 createPipelines() {
   echo 'Creating deployment pipeline(s)...'
-  jq -r '.pipeline[]' ${PROVIDERS_FILE} &> /dev/null
-  if [ "$?" != "0" ]; then
-    echo 'ERROR: Providers/credentials file missing pipeline JSON key.'
-    exit 1
+
+  PIPELINES=''
+
+  if [ -z "$BUTTON_DEPLOY" ]; then
+    jq -r '.pipeline[]' ${PROVIDERS_FILE} &> /dev/null
+    if [ "$?" != "0" ]; then
+      echo 'ERROR: Providers/credentials file missing pipeline JSON key.'
+      exit 1
+    fi
+    PIPELINES=`jq -c '.pipeline[]' ${PROVIDERS_FILE}`
+  else
+    PIPELINES=$(printf '{"channel":{"facebook":{"app_secret":"%s","page_access_token":"%s","verification_token":"%s"},"name":"facebook"},"conversation":{"password":"%s","username":"%s","workspace_id":"%s"}, "name":"%s"}' "$FB_SECRET" "$FB_ACCESS_TOKEN" "$FB_VERIFICATION_TOKEN" "$CONVO_PASSWORD" "$CONVO_USERNAME" "$CONVO_WORKSPACE" "$CF_APP_NAME")
   fi
 
   IFS=$'\n'
-  for pipeline in `jq -c '.pipeline[]' ${PROVIDERS_FILE}`; do
+
+  for pipeline in $PIPELINES; do
     PIPELINE_NAME=`echo $pipeline | jq -r .name`
     if [ "$NO_NAME" == "1" ]; then
       PIPELINE_NAME=''
@@ -169,7 +183,7 @@ createPipelines() {
     else
       PIPELINE_NAME="${PIPELINE_NAME}_"
     fi
-    PIPELINE_AUTH_KEY=`uuidgen`
+    PIPELINE_AUTH_KEY=`node -e "{x=require('uuid'); console.log(x.v1())}"`
 
     ## UPDATE ALL RELEVANT RESOURCES
     cd starter-code; ./setup.sh ${PIPELINE_NAME}; cd ..
@@ -211,17 +225,17 @@ createPipelines() {
           -a cloudant_auth_dbname "${CLOUDANT_AUTH_DBNAME}" \
           -a cloudant_context_dbname "${CLOUDANT_CONTEXT_DBNAME}" &> /dev/null
       done
-      
+
       ## CREATE SEQUENCE ACTION
       if [ "$CHANNEL" == "facebook" ]; then
         sequence="${PIPELINE_NAME}starter-code/pre-normalize,${PIPELINE_NAME}starter-code/normalize-${CHANNEL}-for-conversation,${PIPELINE_NAME}context/load-context,${PIPELINE_NAME}starter-code/pre-conversation,${PIPELINE_NAME}conversation/call-conversation,${PIPELINE_NAME}starter-code/post-conversation,${PIPELINE_NAME}context/save-context,${PIPELINE_NAME}starter-code/normalize-conversation-for-${CHANNEL},${PIPELINE_NAME}starter-code/post-normalize,${PIPELINE_NAME}${CHANNEL}/post"
-        echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(wsk namespace list | tail -n +2 | head -n 1)/default/${PIPELINE_NAME}facebook/receive.text"
+        echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(wsk namespace list | tail -n +2 | head -n 1)/${PIPELINE_NAME}facebook/receive.text"
       else
         sequence="${PIPELINE_NAME}${CHANNEL}/receive,${PIPELINE_NAME}starter-code/pre-normalize,${PIPELINE_NAME}starter-code/normalize-${CHANNEL}-for-conversation,${PIPELINE_NAME}context/load-context,${PIPELINE_NAME}starter-code/pre-conversation,${PIPELINE_NAME}conversation/call-conversation,${PIPELINE_NAME}starter-code/post-conversation,${PIPELINE_NAME}context/save-context,${PIPELINE_NAME}starter-code/normalize-conversation-for-${CHANNEL},${PIPELINE_NAME}starter-code/post-normalize,${PIPELINE_NAME}${CHANNEL}/post"
         echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(wsk namespace list | tail -n +2 | head -n 1)/default/${PIPELINE_NAME%_}.json"
       fi
-      # node -e 'console.log(process.argv[1].split(",").join("\n"));' "$sequence"
       ${WSK} action update ${PIPELINE_NAME%_} --sequence ${sequence} -a web-export true > /dev/null
+
     fi
   done
   IFS=$' \t\n'
