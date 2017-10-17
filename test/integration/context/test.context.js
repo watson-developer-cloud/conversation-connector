@@ -54,34 +54,32 @@ describe('context package integration tests', () => {
       raw_input_data: params.raw_input_data,
       channel: params.raw_input_data.slack.event.channel,
       text: 'Hi. It looks like a nice drive today. What would you like me to do?  ',
-      raw_output_data: {
-        conversation: {
-          entities: [],
-          context: {
-            conversation_id: '1',
-            system: {
-              branch_exited_reason: 'completed',
-              dialog_request_counter: 1,
-              branch_exited: true,
-              dialog_turn_counter: 1,
-              dialog_stack: [
-                {
-                  dialog_node: 'root'
-                }
-              ]
-            }
-          },
-          intents: [],
-          output: {
-            text: [
-              'Hi. It looks like a nice drive today. What would you like me to do?  '
-            ],
-            nodes_visited: ['node_1_1473880041309'],
-            log_messages: []
-          },
-          input: {
-            text: ''
+      conversation: {
+        entities: [],
+        context: {
+          conversation_id: '1',
+          system: {
+            branch_exited_reason: 'completed',
+            dialog_request_counter: 1,
+            branch_exited: true,
+            dialog_turn_counter: 1,
+            dialog_stack: [
+              {
+                dialog_node: 'root'
+              }
+            ]
           }
+        },
+        intents: [],
+        output: {
+          text: [
+            'Hi. It looks like a nice drive today. What would you like me to do?  '
+          ],
+          nodes_visited: ['node_1_1473880041309'],
+          log_messages: []
+        },
+        input: {
+          text: ''
         }
       }
     };
@@ -111,7 +109,7 @@ describe('context package integration tests', () => {
     params.raw_input_data.cloudant_context_key = 'slack_TXXXXXXXX_abcd-123_U2147483697_D024BE91M';
 
     // The expected responses from the system.
-    expectedResult.raw_output_data.conversation.context.conversation_id = '2';
+    expectedResult.conversation.context.conversation_id = '2';
 
     return ow.actions
       .invoke({
@@ -128,15 +126,13 @@ describe('context package integration tests', () => {
 
         // Update the expected JSON for the second turn.
         expectedResult.text = 'Ok. Turning on the lights.';
-        expectedResult.raw_output_data.conversation.context.system.dialog_request_counter = 2;
-        expectedResult.raw_output_data.conversation.context.system.dialog_turn_counter = 2;
-        expectedResult.raw_output_data.conversation.output.text[
-          0
-        ] = expectedResult.text;
-        expectedResult.raw_output_data.conversation.output.nodes_visited[
+        expectedResult.conversation.context.system.dialog_request_counter = 2;
+        expectedResult.conversation.context.system.dialog_turn_counter = 2;
+        expectedResult.conversation.output.text[0] = expectedResult.text;
+        expectedResult.conversation.output.nodes_visited[
           0
         ] = 'node_2_1473880041309';
-        expectedResult.raw_output_data.conversation.input.text = params.conversation.input.text;
+        expectedResult.conversation.input.text = params.conversation.input.text;
 
         // Invoke the context sequence actions again.
         // The context package should read the updated context from the previous turn.

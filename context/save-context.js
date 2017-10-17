@@ -10,43 +10,41 @@ const CLOUDANT_CONTEXT_KEY = 'cloudant_context_key';
  *  This action is used to save the most recent Conversation context to the Cloudant context db.
  *  @params Parameters passed by normalize-for-channel:
  *    {
-        "raw_output_data": {
-          "conversation": { //Conversation response forwarded over from normalize-for-slack.
-            "entities": [],
-            "context": {
-              "conversation_id": "123abc",
-              "system": {
-                "branch_exited_reason": "completed",
-                "dialog_request_counter": 1,
-                "branch_exited": true,
-                "dialog_turn_counter": 1,
-                "dialog_stack": [
-                  {
-                    "dialog_node": "root"
-                  }
-                ],
-                "_node_output_map": {
-                  "Anything else": [
-                    0
-                  ]
+        "conversation": { //Conversation response forwarded over from normalize-for-slack.
+          "entities": [],
+          "context": {
+            "conversation_id": "123abc",
+            "system": {
+              "branch_exited_reason": "completed",
+              "dialog_request_counter": 1,
+              "branch_exited": true,
+              "dialog_turn_counter": 1,
+              "dialog_stack": [
+                {
+                  "dialog_node": "root"
                 }
+              ],
+              "_node_output_map": {
+                "Anything else": [
+                  0
+                ]
               }
-            },
-            "intents": [],
-            "output": {
-              "text": [
-                "Ok. Turning on the lights."
-              ],
-              "nodes_visited": [
-                "turn_on"
-              ],
-              "log_messages": []
-            },
-            "input": {
-              "text": "Turn on the lights"
             }
+          },
+          "intents": [],
+          "output": {
+            "text": [
+              "Ok. Turning on the lights."
+            ],
+            "nodes_visited": [
+              "turn_on"
+            ],
+            "log_messages": []
+          },
+          "input": {
+            "text": "Turn on the lights"
           }
-        }
+        },
         "raw_input_data": {
           "provider": "slack", //slack/facebook depending on the source
           "slack": {
@@ -83,17 +81,13 @@ const CLOUDANT_CONTEXT_KEY = 'cloudant_context_key';
 function main(params) {
   return new Promise((resolve, reject) => {
     validateParams(params);
-
     getCloudantCreds()
       .then(cloudantCreds => {
         const cloudantUrl = cloudantCreds[CLOUDANT_URL];
         const cloudantContextDbName = cloudantCreds[CLOUDANT_CONTEXT_DBNAME];
         const cloudantContextKey = params.raw_input_data[CLOUDANT_CONTEXT_KEY];
         const db = createCloudantObj(cloudantUrl).use(cloudantContextDbName);
-        const context = Object.assign(
-          {},
-          params.raw_output_data.conversation.context
-        );
+        const context = Object.assign({}, params.conversation.context);
         return setContext(db, cloudantContextKey, context);
       })
       .then(() => {
@@ -288,14 +282,8 @@ function validateParams(params) {
     `${CLOUDANT_CONTEXT_KEY} absent in params.raw_input_data.`
   );
 
-  // Required: raw_output_data
-  assert(params.raw_output_data, 'raw_output_data absent in params.');
-
-  // Required: raw_output_data.conversation
-  assert(
-    params.raw_output_data.conversation,
-    'conversation object absent in params.raw_output_data.'
-  );
+  // Required: conversation
+  assert(params.conversation, 'conversation object absent in params.');
 }
 
 module.exports = {

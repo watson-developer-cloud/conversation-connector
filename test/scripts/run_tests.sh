@@ -29,7 +29,13 @@ main() {
 loadEnvVars() {
   echo 'Loading env variables from test/resources/.env'
   # Read the master test creds file.
-  export $(cat test/resources/.env | xargs)
+  IFS=$'\n'
+  for line in $(cat test/resources/.env); do
+    if [ -n "$line" ]; then
+      export $line
+    fi
+  done
+  IFS=$' \t\n'
 }
 
 ### CHECK OR PROCESS CF LOGIN

@@ -13,6 +13,8 @@ describe('End-to-End tests: Conversation & Starter-code prerequisites', () => {
     `${pipelineName}_starter-code/pre-conversation`,
     `${pipelineName}_starter-code/post-conversation`,
     `${pipelineName}_conversation/call-conversation`,
+    `${pipelineName}_starter-code/pre-normalize`,
+    `${pipelineName}_starter-code/post-normalize`,
     `${pipelineName}_context/load-context`,
     `${pipelineName}_context/save-context`
   ];

@@ -14,8 +14,7 @@ const invalidCloudantUrl = 'invalid-url';
 const errorInvalidUrl = 'Cloudant object creation failed. Error from Cloudant: Error: invalid url.';
 const errorNoRawInputData = 'raw_input_data absent in params.';
 const errorNoCloudantContextKey = 'cloudant_context_key absent in params.raw_input_data.';
-const errorNoRawOutputData = 'raw_output_data absent in params.';
-const errorNoConversationObj = 'conversation object absent in params.raw_output_data.';
+const errorNoConversationObj = 'conversation object absent in params.';
 
 describe('Save Context Unit Tests: main()', () => {
   let params = {};
@@ -36,7 +35,7 @@ describe('Save Context Unit Tests: main()', () => {
 
     // This is what the mock calls should return.
     const nockResponseForGet = expected[0];
-    const nockResponseForPut = expected[1].raw_output_data.conversation.context;
+    const nockResponseForPut = expected[1].conversation.context;
 
     const apiHost = process.env.__OW_API_HOST;
     const namespace = process.env.__OW_NAMESPACE;
@@ -479,20 +478,10 @@ describe('Save Context Unit Tests: validateParams()', () => {
     }
   });
 
-  it('should throw AssertionError for missing raw_output_data', () => {
-    try {
-      func({ raw_input_data: { cloudant_context_key: 'xyz' } });
-    } catch (e) {
-      assert.equal(e.name, 'AssertionError');
-      assert.equal(e.message, errorNoRawOutputData);
-    }
-  });
-
   it('should throw AssertionError for missing Conversation object', () => {
     try {
       func({
-        raw_input_data: { cloudant_context_key: 'xyz' },
-        raw_output_data: {}
+        raw_input_data: { cloudant_context_key: 'xyz' }
       });
     } catch (e) {
       assert.equal(e.name, 'AssertionError');

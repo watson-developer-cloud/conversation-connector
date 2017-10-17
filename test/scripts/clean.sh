@@ -20,6 +20,8 @@ ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_facebook/batched_messages"
 
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/pre-conversation"
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/post-conversation"
+${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/pre-normalize"
+${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/post-normalize"
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/normalize-slack-for-conversation"
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/normalize-facebook-for-conversation"
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/normalize-conversation-for-slack"
