@@ -12,7 +12,7 @@ PACKAGE_NAME="${PIPELINE_NAME}facebook"
 # facebook/receive and facebook/post will need these to load auth
 ${WSK} package update $PACKAGE_NAME \
   -p sub_pipeline "${PIPELINE_NAME%_}" \
-  -p batched_messages "${PACKAGE_NAME}/batched_messages"
+  -p batched_messages "${PACKAGE_NAME}/batched_messages" > /dev/null
 
 ${WSK} action update $PACKAGE_NAME/receive ./receive/index.js -a web-export true &> /dev/null
 ${WSK} action update $PACKAGE_NAME/post ./post/index.js &> /dev/null

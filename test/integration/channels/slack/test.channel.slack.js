@@ -118,9 +118,7 @@ describe('Slack channel integration tests', () => {
           assert(false, error);
         }
       );
-  })
-    .timeout(5000)
-    .retries(4);
+  }).retries(4);
 
   it('validate slack receives text and posts an attached message', () => {
     const sequenceName = `${pipelineName}_slack/integration-pipeline-text-to-attached-message`;
@@ -142,9 +140,7 @@ describe('Slack channel integration tests', () => {
           assert(false, error);
         }
       );
-  })
-    .timeout(5000)
-    .retries(4);
+  }).retries(4);
 
   it(
     'validate slack receives an attached message and posts a message update',
@@ -173,7 +169,5 @@ describe('Slack channel integration tests', () => {
           }
         );
     }
-  )
-    .timeout(5000)
-    .retries(4);
+  ).retries(4);
 });

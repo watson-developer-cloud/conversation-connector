@@ -15,6 +15,7 @@ RETCODE=0
 main() {
   loadEnvVars
   processCfLogin
+  processDeployUserTestTokens
   changeWhiskKey
   createCloudantInstanceDatabases
   createWhiskArtifacts
@@ -43,19 +44,32 @@ processCfLogin() {
   echo 'Logging into Bluemix using cf...'
   #Login to Bluemix
   if [ -n ${__TEST_BX_CF_KEY} ]; then
-    ${CF} login -a ${__TEST_BX_API_HOST} -u apikey -p ${__TEST_BX_CF_KEY} -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE}
+    ${CF} login -a ${__TEST_BX_API_HOST} -u apikey -p ${__TEST_BX_CF_KEY} -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE} > /dev/null
   else
     echo 'CF not logged in, and missing ${__TEST_BX_CF_KEY}'
     exit 1
   fi
 }
 
+### GET BX ACCESS TOKENS FOR DEPLOY-USER
+processDeployUserTestTokens() {
+  echo 'Grabbing test tokens for deploy user...'
+  ${CF} target -o ${__TEST_DEPLOYUSER_ORG} -s ${__TEST_DEPLOYUSER_SPACE} > /dev/null
+  export __TEST_DEPLOYUSER_ACCESS_TOKEN=$(cat ~/.cf/config.json | jq -r .AccessToken | awk '{print $2}')
+  export __TEST_DEPLOYUSER_REFRESH_TOKEN=$(cat ~/.cf/config.json | jq -r .RefreshToken)
+
+  # revert back to main test workspace
+  ${CF} target -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE} > /dev/null
+}
+
 # Switches the Openwhisk namespace based on the current Bluemix org/space
 # where user has logged in.
 changeWhiskKey() {
   echo 'Syncing wsk namespace with CF namespace...'
-  WSK_NAMESPACE="`${CF} target | grep 'Org:' | awk '{print $2}'`_`${CF} target | grep 'Space:' | awk '{print $2}'`"
-  if [ "${WSK_NAMESPACE}" == `${WSK} namespace list | tail -n +2 | head -n 1` ]; then
+  WSK_NAMESPACE=`${CF} target | grep 'Org:' | awk '{print $2}'`_`${CF} target | grep 'Space:' | awk '{print $2}'`
+
+  WSK_CURRENT_NAMESPACE=`${WSK} namespace list | tail -n +2 | head -n 1 2> /dev/null`
+  if [ "${WSK_NAMESPACE}" == "${WSK_CURRENT_NAMESPACE}" ]; then
     return
   fi
   TARGET=`${CF} target | grep 'API endpoint:' | awk '{print $3}'`
@@ -64,10 +78,10 @@ changeWhiskKey() {
   ACCESS_TOKEN=`cat ~/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`
   REFRESH_TOKEN=`cat ~/.cf/config.json | jq -r .RefreshToken`
 
-  WSK_CREDENTIALS=`curl -s -X POST -H 'Content-Type: application/json' -d '{"accessToken": "'$ACCESS_TOKEN'", "refreshToken": "'$REFRESH_TOKEN'"}' ${WSK_API_HOST}/bluemix/v2/authenticate`
+  WSK_CREDENTIALS=`curl -s -X POST -H 'Content-Type: application/json' -d '{"accessToken": "'$ACCESS_TOKEN'", "refreshToken": "'$REFRESH_TOKEN'"}' https://${__OW_API_HOST}/bluemix/v2/authenticate`
   WSK_API_KEY=`echo ${WSK_CREDENTIALS} | jq -r ".namespaces[] | select(.name==\"${WSK_NAMESPACE}\") | [.uuid, .key] | join(\":\")"`
 
-  ${WSK} property set --apihost ${WSK_API_HOST} --auth "${WSK_API_KEY}" --namespace ${WSK_NAMESPACE}
+  ${WSK} property set --apihost ${WSK_API_HOST} --auth "${WSK_API_KEY}" --namespace ${WSK_NAMESPACE} > /dev/null
 }
 
 ### CHECK OR CREATE CLOUDANT-LITE DATABASE INSTANCE, CREATE AUTH DATABASE
@@ -87,8 +101,8 @@ createCloudantInstanceDatabases() {
   CLOUDANT_URL=`${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +2 | jq -r .url`
 
   for i in {1..10}; do
-    e=`curl -s -XPUT ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME} | jq -er .error`
-    if [ "$?" == "0" ]; then
+    e=`curl -s -XPUT ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME} | jq -r .error`
+    if [ "$e" != "null" ]; then
       if [ "$e" == "conflict" -o "$e" == "file_exists" ]; then
         break
       fi
@@ -100,8 +114,8 @@ createCloudantInstanceDatabases() {
   done
 
   for i in {1..10}; do
-    e=`curl -s -XPUT ${CLOUDANT_URL}/${CLOUDANT_CONTEXT_DBNAME} | jq -er .error`
-    if [ "$?" == "0" ]; then
+    e=`curl -s -XPUT ${CLOUDANT_URL}/${CLOUDANT_CONTEXT_DBNAME} | jq -r .error`
+    if [ "$e" != "null" ]; then
       if [ "$e" == "conflict" -o "$e" == "file_exists" ]; then
         break
       fi
@@ -136,7 +150,6 @@ createAuthDoc() {
       workspace_id: params.__TEST_CONVERSATION_WORKSPACE_ID
     }
   };
-
   console.log(JSON.stringify(doc));
   ')
 }
@@ -160,8 +173,8 @@ createWhiskArtifacts() {
   ## CREATE CREDENTIALS DOCUMENT IN AUTH DATABASE
   createAuthDoc # creates the Auth doc JSON and stores it into $AUTH_DOC
   for i in {1..10}; do
-    e=`curl -s -XPUT -d $AUTH_DOC ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME}/${PIPELINE_AUTH_KEY} | jq -er .error`
-    if [ "$?" == "0" ]; then
+    e=`curl -s -XPUT -d $AUTH_DOC ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME}/${PIPELINE_AUTH_KEY} | jq -r .error`
+    if [ "$e" != "null" ]; then
       if [ "$e" == "conflict" -o "$e" == "file_exists" ]; then
         break
       fi
@@ -262,16 +275,16 @@ destroyWhiskArtifactsAndDatabases() {
 
 runTestSuite() {
   # Run tests with coverage
-  istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive -R spec
+  istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive -s 5000 -t 10000 -R spec
   RETCODE=$?
 }
 
 # Deletes a cloudant database
 # $1 - cloudant_url
 # $2 - database_name
-deleteCloudantDb(){
+deleteCloudantDb() {
   echo "Deleting cloudant database $2"
-  curl -s -XDELETE "$1/$2" | grep -v "error"
+  curl -s -XDELETE "$1/$2" | grep -v "error" > /dev/null
 }
 
 main

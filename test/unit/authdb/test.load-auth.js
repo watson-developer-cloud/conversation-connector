@@ -227,43 +227,6 @@ describe('Auth Db:: retrieveDoc()', () => {
           assert(false, e);
         });
     });
-
-    it(`${action.name}: should return an empty JSON when doc absent.`, () => {
-      const cloudantUrl = 'https://some-cloudant-url.com';
-      const cloudantAuthDbName = 'abc';
-      const cloudantAuthKey = '123';
-
-      const cloudant = Cloudant({
-        url: cloudantUrl,
-        plugin: 'retry',
-        retryAttempts: 5,
-        retryTimeout: 1000
-      });
-      const db = cloudant.use(cloudantAuthDbName);
-
-      const expected = {};
-
-      const mock = nock(cloudantUrl)
-        .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-        .query(() => {
-          return true;
-        })
-        .reply(404, { error: 'not_found', reason: 'missing' });
-
-      const func = action.retrieveDoc;
-      return func(db, cloudantAuthKey)
-        .then(response => {
-          if (!mock.isDone()) {
-            nock.cleanAll();
-            assert(false, 'Mock server did not get called.');
-          }
-          nock.cleanAll();
-          assert.deepEqual(response, expected);
-        })
-        .catch(e => {
-          assert(false, e);
-        });
-    });
   });
 });
 

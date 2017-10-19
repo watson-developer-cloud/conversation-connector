@@ -1,12 +1,5 @@
 #!/usr/bin/env bash
 
-export WSK=${WSK-wsk}
-
-${WSK} action delete test-pipeline-slack | grep -v 'ok'
-${WSK} action delete test-pipeline-context-slack | grep -v 'ok'
-${WSK} action delete test-pipeline-facebook | grep -v 'ok'
-${WSK} action delete test-pipeline-context-facebook | grep -v 'ok'
-
 ${WSK} property set --apihost ${__OW_API_HOST} --auth ${__TEST_DEPLOYUSER_WSK_API_KEY} --namespace ${__TEST_DEPLOYUSER_WSK_NAMESPACE} > /dev/null
 
 # Clean all artifacts created in the user-deploy namespace
@@ -19,6 +12,12 @@ while [ $(${WSK} action list | tail -n +2 | wc -l | awk '{print $1}') -gt 0 ]; d
   done
 done
 
+for line in `${WSK} package list | tail -n +2`; do
+  packageName=${line%% *}
+  execution=${line##* }
+  ${WSK} package delete $packageName > /dev/null
+done
+
 for line in `${WSK} trigger list | tail -n +2`; do
   triggerName=${line%% *}
   execution=${line##* }
@@ -29,12 +28,6 @@ for line in `${WSK} rule list | tail -n +2`; do
   ruleName=${line%% *}
   execution=${line##* }
   ${WSK} rule delete $ruleName > /dev/null
-done
-
-for line in `${WSK} package list | tail -n +2`; do
-  packageName=${line%% *}
-  execution=${line##* }
-  ${WSK} package delete $packageName > /dev/null
 done
 IFS=$' \t\n'
 

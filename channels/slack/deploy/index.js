@@ -1,6 +1,6 @@
 const assert = require('assert');
 const crypto = require('crypto');
-const rp = require('request-promise');
+const request = require('request-promise');
 const Cloudant = require('cloudant');
 const openwhisk = require('openwhisk');
 
@@ -26,7 +26,21 @@ const CLOUDANT_AUTH_KEY = 'cloudant_auth_key';
  */
 function main(params) {
   return new Promise((resolve, reject) => {
-    const cleanedParams = validateAndPreprocessParameters(params);
+    const returnUrl = params.state &&
+      JSON.parse(decodeURIComponent(params.state)) &&
+      JSON.parse(decodeURIComponent(params.state)).success_url;
+
+    try {
+      validateParameters(params);
+    } catch (e) {
+      returnWithCallback(returnUrl, reject, { code: 400, message: e.message });
+    }
+
+    const state = JSON.parse(decodeURIComponent(params.state));
+    const redirectUri = state.redirect_url;
+    const signature = state.signature;
+    const code = params.code;
+
     let cloudantCreds;
 
     getCloudantCreds()
@@ -35,38 +49,40 @@ function main(params) {
         return loadAuth(cloudantCreds);
       })
       .then(auth => {
-        const state = cleanedParams.state;
-        const signature = state.signature;
-
         const clientId = auth.slack.client_id;
         const clientSecret = auth.slack.client_secret;
 
-        const hash = createHmacKey(clientId, clientSecret);
-
-        if (hash !== signature) {
-          reject('Security hash does not match hash from the server.');
+        if (createHmacKey(clientId, clientSecret) !== signature) {
+          throw new Error('Security hash does not match hash from the server.');
         }
-
-        const redirectUri = state.redirect_uri;
-        const code = cleanedParams.code;
 
         // build url to the authorization server
         const requestUrl = `https://slack.com/api/oauth.access?client_id=${clientId}&client_secret=${clientSecret}&redirect_uri=${redirectUri}&code=${code}`;
 
-        const options = {
+        return request({
           uri: requestUrl,
           json: true
-        };
-        return rp(options);
+        });
       })
       .then(body => {
         validateResponseBody(body);
         return saveAuth(cloudantCreds, body);
       })
       .then(() => {
-        resolve({ status: 'Authorized successfully!' });
+        const form = {
+          code: 200,
+          message: 'Authorized successfully!'
+        };
+        returnWithCallback(returnUrl, resolve, form);
       })
-      .catch(reject);
+      .catch(error => {
+        const errorString = typeof error === 'string' ? error : error.message;
+        const form = {
+          code: 400,
+          message: errorString
+        };
+        returnWithCallback(returnUrl, reject, form);
+      });
   });
 }
 
@@ -81,6 +97,33 @@ function main(params) {
 function createHmacKey(clientId, clientSecret) {
   const hmacKey = `${clientId}&${clientSecret}`;
   return crypto.createHmac('sha256', hmacKey).update('authorize').digest('hex');
+}
+
+/**
+ * Convert the form paramters into query parameters, add them into the URL,
+ *   and then resolving or reject the URL.
+ *
+ * @param  {string}   url      - URL to direct to (optional)
+ * @param  {Function} callback - Promise resolve or reject
+ * @param  {Object}   body     - form parameters to be converted to query parameters
+ */
+function returnWithCallback(url, callback, body) {
+  const form = {
+    headers: { 'Content-Type': 'text/html' },
+    body: JSON.stringify(body)
+  };
+
+  if (url) {
+    let formedUrl = url;
+    const queryParams = [];
+    Object.keys(body).forEach(key => {
+      queryParams.push(`${key}=${body[key]}`);
+    });
+    formedUrl = `${formedUrl}?${queryParams.join('&')}`;
+    form.body = `<html><script>window.location.href = "${formedUrl}";</script></html>`;
+  }
+
+  callback(form);
 }
 
 /**
@@ -110,22 +153,27 @@ function validateResponseBody(body) {
  *
  *  @params The parameters passed into the action
  */
-function validateAndPreprocessParameters(params) {
-  // // Required: Slack verfication token
-  assert(params.state, 'No verification state provided.');
-  assert(params.code, 'No code provided in params.');
+function validateParameters(params) {
+  // Required: state object
+  assert(
+    params.state && JSON.parse(decodeURIComponent(params.state)),
+    'No verification state provided.'
+  );
 
-  let state = params.state;
+  // Required: HMAC key provided by Slack to be verified
+  assert(
+    JSON.parse(decodeURIComponent(params.state)).signature,
+    'No hash signature provided in state.'
+  );
 
-  // Safely convert state to a JSON if it came as a string.
-  // This will be the case when state is generated and sent via a bash script.
-  // All double-quotes " get converted to %22 so need to do the reverse now.
-  if (typeof params.state === 'string') {
-    state = JSON.parse(params.state.split('%22').join('"'));
-  }
-  const returnParams = params;
-  returnParams.state = state;
-  return returnParams;
+  // Required: redirect URL within state
+  assert(
+    JSON.parse(decodeURIComponent(params.state)).redirect_url,
+    'No redirect URL provided in state.'
+  );
+
+  // Required: Slack authentication code
+  assert(params.code, 'No Slack authentication code provided.');
 }
 
 /**
@@ -272,12 +320,8 @@ function loadAuth(cloudantCreds) {
           cloudantAuthKey
         );
       })
-      .then(auth => {
-        resolve(auth);
-      })
-      .catch(err => {
-        reject(err);
-      });
+      .then(resolve)
+      .catch(reject);
   });
 }
 
@@ -406,7 +450,7 @@ function insertDoc(db, key, doc) {
 module.exports = {
   main,
   name: 'slack/deploy',
-  validateAndPreprocessParameters,
+  validateParameters,
   validateResponseBody,
   saveAuth,
   loadAuth,

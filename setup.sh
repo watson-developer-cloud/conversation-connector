@@ -3,7 +3,7 @@
 export WSK=${WSK-wsk}
 export CF=${CF-cf}
 
-PROVIDERS_FILE='providers-template.json'
+PROVIDERS_FILE='providers.json'
 
 CLOUDANT_URL=''
 CLOUDANT_AUTH_DBNAME='authdb'
@@ -172,7 +172,6 @@ createPipelines() {
   fi
 
   IFS=$'\n'
-
   for pipeline in $PIPELINES; do
     PIPELINE_NAME=`echo $pipeline | jq -r .name`
     if [ "$NO_NAME" == "1" ]; then
@@ -234,8 +233,8 @@ createPipelines() {
         sequence="${PIPELINE_NAME}${CHANNEL}/receive,${PIPELINE_NAME}starter-code/pre-normalize,${PIPELINE_NAME}starter-code/normalize-${CHANNEL}-for-conversation,${PIPELINE_NAME}context/load-context,${PIPELINE_NAME}starter-code/pre-conversation,${PIPELINE_NAME}conversation/call-conversation,${PIPELINE_NAME}starter-code/post-conversation,${PIPELINE_NAME}context/save-context,${PIPELINE_NAME}starter-code/normalize-conversation-for-${CHANNEL},${PIPELINE_NAME}starter-code/post-normalize,${PIPELINE_NAME}${CHANNEL}/post"
         echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(wsk namespace list | tail -n +2 | head -n 1)/default/${PIPELINE_NAME%_}.json"
       fi
+      # node -e 'console.log(process.argv[1].split(",").join("\n"));' "$sequence"
       ${WSK} action update ${PIPELINE_NAME%_} --sequence ${sequence} -a web-export true > /dev/null
-
     fi
   done
   IFS=$' \t\n'
@@ -269,9 +268,7 @@ createAuthDoc() {
   PIPELINE=$1
 
   AUTH_DOC=$(node -e 'const params = JSON.parse(process.argv[1]);
-
   const channel = params.channel.name;
-
   const doc = {
     conversation: {
       username: params.conversation.username,
@@ -279,9 +276,7 @@ createAuthDoc() {
       workspace_id: params.conversation.workspace_id
     }
   };
-
   doc[channel] = params.channel[channel];
-
   console.log(JSON.stringify(doc));
   ' "$PIPELINE")
 }

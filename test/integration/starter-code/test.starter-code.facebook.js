@@ -127,7 +127,5 @@ describe('starter-code integration tests for facebook', () => {
           }
         );
     }
-  )
-    .timeout(5000)
-    .retries(4);
+  ).retries(4);
 });

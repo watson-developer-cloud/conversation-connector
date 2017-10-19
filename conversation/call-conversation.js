@@ -59,8 +59,8 @@ function main(params) {
           username: auth.conversation.username,
           password: auth.conversation.password,
           url: params.url,
-          version: params.version,
-          version_date: params.version_date
+          version: params.version || 'v1',
+          version_date: params.version_date || '2017-05-26'
         });
         const payload = Object.assign({}, params.conversation);
         payload.workspace_id = auth.conversation.workspace_id;
@@ -299,10 +299,6 @@ function retrieveDoc(db, key) {
       },
       (error, response) => {
         if (error) {
-          if (error.statusCode === 404) {
-            // missing doc when it's a first time deployment.
-            resolve({});
-          }
           reject(error);
         }
         resolve(response);

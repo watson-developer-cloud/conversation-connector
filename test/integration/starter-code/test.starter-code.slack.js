@@ -138,9 +138,7 @@ describe('starter-code integration tests for slack', () => {
           assert(false, error);
         }
       );
-  })
-    .timeout(5000)
-    .retries(4);
+  }).retries(4);
 
   it(
     'validate starter-code handles slack-specific data from conversation',
@@ -163,7 +161,5 @@ describe('starter-code integration tests for slack', () => {
           }
         );
     }
-  )
-    .timeout(5000)
-    .retries(4);
+  ).retries(4);
 });

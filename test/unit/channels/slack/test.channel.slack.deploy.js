@@ -1,369 +1,341 @@
 'use strict';
 
-/**
- * Slack channel deploy action unit tests.
- */
-
 const assert = require('assert');
+const cloudant = require('cloudant');
+const crypto = require('crypto');
 const nock = require('nock');
 
-const envParams = process.env;
+const actionSlackDeploy = require('./../../../../channels/slack/deploy/index.js');
 
-process.env.__OW_ACTION_NAME = `/${envParams.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
+const cloudantUrl = 'https://account:password@account.cloudant.com';
+const cloudantAuthDbName = 'sample_auth_db';
+const cloudantAuthKey = 'KXXXXXXXXX';
+const slackClientId = 'sample_client_id';
+const slackClientSecret = 'sample_client_secret';
+const slackVerificationToken = 'sample_verification_token';
 
-const scSlackDeploy = require('./../../../../channels/slack/deploy/index.js');
+const owHost = 'https://openwhisk.ng.bluemix.net';
+const slackHost = 'https://slack.com';
+const cloudantHost = cloudantUrl;
+const realNamespace = process.env.__OW_NAMESPACE;
+const userNamespace = 'sampleorganization_samplespace';
 
-const errorBadHmacState = 'Security hash does not match hash from the server.';
-const errorMissingSlackCode = 'No code provided in params.';
-const errorNoAccessToken = 'No access token found in http request.';
-const errorNoBotCredentials = 'No bot credentials found in http request.';
-const errorNoBotUserId = 'No bot ID found in http request.';
-const errorNoResponseBody = 'No response body found in http request.';
-const errorNoVerificationState = 'No verification state provided.';
-const errorMissingCloudantUrl = 'cloudant_url absent in cloudant credentials.';
-const errorMissingCloudantAuthDbName = 'cloudant_auth_dbname absent in cloudant credentials.';
-const resultMessage = 'Authorized successfully!';
+const mockError = 'mock-error';
 
-describe('Slack Deploy Unit Tests: main()', () => {
+const packageContent = {
+  annotations: [
+    {
+      key: 'unused',
+      value: 'unused'
+    },
+    {
+      key: 'cloudant_url',
+      value: cloudantUrl
+    },
+    {
+      key: 'cloudant_auth_key',
+      value: cloudantAuthKey
+    },
+    {
+      key: 'cloudant_auth_dbname',
+      value: cloudantAuthDbName
+    }
+  ]
+};
+
+const authDocContent = {
+  slack: {
+    client_id: slackClientId,
+    client_secret: slackClientSecret,
+    verification_token: slackVerificationToken
+  }
+};
+
+describe('Slack Deploy Unit Tests', () => {
   let params;
-  let returnedResult;
-  let initAuth;
 
-  const func = scSlackDeploy.main;
-
-  const cloudantUrl = 'https://some-cloudant-url.com';
-  const cloudantAuthDbName = 'abc';
-  const cloudantAuthKey = '123';
-
-  const apiHost = process.env.__OW_API_HOST;
-  const namespace = process.env.__OW_NAMESPACE;
-  const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
-
-  const owUrl = `https://${apiHost}/api/v1/namespaces`;
-  const expectedOW = {
-    annotations: [
-      {
-        key: 'cloudant_url',
-        value: cloudantUrl
-      },
-      {
-        key: 'cloudant_auth_dbname',
-        value: cloudantAuthDbName
-      },
-      {
-        key: 'cloudant_auth_key',
-        value: cloudantAuthKey
-      }
-    ]
-  };
+  before(() => {
+    process.env.__OW_ACTION_NAME = `${userNamespace}/slack/deploy`;
+    process.env.__OW_NAMESPACE = userNamespace;
+  });
 
   beforeEach(() => {
     params = {
-      state: {
-        signature: envParams.__TEST_SLACK_STATE_SIGNATURE,
-        redirect_uri: envParams.__TEST_SLACK_STATE_REDIRECT_URI
-      },
-      client_id: envParams.__TEST_SLACK_CLIENT_ID,
-      client_secret: envParams.__TEST_SLACK_CLIENT_SECRET,
-      redirect_uri: envParams.__TEST_SLACK_STATE_REDIRECT_URI,
-      code: 'code'
+      state: encodeURIComponent(
+        JSON.stringify({
+          signature: createHmacKey(slackClientId, slackClientSecret),
+          redirect_url: 'sample_redirect_url'
+        })
+      ),
+      code: 'sample_oauth_code'
     };
 
-    returnedResult = {
-      access_token: envParams.__TEST_SLACK_ACCESS_TOKEN,
-      scope: 'bot,chat:write:bot',
-      team_name: 'Converastion Whisk Test Bot',
-      team_id: 'XXXXXXXXXX',
-      incoming_webhook: {
-        url: 'https://hooks.slack.com/TXXXXX/XXXXXXXXXX',
-        channel: envParams.__TEST_SLACK_CHANNEL,
-        configuration_url: 'https://teamname.slack.com/services/BXXXX'
-      },
-      bot: {
-        bot_user_id: envParams.__TEST_SLACK_BOT_USER_ID,
-        bot_access_token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
-      }
-    };
-    initAuth = {
-      slack: {
-        client_id: params.client_id,
-        client_secret: params.client_secret,
-        verification_token: '123'
-      }
-    };
+    createOpenwhiskMock();
+    createSlackMock();
+    createCloudantMock();
   });
 
-  it('validate slack/deploy works as intended', () => {
-    const updatedAuth = {
-      slack: {
-        client_id: 'xxx',
-        client_secret: 'yyy',
-        verification_token: '123',
-        access_token: 'xxxxxx',
-        bot_access_token: 'xxxxx'
-      }
-    };
-
-    const mockOW = nock(owUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
-
-    const mockSlack = nock('https://slack.com')
-      .get('/api/oauth.access')
-      .query(() => {
-        return true;
+  it('validate main works', () => {
+    return actionSlackDeploy
+      .main(params)
+      .then(result => {
+        assert.deepEqual(JSON.parse(result.body), {
+          code: 200,
+          message: 'Authorized successfully!'
+        });
       })
-      .reply(200, returnedResult);
-
-    const mockCloudantGet2 = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, initAuth);
-
-    const mockCloudantPut = nock(cloudantUrl)
-      .put(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, updatedAuth);
-
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, initAuth);
-
-    return func(params).then(
-      result => {
-        if (!mockSlack.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Slack server did not get called.');
-        }
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(
-            false,
-            'Mock Cloudant Get server did not get called the first time.'
-          );
-        }
-        if (!mockCloudantGet2.isDone()) {
-          nock.cleanAll();
-          assert(
-            false,
-            'Mock Cloudant Get server did not get called the second time.'
-          );
-        }
-        if (!mockCloudantPut.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Put server did not get called.');
-        }
-
-        if (!mockOW.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
-        }
-        nock.cleanAll();
-        assert.equal(result.status, resultMessage);
-      },
-      error => {
-        nock.cleanAll();
+      .catch(error => {
         assert(false, error);
-      }
-    );
-  }).timeout(4000);
-
-  it('validate error when server responds not OK', () => {
-    const mockOW = nock(owUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
-
-    const mock = nock('https://slack.com')
-      .get('/api/oauth.access')
-      .query(() => {
-        return true;
-      })
-      .reply(400, 'Bad Result');
-
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, initAuth);
-
-    return func(params).then(
-      () => {
-        nock.cleanAll();
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        if (!mock.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock server did not get called.');
-        }
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(
-            false,
-            'Mock Cloudant Get server did not get called the first time.'
-          );
-        }
-        if (!mockOW.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
-        }
-        nock.cleanAll();
-        assert.equal(error.statusCode, 400);
-      }
-    );
-  });
-
-  it('validate error when state does not match hmac key', () => {
-    const mockOW = nock(owUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
-
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, initAuth);
-
-    params.state.signature = 'bad_state';
-
-    return func(params).then(
-      () => {
-        nock.cleanAll();
-        assert(false, 'Action suceeded unexpectedly.');
-      },
-      error => {
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(
-            false,
-            'Mock Cloudant Get server did not get called the first time.'
-          );
-        }
-        if (!mockOW.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
-        }
-        nock.cleanAll();
-        assert.equal(error, errorBadHmacState);
-      }
-    );
-  });
-});
-
-describe('Slack Deploy Unit Tests: validateAndPreprocessParameters()', () => {
-  const func = scSlackDeploy.validateAndPreprocessParameters;
-
-  it('validate error when no verification state provided', () => {
-    try {
-      func({});
-    } catch (e) {
-      assert.equal('AssertionError', e.name);
-      assert.equal(e.message, errorNoVerificationState);
-    }
-  });
-
-  it('validate error when no code provided', () => {
-    try {
-      func({ state: {} });
-    } catch (e) {
-      assert.equal('AssertionError', e.name);
-      assert.equal(e.message, errorMissingSlackCode);
-    }
-  });
-
-  it('validates that stringified state object works', () => {
-    try {
-      const cleanedParams = func({
-        code: '122',
-        state: '{%22signature%22:%22xxx%22,%22pipeline_name%22:%22slack-flexible-pipeline%22,%22redirect_uri%22:%22https://xxxx/deploy.http%22}'
       });
-      assert(
-        cleanedParams && cleanedParams.state && cleanedParams.state.signature
-      );
-      assert.deepEqual(
-        {
-          code: 122,
-          state: {
-            signature: 'xxx',
-            pipeline_name: 'slack-flexible-pipeline',
-            redirect_uri: 'https://xxxx/deploy.http'
-          }
-        },
-        cleanedParams
-      );
-    } catch (e) {
-      assert(false, e);
-    }
-  });
-});
-
-describe('Slack Deploy Unit Tests: validateResponseBody()', () => {
-  const func = scSlackDeploy.validateResponseBody;
-
-  it('validate error when server sends response with no body', () => {
-    try {
-      func();
-    } catch (e) {
-      assert.equal('AssertionError', e.name);
-      assert.equal(e.message, errorNoResponseBody);
-    }
   });
 
-  it('validate error when server sends response with no access token', () => {
-    try {
-      func({});
-    } catch (e) {
-      assert.equal('AssertionError', e.name);
-      assert.equal(e.message, errorNoAccessToken);
-    }
+  it('validate main works with a success url', () => {
+    const successUrl = 'https://ibm.com/';
+
+    params.state = encodeURIComponent(
+      JSON.stringify({
+        signature: createHmacKey(slackClientId, slackClientSecret),
+        redirect_url: 'sample_redirect_url',
+        success_url: successUrl
+      })
+    );
+
+    return actionSlackDeploy
+      .main(params)
+      .then(result => {
+        assert.equal(
+          result.body,
+          `<html><script>window.location.href = "${successUrl}?code=200&message=Authorized successfully!";</script></html>`
+        );
+      })
+      .catch(error => {
+        assert(false, error);
+      });
   });
 
-  it('validate error when server sends response with no bot access token', () => {
-    try {
-      func({ access_token: 'xyz' });
-    } catch (e) {
-      assert.equal('AssertionError', e.name);
-      assert.equal(e.message, errorNoBotCredentials);
-    }
+  it('validate error when not enough input parameters', () => {
+    delete params.state;
+
+    return actionSlackDeploy
+      .main(params)
+      .then(() => {
+        assert(false, 'Action succeeded unexpectedly.');
+      })
+      .catch(error => {
+        assert.deepEqual(JSON.parse(error.body), {
+          code: 400,
+          message: 'No verification state provided.'
+        });
+      });
   });
 
-  it('validate error when server sends response with no bot user id', () => {
-    try {
-      func({ access_token: 'xyz', bot: { bot_access_token: 'abc' } });
-    } catch (e) {
-      assert.equal('AssertionError', e.name);
-      assert.equal(e.message, errorNoBotUserId);
-    }
-  });
-});
+  it('validate error when hmac key is incorrect', () => {
+    params.state = encodeURIComponent(
+      JSON.stringify({
+        signature: 'bad_hmac_signature',
+        redirect_url: 'sample_redirect_url'
+      })
+    );
 
-describe('Slack Deploy Unit Tests: checkCloudantCredentials()', () => {
-  const func = scSlackDeploy.checkCloudantCredentials;
-
-  it('validate error when cloudant_url absent', () => {
-    try {
-      func({});
-    } catch (e) {
-      assert.equal('AssertionError', e.name);
-      assert.equal(e.message, errorMissingCloudantUrl);
-    }
+    return actionSlackDeploy
+      .main(params)
+      .then(() => {
+        assert(false, 'Action succeeded unexpectedly.');
+      })
+      .catch(error => {
+        assert.deepEqual(JSON.parse(error.body), {
+          code: 400,
+          message: 'Security hash does not match hash from the server.'
+        });
+      });
   });
 
-  it('validate error when cloudant_auth_dbname absent', () => {
-    try {
-      func({ cloudant_url: 'https://some-url' });
-    } catch (e) {
-      assert.equal('AssertionError', e.name);
-      assert.equal(e.message, errorMissingCloudantAuthDbName);
-    }
+  it('validate error when save auth retrieves no existing keys', () => {
+    nock.cleanAll();
+    createOpenwhiskMock();
+    createSlackMock();
+
+    nock(cloudantHost)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(true)
+      .reply(200, authDocContent);
+
+    nock(`https://${cloudantHost.split('@')[1]}`)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(true)
+      .reply(200, {})
+      .put(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .reply(200, {});
+
+    return actionSlackDeploy
+      .main(params)
+      .then(() => {
+        assert(false, 'Action succeeded unexpectedly.');
+      })
+      .catch(error => {
+        assert.deepEqual(JSON.parse(error.body), {
+          code: 400,
+          message: `No auth db entry for key ${cloudantAuthKey}. Re-run setup.`
+        });
+      });
   });
+
+  it('validate okay when retrieve doc retrieves no docs', () => {
+    nock.cleanAll();
+    createOpenwhiskMock();
+    createSlackMock();
+
+    nock(cloudantHost)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(true)
+      .replyWithError({ statusCode: 404 });
+
+    nock(`https://${cloudantHost.split('@')[1]}`)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(true)
+      .reply(200, authDocContent)
+      .put(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .reply(200, {});
+
+    const db = cloudant({
+      url: cloudantUrl,
+      plugin: 'retry',
+      retryAttempts: 5,
+      retryTimeout: 1000
+    }).use(cloudantAuthDbName);
+
+    return actionSlackDeploy
+      .retrieveDoc(db, cloudantAuthKey)
+      .then(result => {
+        assert.deepEqual(result, {});
+      })
+      .catch(error => {
+        assert(false, error);
+      });
+  });
+
+  it('validate error when retrieve doc throws an error', () => {
+    nock.cleanAll();
+    createOpenwhiskMock();
+    createSlackMock();
+
+    nock(cloudantHost)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(true)
+      .replyWithError({ statusCode: 400, message: mockError });
+
+    nock(`https://${cloudantHost.split('@')[1]}`)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(true)
+      .reply(200, authDocContent)
+      .put(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .reply(200, {});
+
+    const db = cloudant({
+      url: cloudantUrl,
+      plugin: 'retry',
+      retryAttempts: 5,
+      retryTimeout: 1000
+    }).use(cloudantAuthDbName);
+
+    return actionSlackDeploy
+      .retrieveDoc(db, cloudantAuthKey)
+      .then(() => {
+        assert(false, 'Action succeeded unexpectedly.');
+      })
+      .catch(error => {
+        assert.deepEqual(error.description, mockError);
+      });
+  });
+
+  it('validate error when insert doc throws an error', () => {
+    nock.cleanAll();
+    createOpenwhiskMock();
+    createSlackMock();
+
+    nock(cloudantHost)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(true)
+      .reply(200, authDocContent);
+
+    nock(`https://${cloudantHost.split('@')[1]}`)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(true)
+      .reply(200, authDocContent)
+      .put(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .replyWithError({ error_code: 400, message: mockError });
+
+    const db = cloudant({
+      url: cloudantUrl,
+      plugin: 'retry',
+      retryAttempts: 5,
+      retryTimeout: 1000
+    }).use(cloudantAuthDbName);
+
+    return actionSlackDeploy
+      .insertDoc(db, cloudantAuthKey)
+      .then(() => {
+        assert(false, 'Action succeeded unexpectedly.');
+      })
+      .catch(error => {
+        assert.deepEqual(error.description, mockError);
+      });
+  });
+
+  it('validate error when create cloudant object is init on null url', () => {
+    return actionSlackDeploy
+      .createCloudantObj(null)
+      .then(() => {
+        assert(false, 'Action succeeded unexpectedly');
+      })
+      .catch(error => {
+        assert.equal(error.message, 'invalid url');
+      });
+  });
+
+  after(() => {
+    delete process.env.__OW_ACTION_NAME;
+    process.env.__OW_NAMESPACE = realNamespace;
+  });
+
+  function createOpenwhiskMock() {
+    return nock(owHost)
+      .get(uri => {
+        return uri.indexOf(`/api/v1/namespaces/${userNamespace}/packages`) ===
+          0;
+      })
+      .reply(200, packageContent);
+  }
+
+  function createSlackMock() {
+    return nock(slackHost).get('/api/oauth.access').query(true).reply(200, {
+      access_token: 'sample_access_token',
+      bot: {
+        bot_access_token: 'sample_bot_access_token',
+        bot_user_id: 'sample_bot_user_id'
+      }
+    });
+  }
+
+  function createCloudantMock() {
+    nock(cloudantHost)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(true)
+      .reply(200, authDocContent);
+
+    nock(`https://${cloudantHost.split('@')[1]}`)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(true)
+      .reply(200, authDocContent)
+      .put(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .reply(200, {});
+  }
+
+  function createHmacKey(clientId, clientSecret) {
+    const hmacKey = `${clientId}&${clientSecret}`;
+    return crypto
+      .createHmac('sha256', hmacKey)
+      .update('authorize')
+      .digest('hex');
+  }
 });

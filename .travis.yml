@@ -18,7 +18,3 @@ script:
   - eslint .
   - npm test
   - node ./node_modules/.bin/istanbul check-coverage --statements 90 --branches 90 --lines 90 --functions 90
-env:
-  global:
-    WSK_HOST=openwhisk.ng.bluemix.net
-    WSK_AUTH=5c5820ff-1e7a-44ae-b38a-7b70b215cb8c:AqtqbYpavejPt4fjM5vlzSqpSmdU1QZ3I98hqEYykkbwcybPw4t4IcWpedVOzzFM

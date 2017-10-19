@@ -286,10 +286,6 @@ function retrieveDoc(db, key) {
       },
       (error, response) => {
         if (error) {
-          if (error.statusCode === 404) {
-            // missing doc when it's a first time deployment.
-            resolve({});
-          }
           reject(error);
         }
         resolve(response);

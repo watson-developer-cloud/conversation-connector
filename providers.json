@@ -1,0 +1,31 @@
+{
+  "bluemix": {
+    "api_host": "",
+    "api_key": "",
+    "org": "",
+    "space": ""
+  },
+  "pipeline": [
+    {
+      "channel": {
+        "facebook": {
+          "app_secret": "xxxxxx",
+          "page_access_token": "xxxxxx",
+          "verification_token": "xxxxxx"
+        },
+        "name": "slack",
+        "slack": {
+          "client_id": "xxxx",
+          "client_secret": "xxxx",
+          "verification_token": "xxxx"
+        }
+      },
+      "conversation": {
+        "username": "xxxx",
+        "password": "xxxx",
+        "workspace_id": "xxxx"
+      },
+      "name": "xxxx"
+    }
+  ]
+}

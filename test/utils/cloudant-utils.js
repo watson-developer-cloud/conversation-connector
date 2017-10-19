@@ -12,29 +12,20 @@ const Cloudant = require('cloudant');
  * @return {object} response body/error json
  */
 function clearContextDb(dbName, cloudantUrl) {
-  return new Promise((resolve, reject) => {
-    const cloudant = Cloudant({
-      url: cloudantUrl,
-      plugin: 'retry',
-      retryAttempts: 5,
-      retryTimeout: 1000
-    });
-    if (typeof cloudant !== 'object') {
-      throw new Error(
-        `CloudantAccount returned an unexpected object type: ${typeof cloudant}`
-      );
-    }
+  const cloudant = Cloudant({
+    url: cloudantUrl,
+    plugin: 'retry',
+    retryAttempts: 5,
+    retryTimeout: 1000
+  });
+  if (typeof cloudant !== 'object') {
+    throw new Error(
+      `CloudantAccount returned an unexpected object type: ${typeof cloudant}`
+    );
+  }
 
-    destroyDb(cloudant, dbName)
-      .then(() => {
-        return createDb(cloudant, dbName);
-      })
-      .then(data => {
-        resolve(data);
-      })
-      .catch(err => {
-        reject(err);
-      });
+  destroyDb(cloudant, dbName).then(() => {
+    return createDb(cloudant, dbName);
   });
 }
 

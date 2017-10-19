@@ -33,6 +33,7 @@
     "openwhisk": "^3.5.1",
     "request": "^2.81.0",
     "request-promise": "^4.2.1",
+    "uuid": "^3.1.0",
     "watson-developer-cloud": "^2.29.0"
   }
 }

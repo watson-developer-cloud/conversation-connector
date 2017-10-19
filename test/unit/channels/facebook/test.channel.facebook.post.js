@@ -181,7 +181,7 @@ describe('Facebook Post Unit Tests', () => {
         assert(error, errorMovedPermanently);
       }
     );
-  }).timeout(8000);
+  });
 
   it('validate error when page access token absent in auth', () => {
     func = facebookPost.main;

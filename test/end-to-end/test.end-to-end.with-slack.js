@@ -186,9 +186,7 @@ describe('End-to-End tests: with Slack package', () => {
           return assert(false, safeExtractErrorMessage(error));
         }
       );
-  })
-    .timeout(10000)
-    .retries(4);
+  }).retries(4);
 
   // Under validated circumstances, context package should load and save context
   // to complete a multi-turn conversation successfully.
