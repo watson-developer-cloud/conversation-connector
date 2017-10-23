@@ -17,13 +17,15 @@ const actionsToPopulate = [
 
 const defaultPipelineActions = [
   'slack/receive',
+  'starter-code/pre-normalize',
   'starter-code/normalize-slack-for-conversation',
   'context/load-context',
   'starter-code/pre-conversation',
   'conversation/call-conversation',
-  'starter-code/normalize-conversation-for-slack',
   'starter-code/post-conversation',
   'context/save-context',
+  'starter-code/normalize-conversation-for-slack',
+  'starter-code/post-normalize',
   'slack/post'
 ];
 

@@ -10,11 +10,13 @@ const apihost = 'openwhisk.ng.bluemix.net';
 const packagesToUpdate = ['context', 'conversation', 'starter-code'];
 
 const actionsToPopulate = [
+  'starter-code/pre-normalize',
+  'context/load-context',
   'starter-code/pre-conversation',
   'conversation/call-conversation',
   'starter-code/post-conversation',
-  'context/load-context',
-  'context/save-context'
+  'context/save-context',
+  'starter-code/post-normalize'
 ];
 
 const AUTHDB_NAME = 'authdb';

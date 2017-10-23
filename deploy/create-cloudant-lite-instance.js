@@ -7,8 +7,8 @@ const apiUrl = 'https://api.ng.bluemix.net';
 
 const NAME_CLOUDANT_SERVICE = 'cloudantNoSQLDB';
 const NAME_CLOUDANT_LITE_PLAN = 'cloudant-lite';
-const NAME_CLOUDANT_INSTANCE = 'convoflex';
-const NAME_CLOUDANT_INSTANCE_KEY = 'bot-key';
+const NAME_CLOUDANT_INSTANCE = 'conversation-connector';
+const NAME_CLOUDANT_INSTANCE_KEY = 'conversation-connector-key';
 
 /**
  * Accepts a user's Bluemix tokens and org-space,
