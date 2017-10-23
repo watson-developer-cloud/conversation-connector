@@ -98,7 +98,7 @@ processCfLogin() {
   fi
 }
 
-# Switches the Openwhisk namespace based on the current Bluemix org/space
+# Switches the Cloud Functions namespace based on the current Bluemix org/space
 # where user has logged in.
 changeWhiskKey() {
   echo 'Syncing wsk namespace with CF namespace...'
@@ -121,12 +121,12 @@ changeWhiskKey() {
 ### CHECK OR CREATE CLOUDANT-LITE DATABASE INSTANCE, CREATE AUTH+CONTEXT DATABASES
 createCloudantInstanceDatabases() {
   echo 'Checking for or creating cloudant instance...'
-  CLOUDANT_INSTANCE_NAME='convoflex'
-  CLOUDANT_INSTANCE_KEY='bot-key'
+  CLOUDANT_INSTANCE_NAME='conversation-connector'
+  CLOUDANT_INSTANCE_KEY='conversation-connector-key'
 
   ${CF} service ${CLOUDANT_INSTANCE_NAME} > /dev/null
   if [ "$?" != "0" ]; then
-    ${CF} create-service cloudantNoSQLDB Lite convoflex
+    ${CF} create-service cloudantNoSQLDB Lite ${CLOUDANT_INSTANCE_NAME}
   fi
   ${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} > /dev/null
   if [ "$?" != "0" ]; then
@@ -168,7 +168,7 @@ createPipelines() {
     fi
     PIPELINES=`jq -c '.pipeline[]' ${PROVIDERS_FILE}`
   else
-    PIPELINES=$(printf '{"channel":{"facebook":{"app_secret":"%s","page_access_token":"%s","verification_token":"%s"},"name":"facebook"},"conversation":{"password":"%s","username":"%s","workspace_id":"%s"}, "name":"%s"}' "$FB_SECRET" "$FB_ACCESS_TOKEN" "$FB_VERIFICATION_TOKEN" "$CONVO_PASSWORD" "$CONVO_USERNAME" "$CONVO_WORKSPACE" "$CF_APP_NAME")
+    PIPELINES=$(printf '{"channel":{"facebook":{"app_secret":"%s","page_access_token":"%s","verification_token":"%s"},"name":"facebook"},"conversation":{"password":"%s","username":"%s","workspace_id":"%s"}, "name":"%s"}' "$FB_SECRET" "$FB_ACCESS_TOKEN" "$FB_VERIFICATION_TOKEN" "$CONVERSATION_PASSWORD" "$CONVERSATION_USERNAME" "$CONVERSATION_WORKSPACE" "$CF_APP_NAME")
   fi
 
   IFS=$'\n'

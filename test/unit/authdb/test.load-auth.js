@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 /**
@@ -10,27 +26,27 @@ const Cloudant = require('cloudant');
 
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
-const scSlackDeploy = require('./../../../channels/slack/deploy/index.js');
-const scSlackReceive = require('./../../../channels/slack/receive/index.js');
-const scSlackPost = require('./../../../channels/slack/post/index.js');
+const actionSlackDeploy = require('./../../../channels/slack/deploy/index.js');
+const actionSlackReceive = require('./../../../channels/slack/receive/index.js');
+const actionSlackPost = require('./../../../channels/slack/post/index.js');
 
-const scFacebookPost = require('./../../../channels/facebook/post/index.js');
-const scFacebookReceive = require('./../../../channels/facebook/receive/index.js');
+const actionFacebookPost = require('./../../../channels/facebook/post/index.js');
+const actionFacebookReceive = require('./../../../channels/facebook/receive/index.js');
 
-const scCallConversation = require('./../../../conversation/call-conversation.js');
+const actionCallConversation = require('./../../../conversation/call-conversation.js');
 
-const scStarterCodeNormSlackForConv = require('./../../../starter-code/normalize-for-conversation/normalize-slack-for-conversation.js');
-const scStarterCodeNormFacebookForConv = require('./../../../starter-code/normalize-for-conversation/normalize-facebook-for-conversation.js');
+const actionStarterCodeNormSlackForConv = require('./../../../starter-code/normalize-for-conversation/normalize-slack-for-conversation.js');
+const actionStarterCodeNormFacebookForConv = require('./../../../starter-code/normalize-for-conversation/normalize-facebook-for-conversation.js');
 
 const actions = [
-  scSlackDeploy,
-  scSlackReceive,
-  scSlackPost,
-  scFacebookPost,
-  scFacebookReceive,
-  scCallConversation,
-  scStarterCodeNormSlackForConv,
-  scStarterCodeNormFacebookForConv
+  actionSlackDeploy,
+  actionSlackReceive,
+  actionSlackPost,
+  actionFacebookPost,
+  actionFacebookReceive,
+  actionCallConversation,
+  actionStarterCodeNormSlackForConv,
+  actionStarterCodeNormFacebookForConv
 ];
 
 const errorNoCloudantUrl = 'cloudant_url absent in cloudant credentials.';
@@ -278,7 +294,7 @@ describe('Auth Db:: checkCloudantCredentials()', () => {
 
 describe('Auth Db:: getCloudantCreds()', () => {
   actions.forEach(action => {
-    it(`${action.name}: should get Cloudant credentials from Openwhisk package annotations.`, () => {
+    it(`${action.name}: should get Cloudant credentials from Cloud Functions package annotations.`, () => {
       const mockResponse = {
         annotations: [
           {
@@ -306,9 +322,9 @@ describe('Auth Db:: getCloudantCreds()', () => {
       const namespace = process.env.__OW_NAMESPACE;
       const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
 
-      const owUrl = `https://${apiHost}/api/v1/namespaces`;
+      const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
 
-      const mock = nock(owUrl)
+      const mock = nock(cloudFunctionsUrl)
         .get(`/${namespace}/packages/${packageName}`)
         .reply(200, mockResponse);
 
@@ -327,16 +343,16 @@ describe('Auth Db:: getCloudantCreds()', () => {
         });
     });
 
-    it(`${action.name}: should throw error from Openwhisk when getting package annotations.`, () => {
+    it(`${action.name}: should throw error from Cloud Functions when getting package annotations.`, () => {
       const mockResponse = { name: 'OpenWhiskError', message: 'Not Found' };
 
       const apiHost = process.env.__OW_API_HOST;
       const namespace = process.env.__OW_NAMESPACE;
       const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
 
-      const owUrl = `https://${apiHost}/api/v1/namespaces`;
+      const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
 
-      const mock = nock(owUrl)
+      const mock = nock(cloudFunctionsUrl)
         .get(`/${namespace}/packages/${packageName}`)
         .reply(404, mockResponse);
 

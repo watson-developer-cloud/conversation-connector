@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 /**
@@ -44,10 +60,10 @@ describe('starter-code integration tests for facebook', () => {
         cloudant_context_key: 'facebook_1481847138543615_e808d814-9143-4dce-aec7-68af02e650a8_185643828639058',
         conversation: { input: { text: 'hello, world!' } }
       },
-      message: { text: 'Output text from mock-convo.' },
+      message: { text: 'Output text from mock-conversation.' },
       raw_output_data: {
         conversation: {
-          output: { text: ['Output text from mock-convo.'] },
+          output: { text: ['Output text from mock-conversation.'] },
           context: {
             conversation_id: '06aae48c-a5a9-4bbc-95eb-2ddd26db9a7b',
             system: {
@@ -69,7 +85,7 @@ describe('starter-code integration tests for facebook', () => {
         payload: {
           elements: [
             {
-              title: 'Output text from mock-convo.',
+              title: 'Output text from mock-conversation.',
               buttons: [
                 {
                   type: 'postback',

@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 /**
@@ -10,17 +26,17 @@ const assert = require('assert');
 const nock = require('nock');
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
-const facebookOpenwhiskResources = require('./../../../resources/payloads/test.unit.facebook.receive.json');
+const facebookCloudFunctionsResources = require('./../../../resources/payloads/test.unit.facebook.receive.json');
 
-const errorNoSubpipelineName = "Subpipeline name does not exist. Please make sure your openwhisk channel package has the binding 'sub_pipeline'";
+const errorNoSubpipelineName = "Subpipeline name does not exist. Please make sure your Cloud Functions channel package has the binding 'sub_pipeline'";
 
 describe('Facebook Batched Messages Unit Tests', () => {
   let invocationResults = {};
-  let mockOpenwhiskEndpoints = {};
+  let mockCloudFunctionsEndpoints = {};
   let batchedMessageParams = {};
   let batchedMessageSuccessResult = {};
   let batchedMessageFailedResult = {};
-  let openwhiskStub;
+  let CloudFunctionsStub;
   let mockFacebookBatchedMessages;
 
   const envParams = process.env;
@@ -29,10 +45,10 @@ describe('Facebook Batched Messages Unit Tests', () => {
   const apiKey = envParams.__OW_API_KEY;
   const namespace = envParams.__OW_NAMESPACE;
 
-  const owUrl = `https://${apiHost}/api/v1/namespaces`;
+  const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
 
   beforeEach(() => {
-    openwhiskStub = sinon.stub().returns(
+    CloudFunctionsStub = sinon.stub().returns(
       openwhisk({
         apihost: apiHost,
         api_key: apiKey,
@@ -42,19 +58,19 @@ describe('Facebook Batched Messages Unit Tests', () => {
 
     mockFacebookBatchedMessages = proxyquire(
       './../../../../channels/facebook/batched_messages/index.js',
-      { openwhisk: openwhiskStub }
+      { openwhisk: CloudFunctionsStub }
     );
 
-    mockOpenwhiskEndpoints = {
-      url: owUrl,
-      actionsEndpoint: `/${namespace}/actions/facebook-flexible-pipeline?blocking=true`
+    mockCloudFunctionsEndpoints = {
+      url: cloudFunctionsUrl,
+      actionsEndpoint: `/${namespace}/actions/facebook-connector-pipeline?blocking=true`
     };
 
     invocationResults = {
       failedActionInvocations: [
         {
           activationId: '46a8fcba2c274db296f3e5602c6xxxxx',
-          errorMessage: `Recipient id: 185643828639058 , Sender id: 1481847138543615 -- POST https://${apiHost}/api/v1/namespaces/${namespace}/actions/facebook-flexible-pipeline Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"`
+          errorMessage: `Recipient id: 185643828639058 , Sender id: 1481847138543615 -- POST https://${apiHost}/api/v1/namespaces/${namespace}/actions/facebook-connector-pipeline Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"`
         }
       ],
       successfulActionInvocations: [
@@ -79,7 +95,7 @@ describe('Facebook Batched Messages Unit Tests', () => {
     };
 
     batchedMessageParams = {
-      sub_pipeline: 'facebook-flexible-pipeline',
+      sub_pipeline: 'facebook-connector-pipeline',
       __ow_headers: {
         'x-hub-signature': 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738'
       },
@@ -159,13 +175,13 @@ describe('Facebook Batched Messages Unit Tests', () => {
   });
 
   it('validate facebook/batched_messages receives a legit batched message request', () => {
-    const mock = nock(`${mockOpenwhiskEndpoints.url}`)
-      .post(mockOpenwhiskEndpoints.actionsEndpoint)
-      .reply(201, facebookOpenwhiskResources.owSuccessResponse)
-      .post(mockOpenwhiskEndpoints.actionsEndpoint)
-      .reply(201, facebookOpenwhiskResources.owSuccessResponse)
-      .post(mockOpenwhiskEndpoints.actionsEndpoint)
-      .reply(201, facebookOpenwhiskResources.owSuccessResponse);
+    const mock = nock(`${mockCloudFunctionsEndpoints.url}`)
+      .post(mockCloudFunctionsEndpoints.actionsEndpoint)
+      .reply(201, facebookCloudFunctionsResources.owSuccessResponse)
+      .post(mockCloudFunctionsEndpoints.actionsEndpoint)
+      .reply(201, facebookCloudFunctionsResources.owSuccessResponse)
+      .post(mockCloudFunctionsEndpoints.actionsEndpoint)
+      .reply(201, facebookCloudFunctionsResources.owSuccessResponse);
 
     return mockFacebookBatchedMessages.main(batchedMessageParams).then(
       result => {
@@ -182,13 +198,13 @@ describe('Facebook Batched Messages Unit Tests', () => {
   });
 
   it('validate facebook/batched_messages fails for certain batched messages', () => {
-    const mock = nock(`${mockOpenwhiskEndpoints.url}`)
-      .post(mockOpenwhiskEndpoints.actionsEndpoint)
-      .reply(201, facebookOpenwhiskResources.owSuccessResponse)
-      .post(mockOpenwhiskEndpoints.actionsEndpoint)
-      .reply(201, facebookOpenwhiskResources.owSuccessResponse)
-      .post(mockOpenwhiskEndpoints.actionsEndpoint)
-      .reply(400, facebookOpenwhiskResources.owFailureResponse.error);
+    const mock = nock(`${mockCloudFunctionsEndpoints.url}`)
+      .post(mockCloudFunctionsEndpoints.actionsEndpoint)
+      .reply(201, facebookCloudFunctionsResources.owSuccessResponse)
+      .post(mockCloudFunctionsEndpoints.actionsEndpoint)
+      .reply(201, facebookCloudFunctionsResources.owSuccessResponse)
+      .post(mockCloudFunctionsEndpoints.actionsEndpoint)
+      .reply(400, facebookCloudFunctionsResources.owFailureResponse.error);
 
     return mockFacebookBatchedMessages.main(batchedMessageParams).then(
       result => {

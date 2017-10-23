@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 const assert = require('assert');
@@ -5,7 +21,7 @@ const nock = require('nock');
 
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
-const sc = require('../../../context/save-context.js');
+const actionSaveContext = require('../../../context/save-context.js');
 const paramsJson = require('../../resources/payloads/test.unit.context.json').saveContextJson;
 const Cloudant = require('cloudant');
 
@@ -42,13 +58,13 @@ describe('Save Context Unit Tests: main()', () => {
     const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
 
     const cloudantUrl = 'https://pinkunicorns.cloudant.com';
-    const cloudantContextDbName = 'convo-context';
+    const cloudantContextDbName = 'conversation-context';
 
     const cloudantKey = params.raw_input_data.cloudant_context_key;
 
-    const owUrl = `https://${apiHost}/api/v1/namespaces`;
+    const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
 
-    const mockResponseOW = {
+    const mockResponseCloudFunctions = {
       annotations: [
         {
           key: 'cloudant_url',
@@ -61,9 +77,9 @@ describe('Save Context Unit Tests: main()', () => {
       ]
     };
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, mockResponseOW);
+      .reply(200, mockResponseCloudFunctions);
 
     const mockGet = nock(cloudantUrl)
       .get(`/${cloudantContextDbName}/${cloudantKey}`)
@@ -79,7 +95,7 @@ describe('Save Context Unit Tests: main()', () => {
       })
       .reply(200, nockResponseForPut);
 
-    func = sc.main;
+    func = actionSaveContext.main;
 
     return func(params).then(
       response => {
@@ -91,9 +107,9 @@ describe('Save Context Unit Tests: main()', () => {
           nock.cleanAll();
           assert(false, 'Mock Put server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW server did not get called.');
+          assert(false, 'Mock Cloud Functions server did not get called.');
         }
         nock.cleanAll();
         assert.deepEqual(response, expected[1]);
@@ -108,7 +124,7 @@ describe('Save Context Unit Tests: main()', () => {
 
 describe('Save Context Unit Tests: setContext()', () => {
   let params = {};
-  const func = sc.setContext; // Function to test
+  const func = actionSaveContext.setContext; // Function to test
 
   beforeEach(() => {
     // merge the two objects, deep copying packageBindings so it doesn't get changed between tests
@@ -389,19 +405,19 @@ describe('Save Context Unit Tests: setContext()', () => {
 });
 
 describe('Save Context Unit Tests: getCloudantCreds()', () => {
-  const func = sc.getCloudantCreds; // function to test
+  const func = actionSaveContext.getCloudantCreds; // function to test
 
   it('All OK', () => {
     const cloudantUrl = 'https://pinkunicorns.cloudant.com';
-    const cloudantContextDbName = 'convo-context';
+    const cloudantContextDbName = 'conversation-context';
 
     const apiHost = process.env.__OW_API_HOST;
     const namespace = process.env.__OW_NAMESPACE;
     const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
 
-    const owUrl = `https://${apiHost}/api/v1/namespaces`;
+    const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
 
-    const mockResponseOW = {
+    const mockResponseCloudFunctions = {
       annotations: [
         {
           key: 'cloudant_url',
@@ -418,15 +434,15 @@ describe('Save Context Unit Tests: getCloudantCreds()', () => {
       cloudant_context_dbname: cloudantContextDbName
     };
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, mockResponseOW);
+      .reply(200, mockResponseCloudFunctions);
 
     return func().then(
       response => {
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW server did not get called.');
+          assert(false, 'Mock Cloud Functions server did not get called.');
         }
         nock.cleanAll();
         assert.deepEqual(response, expected);
@@ -440,7 +456,7 @@ describe('Save Context Unit Tests: getCloudantCreds()', () => {
 });
 
 describe('Save Context Unit Tests: createCloudantObj()', () => {
-  const func = sc.createCloudantObj;
+  const func = actionSaveContext.createCloudantObj;
 
   it('validate Cloudant url should be proper', () => {
     return func(invalidCloudantUrl).then(
@@ -459,7 +475,7 @@ describe('Save Context Unit Tests: createCloudantObj()', () => {
 });
 
 describe('Save Context Unit Tests: validateParams()', () => {
-  const func = sc.validateParams;
+  const func = actionSaveContext.validateParams;
   it('should throw AssertionError for missing raw_input_data', () => {
     try {
       func({});

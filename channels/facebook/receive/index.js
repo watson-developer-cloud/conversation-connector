@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 const crypto = require('crypto');
 const openwhisk = require('openwhisk');
 const assert = require('assert');
@@ -21,12 +37,12 @@ const CLOUDANT_AUTH_KEY = 'cloudant_auth_key';
  * (i) When facebook tries to verify the webhook (URL verification event), then it makes
  * a GET request to it. Receive action in turn returns [hub.challenge] to facebook
  * (ii) If user sends a message on the messenger, then facebook makes a POST request to the
- * webhook in which case the receive action invokes an openwhisk action ( which essentially
+ * webhook in which case the receive action invokes a Cloud Functions action ( which essentially
  * posts the response from watson conversation bot to facebook messenger).
  *
  * Following diagram explains what we are trying to do in the code:
  *
- * Here's a openwhisk sequence (named  "sub_pipeline")  ----
+ * Here's a Cloud Functions sequence (named  "sub_pipeline")  ----
  *   starter-code/normalize-facebook-for-conversation -> context/load-context ->
  *   starter-code/pre-conversation -> conversation/call-conversation ->
  *   starter-code/normalize-conversation-for-facebook -> starter-code/post-conversation ->
@@ -95,7 +111,7 @@ function main(params) {
           const [actionParams, actionName] = getPayloadForActionInvocation(
             params
           );
-          // Invoke appropriate openwhisk action
+          // Invoke appropriate Cloud Functions action
           return invokeAction(actionParams, actionName);
         }
         // Neither page nor verification type request is detected
@@ -140,7 +156,7 @@ function getPayloadForActionInvocation(params) {
 }
 
 /**
- * Function invokes an openwhisk action
+ * Function invokes a Cloud Functions action
  * @param {JSON} actionParams Parameters required to invoke an action
  * @param {JSON} actionName Name of the action
  */
@@ -154,9 +170,9 @@ function invokeAction(actionParams, actionName) {
       })
       .then(result => {
         // Everytime facebook pings the "receive" endpoint/webhook, it expects a
-        // "200" string/text response in return. In openwhisk, if we'd want to return
+        // "200" string/text response in return. In Cloud Functions, if we'd want to return
         // a string response, then it's necessary that we add a field "text" and the
-        // response "200" as the value. The field "text" tells openwhisk that this
+        // response "200" as the value. The field "text" tells Cloud Functions that this
         // endpoint must return a "text" response.
         // Response code 200 only tells us that receive was able to execute it's code
         // successfully but it doesn't really tell us if the sub-pipeline or the
@@ -228,12 +244,12 @@ function validateParameters(params) {
   // Required: Subpipeline name
   assert(
     params.sub_pipeline,
-    "Subpipeline name does not exist. Please make sure your openwhisk channel package has the binding 'sub_pipeline'"
+    "Subpipeline name does not exist. Please make sure your Cloud Functions channel package has the binding 'sub_pipeline'"
   );
   // Required: Batched Message Action name
   assert(
     params.batched_messages,
-    "Batched Messages action name does not exist. Please make sure your openwhisk channel package has the binding 'batched_messages'"
+    "Batched Messages action name does not exist. Please make sure your Cloud Functions channel package has the binding 'batched_messages'"
   );
 }
 

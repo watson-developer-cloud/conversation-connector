@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 /**
@@ -20,7 +36,7 @@ const apiKey = envParams.__OW_API_KEY;
 const namespace = envParams.__OW_NAMESPACE;
 const packageName = envParams.__OW_ACTION_NAME.split('/')[2];
 
-const facebookOpenwhiskResources = require('./../../../resources/payloads/test.unit.facebook.receive.json');
+const facebookCloudFunctionsResources = require('./../../../resources/payloads/test.unit.facebook.receive.json');
 
 const facebookReceive = require('./../../../../channels/facebook/receive/index.js');
 
@@ -30,12 +46,12 @@ const errorNeitherVerificationNorMessageTypeRequest = {
   status: 400,
   text: 'Neither a page type request nor a verfication type request detected'
 };
-const errorNoSubpipelineName = "Subpipeline name does not exist. Please make sure your openwhisk channel package has the binding 'sub_pipeline'";
-const errorNoBatchedMessageActionName = "Batched Messages action name does not exist. Please make sure your openwhisk channel package has the binding 'batched_messages'";
+const errorNoSubpipelineName = "Subpipeline name does not exist. Please make sure your Cloud Functions channel package has the binding 'sub_pipeline'";
+const errorNoBatchedMessageActionName = "Batched Messages action name does not exist. Please make sure your Cloud Functions channel package has the binding 'batched_messages'";
 const errorNoSubpiplineInNamespace = {
   text: 400,
-  actionName: 'facebook-flexible-pipeline',
-  message: 'There was an issue invoking facebook-flexible-pipeline. Please make sure this action exists in your namespace'
+  actionName: 'facebook-connector-pipeline',
+  message: 'There was an issue invoking facebook-connector-pipeline. Please make sure this action exists in your namespace'
 };
 
 describe('Facebook Receive Unit Tests', () => {
@@ -43,10 +59,10 @@ describe('Facebook Receive Unit Tests', () => {
   let challengeResult = {};
   let messageParams = {};
   let messageSuccessfulResult = {};
-  let mockOpenwhiskEndpoints = {};
+  let mockCloudFunctionsEndpoints = {};
   let batchedMessageParams = {};
   let batchedMessageSuccessResult = {};
-  let openwhiskStub;
+  let cloudFunctionsStub;
   let mockFacebookReceive;
   let auth;
   let actionName;
@@ -55,11 +71,11 @@ describe('Facebook Receive Unit Tests', () => {
   const cloudantAuthDbName = 'abc';
   const cloudantAuthKey = '123';
 
-  const subPipelineActionName = 'facebook-flexible-pipeline';
+  const subPipelineActionName = 'facebook-connector-pipeline';
   const batchedMessageActionName = 'batched_messages';
 
-  const owUrl = `https://${apiHost}/api/v1/namespaces`;
-  const expectedOW = {
+  const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
+  const expectedCloudFunctions = {
     annotations: [
       {
         key: 'cloudant_url',
@@ -77,7 +93,7 @@ describe('Facebook Receive Unit Tests', () => {
   };
 
   beforeEach(() => {
-    openwhiskStub = sinon.stub().returns(
+    cloudFunctionsStub = sinon.stub().returns(
       openwhisk({
         apihost: apiHost,
         api_key: apiKey,
@@ -87,11 +103,11 @@ describe('Facebook Receive Unit Tests', () => {
 
     mockFacebookReceive = proxyquire(
       './../../../../channels/facebook/receive/index.js',
-      { openwhisk: openwhiskStub }
+      { openwhisk: cloudFunctionsStub }
     );
 
-    mockOpenwhiskEndpoints = {
-      url: owUrl,
+    mockCloudFunctionsEndpoints = {
+      url: cloudFunctionsUrl,
       actionsEndpoint: `/${namespace}/actions/${actionName}`
     };
 
@@ -129,7 +145,7 @@ describe('Facebook Receive Unit Tests', () => {
       text: 200,
       activationId: '2747c146f7e34f97b6cb1183f53xxxxx',
       actionName: subPipelineActionName,
-      message: 'Response code 200 above only tells you that receive action was invoked successfully. However, it does not really say if facebook-flexible-pipeline was invoked successfully. Please use 2747c146f7e34f97b6cb1183f53xxxxx to get more details about this invocation.'
+      message: 'Response code 200 above only tells you that receive action was invoked successfully. However, it does not really say if facebook-connector-pipeline was invoked successfully. Please use 2747c146f7e34f97b6cb1183f53xxxxx to get more details about this invocation.'
     };
 
     batchedMessageParams = {
@@ -198,7 +214,7 @@ describe('Facebook Receive Unit Tests', () => {
     };
 
     challengeParams = {
-      sub_pipeline: 'facebook-flexible-pipeline',
+      sub_pipeline: 'facebook-connector-pipeline',
       batched_messages: 'batched_messages',
       'hub.mode': 'subscribe',
       'hub.verify_token': envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN,
@@ -223,9 +239,9 @@ describe('Facebook Receive Unit Tests', () => {
   });
 
   it('validate facebook/receive passes on challenge', () => {
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -240,9 +256,9 @@ describe('Facebook Receive Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         nock.cleanAll();
         assert.deepEqual(challengeResult, result);
@@ -255,15 +271,15 @@ describe('Facebook Receive Unit Tests', () => {
   });
 
   it('validate facebook/receive receives a legit message request', () => {
-    mockOpenwhiskEndpoints.actionsEndpoint = `/${namespace}/actions/${subPipelineActionName}`;
+    mockCloudFunctionsEndpoints.actionsEndpoint = `/${namespace}/actions/${subPipelineActionName}`;
 
-    nock(`${mockOpenwhiskEndpoints.url}`)
-      .post(mockOpenwhiskEndpoints.actionsEndpoint)
-      .reply(201, facebookOpenwhiskResources.owSuccessResponse);
+    nock(`${mockCloudFunctionsEndpoints.url}`)
+      .post(mockCloudFunctionsEndpoints.actionsEndpoint)
+      .reply(201, facebookCloudFunctionsResources.owSuccessResponse);
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -278,9 +294,9 @@ describe('Facebook Receive Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         nock.cleanAll();
         assert.deepEqual(result, messageSuccessfulResult);
@@ -293,19 +309,19 @@ describe('Facebook Receive Unit Tests', () => {
   });
 
   it('validate facebook/receive receives a legit batched message request', () => {
-    mockOpenwhiskEndpoints.actionsEndpoint = `/${namespace}/actions/${batchedMessageActionName}`;
+    mockCloudFunctionsEndpoints.actionsEndpoint = `/${namespace}/actions/${batchedMessageActionName}`;
 
-    nock(`${mockOpenwhiskEndpoints.url}`)
-      .post(mockOpenwhiskEndpoints.actionsEndpoint)
-      .reply(201, facebookOpenwhiskResources.owSuccessResponse)
-      .post(mockOpenwhiskEndpoints.actionsEndpoint)
-      .reply(201, facebookOpenwhiskResources.owSuccessResponse)
-      .post(mockOpenwhiskEndpoints.actionsEndpoint)
-      .reply(201, facebookOpenwhiskResources.owSuccessResponse);
+    nock(`${mockCloudFunctionsEndpoints.url}`)
+      .post(mockCloudFunctionsEndpoints.actionsEndpoint)
+      .reply(201, facebookCloudFunctionsResources.owSuccessResponse)
+      .post(mockCloudFunctionsEndpoints.actionsEndpoint)
+      .reply(201, facebookCloudFunctionsResources.owSuccessResponse)
+      .post(mockCloudFunctionsEndpoints.actionsEndpoint)
+      .reply(201, facebookCloudFunctionsResources.owSuccessResponse);
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -320,9 +336,9 @@ describe('Facebook Receive Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         nock.cleanAll();
         assert.deepEqual(result, batchedMessageSuccessResult);
@@ -336,9 +352,9 @@ describe('Facebook Receive Unit Tests', () => {
   it('validate error when no verification signature header', () => {
     delete messageParams.__ow_headers['x-hub-signature'];
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -353,9 +369,9 @@ describe('Facebook Receive Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         nock.cleanAll();
         assert(false, 'Action suceeded unexpectedly.');
@@ -370,9 +386,9 @@ describe('Facebook Receive Unit Tests', () => {
   it('validate error when verification of x-hub-signature fails', () => {
     auth.facebook.app_secret = '123';
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -387,9 +403,9 @@ describe('Facebook Receive Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         nock.cleanAll();
         assert(false, 'Action suceeded unexpectedly.');
@@ -404,9 +420,9 @@ describe('Facebook Receive Unit Tests', () => {
   it('validate error when bad verification token', () => {
     auth.facebook.verification_token = '123';
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -421,9 +437,9 @@ describe('Facebook Receive Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         nock.cleanAll();
         assert(false, 'Action suceeded unexpectedly.');
@@ -438,9 +454,9 @@ describe('Facebook Receive Unit Tests', () => {
   it('validate error when challenge header hub.mode is not equal to subscribe', () => {
     challengeParams['hub.mode'] = 'something_else';
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -455,9 +471,9 @@ describe('Facebook Receive Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         nock.cleanAll();
         assert(false, 'Action suceeded unexpectedly.');
@@ -472,9 +488,9 @@ describe('Facebook Receive Unit Tests', () => {
   it('validate error when message request object is not equal to page', () => {
     messageParams.object = 'something_else';
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -489,9 +505,9 @@ describe('Facebook Receive Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         nock.cleanAll();
         assert(false, 'Action suceeded unexpectedly.');
@@ -529,16 +545,16 @@ describe('Facebook Receive Unit Tests', () => {
     );
   });
 
-  it('validate that the sub_pipeline does not exist in openwhisk namespace', () => {
-    mockOpenwhiskEndpoints.actionsEndpoint = `/${namespace}/actions/abc`;
+  it('validate that the sub_pipeline does not exist in Cloud Functions namespace', () => {
+    mockCloudFunctionsEndpoints.actionsEndpoint = `/${namespace}/actions/abc`;
 
-    nock(`${mockOpenwhiskEndpoints.url}`)
-      .post(mockOpenwhiskEndpoints.actionsEndpoint)
+    nock(`${mockCloudFunctionsEndpoints.url}`)
+      .post(mockCloudFunctionsEndpoints.actionsEndpoint)
       .reply(400, '');
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -553,9 +569,9 @@ describe('Facebook Receive Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         nock.cleanAll();
         assert(false, 'Action suceeded unexpectedly.');

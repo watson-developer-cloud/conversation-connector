@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 /**
@@ -36,8 +52,8 @@ describe('Facebook Post Unit Tests', () => {
   const cloudantAuthDbName = 'abc';
   const cloudantAuthKey = '123';
 
-  const owUrl = `https://${apiHost}/api/v1/namespaces`;
-  const expectedOW = {
+  const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
+  const expectedCloudFunctions = {
     annotations: [
       {
         key: 'cloudant_url',
@@ -89,9 +105,9 @@ describe('Facebook Post Unit Tests', () => {
 
   it('validate facebook/post works as intended', () => {
     func = facebookPost.main;
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
       .query(() => {
@@ -105,9 +121,9 @@ describe('Facebook Post Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         assert.deepEqual(expectedResult, result);
       },
@@ -120,9 +136,9 @@ describe('Facebook Post Unit Tests', () => {
   it('validate error when bad uri supplied', () => {
     func = facebookPost.postFacebook;
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -137,9 +153,9 @@ describe('Facebook Post Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         assert(false, result);
       },
@@ -153,9 +169,9 @@ describe('Facebook Post Unit Tests', () => {
   it('validate error when not 200 uri supplied', () => {
     func = facebookPost.postFacebook;
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -170,9 +186,9 @@ describe('Facebook Post Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         assert(false, result);
       },
@@ -193,9 +209,9 @@ describe('Facebook Post Unit Tests', () => {
       }
     };
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -210,9 +226,9 @@ describe('Facebook Post Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         assert(false, result);
       },

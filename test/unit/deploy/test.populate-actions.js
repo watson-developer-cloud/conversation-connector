@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 /**
@@ -62,7 +78,7 @@ describe('Populate-Actions Unit Tests', () => {
       ]
     };
 
-    owMock = createOpenwhiskMock();
+    owMock = createCloudFunctionsMock();
     bxMock = createBluemixApiMock();
   });
 
@@ -91,7 +107,7 @@ describe('Populate-Actions Unit Tests', () => {
       });
   });
 
-  it('validate error when openwhisk host throws object error', () => {
+  it('validate error when Cloud Functions host throws object error', () => {
     nock.cleanAll();
 
     owMock.post('/bluemix/v2/authenticate').replyWithError(mockError);
@@ -105,7 +121,7 @@ describe('Populate-Actions Unit Tests', () => {
       });
   });
 
-  it('validate error when openwhisk host throws response error', () => {
+  it('validate error when Cloud Functions host throws response error', () => {
     nock.cleanAll();
 
     owMock
@@ -124,7 +140,7 @@ describe('Populate-Actions Unit Tests', () => {
       });
   });
 
-  it('validate error when openwhisk host does not find the correct namespace', () => {
+  it('validate error when Cloud Functions host does not find the correct namespace', () => {
     bxAuthPayload.namespaces[0].name = 'bad_namespace';
 
     nock.cleanAll();
@@ -186,7 +202,7 @@ describe('Populate-Actions Unit Tests', () => {
 
   it('validate error when get conversation creds throws object error', () => {
     nock.cleanAll();
-    owMock = createOpenwhiskMock();
+    owMock = createCloudFunctionsMock();
     bxMock
       .get(`/v2/service_instances/${conversationGuid}/service_keys`)
       .replyWithError(mockError);
@@ -202,7 +218,7 @@ describe('Populate-Actions Unit Tests', () => {
 
   it('validate error when get conversation creds throws response error', () => {
     nock.cleanAll();
-    owMock = createOpenwhiskMock();
+    owMock = createCloudFunctionsMock();
     bxMock
       .get(`/v2/service_instances/${conversationGuid}/service_keys`)
       .reply(400, JSON.stringify({ error_code: mockError }));
@@ -224,11 +240,11 @@ describe('Populate-Actions Unit Tests', () => {
     process.env.__OW_NAMESPACE = realSupplierSpace;
   });
 
-  function createOpenwhiskMock() {
+  function createCloudFunctionsMock() {
     return (
       nock(owHost)
         .persist()
-        // get openwhisk credentials from bx tokens
+        // get Cloud Functions credentials from bx tokens
         .post('/bluemix/v2/authenticate')
         .reply(200, bxAuthPayload)
         // update package for user namespace

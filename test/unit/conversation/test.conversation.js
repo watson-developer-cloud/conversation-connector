@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 const assert = require('assert');
@@ -34,13 +50,13 @@ describe('conversation unit tests', () => {
   const namespace = process.env.__OW_NAMESPACE;
   const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
 
-  const convoUrl = 'https://ibm.com:80';
+  const conversationUrl = 'https://ibm.com:80';
 
   let owMock;
   const owHost = `https://${apiHost}`;
   let cloudantMock;
 
-  const convoResponse = {
+  const conversationResponse = {
     intents: [],
     entities: [],
     input: {
@@ -61,11 +77,11 @@ describe('conversation unit tests', () => {
     }
   };
 
-  const convoErrorResponse = {
+  const conversationErrorResponse = {
     error: 'Internal Server Error'
   };
 
-  const convoIncorrectWorkspaceIdResponse = {
+  const conversationIncorrectWorkspaceIdResponse = {
     error: `URL workspaceid parameter ${badWorkspaceId} is not a valid GUID.`
   };
 
@@ -137,7 +153,7 @@ describe('conversation unit tests', () => {
     };
 
     nock.cleanAll();
-    owMock = createOpenwhiskMock();
+    owMock = createCloudFunctionsMock();
     cloudantMock = createCloudantMock();
     createConversationUrlMock();
   });
@@ -173,7 +189,7 @@ describe('conversation unit tests', () => {
 
   it('main works all ok', () => {
     func = conversation.main;
-    params.url = convoUrl;
+    params.url = conversationUrl;
 
     return func(params).then(
       result => {
@@ -198,7 +214,7 @@ describe('conversation unit tests', () => {
     delete params.version_date;
 
     func = conversation.main;
-    params.url = convoUrl;
+    params.url = conversationUrl;
 
     return func(params).then(
       result => {
@@ -218,7 +234,7 @@ describe('conversation unit tests', () => {
 
   it('main should throw error when Conversation returns a non-200', () => {
     func = conversation.main;
-    params.url = convoUrl;
+    params.url = conversationUrl;
 
     return func(params).then(
       result => {
@@ -241,7 +257,7 @@ describe('conversation unit tests', () => {
     delete badAuth.conversation;
 
     nock.cleanAll();
-    owMock = createOpenwhiskMock();
+    owMock = createCloudFunctionsMock();
     createConversationUrlMock();
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -272,7 +288,7 @@ describe('conversation unit tests', () => {
     delete badAuth.conversation.username;
 
     nock.cleanAll();
-    owMock = createOpenwhiskMock();
+    owMock = createCloudFunctionsMock();
     createConversationUrlMock();
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -303,7 +319,7 @@ describe('conversation unit tests', () => {
     delete badAuth.conversation.password;
 
     nock.cleanAll();
-    owMock = createOpenwhiskMock();
+    owMock = createCloudFunctionsMock();
     createConversationUrlMock();
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -334,7 +350,7 @@ describe('conversation unit tests', () => {
     delete badAuth.conversation.workspace_id;
 
     nock.cleanAll();
-    owMock = createOpenwhiskMock();
+    owMock = createCloudFunctionsMock();
     createConversationUrlMock();
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -365,7 +381,7 @@ describe('conversation unit tests', () => {
     badAuth.conversation.workspace_id = badWorkspaceId;
 
     nock.cleanAll();
-    owMock = createOpenwhiskMock();
+    owMock = createCloudFunctionsMock();
     createConversationUrlMock();
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -374,7 +390,7 @@ describe('conversation unit tests', () => {
       })
       .reply(200, badAuth);
 
-    params.url = convoUrl;
+    params.url = conversationUrl;
 
     func = conversation.main;
     return func(params)
@@ -394,9 +410,9 @@ describe('conversation unit tests', () => {
 
   it('validate error when conversation message throws error', () => {
     nock.cleanAll();
-    owMock = createOpenwhiskMock();
+    owMock = createCloudFunctionsMock();
     cloudantMock = createCloudantMock();
-    nock(convoUrl)
+    nock(conversationUrl)
       .post(uri => {
         return uri.indexOf(
           `/v1/workspaces/${envParams.__TEST_CONVERSATION_WORKSPACE_ID}/message?version=`
@@ -408,15 +424,15 @@ describe('conversation unit tests', () => {
           `/v1/workspaces/${envParams.__TEST_CONVERSATION_WORKSPACE_ID}/message?version=`
         ) === 0;
       })
-      .reply(500, convoErrorResponse)
+      .reply(500, conversationErrorResponse)
       .post(uri => {
         return uri.indexOf(
           `/v1/workspaces/${badWorkspaceId}/message?version=`
         ) === 0;
       })
-      .reply(500, convoIncorrectWorkspaceIdResponse);
+      .reply(500, conversationIncorrectWorkspaceIdResponse);
 
-    params.url = convoUrl;
+    params.url = conversationUrl;
 
     return conversation
       .main(params)
@@ -441,7 +457,7 @@ describe('conversation unit tests', () => {
 
   it('validate error when retrieve doc throws an error', () => {
     nock.cleanAll();
-    createOpenwhiskMock();
+    createCloudFunctionsMock();
 
     nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -471,7 +487,7 @@ describe('conversation unit tests', () => {
       });
   });
 
-  function createOpenwhiskMock() {
+  function createCloudFunctionsMock() {
     const expectedOW = {
       annotations: [
         {
@@ -502,24 +518,24 @@ describe('conversation unit tests', () => {
   }
 
   function createConversationUrlMock() {
-    return nock(convoUrl)
+    return nock(conversationUrl)
       .post(uri => {
         return uri.indexOf(
           `/v1/workspaces/${envParams.__TEST_CONVERSATION_WORKSPACE_ID}/message?version=`
         ) === 0;
       })
-      .reply(200, convoResponse)
+      .reply(200, conversationResponse)
       .post(uri => {
         return uri.indexOf(
           `/v1/workspaces/${envParams.__TEST_CONVERSATION_WORKSPACE_ID}/message?version=`
         ) === 0;
       })
-      .reply(500, convoErrorResponse)
+      .reply(500, conversationErrorResponse)
       .post(uri => {
         return uri.indexOf(
           `/v1/workspaces/${badWorkspaceId}/message?version=`
         ) === 0;
       })
-      .reply(500, convoIncorrectWorkspaceIdResponse);
+      .reply(500, conversationIncorrectWorkspaceIdResponse);
   }
 });

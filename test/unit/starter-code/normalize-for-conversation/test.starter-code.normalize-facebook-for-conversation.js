@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 /**
@@ -11,7 +27,7 @@ const envParams = process.env;
 
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
-const scNormFacebookForConvo = require('./../../../../starter-code/normalize-for-conversation/normalize-facebook-for-conversation.js');
+const actionNormFacebookForConversation = require('./../../../../starter-code/normalize-for-conversation/normalize-facebook-for-conversation.js');
 
 const errorBadSupplier = "Provider not supplied or isn't Facebook.";
 const errorNoFacebookData = 'Facebook JSON data is missing.';
@@ -35,8 +51,8 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
   const namespace = process.env.__OW_NAMESPACE;
   const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
 
-  const owUrl = `https://${apiHost}/api/v1/namespaces`;
-  const expectedOW = {
+  const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
+  const expectedCloudFunctions = {
     annotations: [
       {
         key: 'cloudant_url',
@@ -119,10 +135,10 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
   });
 
   it('validate normalizing works for a regular text message', () => {
-    func = scNormFacebookForConvo.main;
-    const mockOW = nock(owUrl)
+    func = actionNormFacebookForConversation.main;
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -137,9 +153,9 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         assert.deepEqual(result, textMsgResult);
       },
@@ -150,10 +166,10 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
   });
 
   it('validate normalizing works for an event when a button is clicked', () => {
-    func = scNormFacebookForConvo.main;
-    const mockOW = nock(owUrl)
+    func = actionNormFacebookForConversation.main;
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -168,9 +184,9 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         assert.deepEqual(result, buttonClickResult);
       },
@@ -183,10 +199,10 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
   it('validate error when neither message type event nor postback type event detected', () => {
     delete textMsgParams.facebook.message;
 
-    func = scNormFacebookForConvo.main;
-    const mockOW = nock(owUrl)
+    func = actionNormFacebookForConversation.main;
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -204,9 +220,9 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         assert.equal(error, errorNoMsgOrPostbackTypeEvent);
       }
@@ -216,7 +232,7 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
   it('validate error when provider missing', () => {
     delete textMsgParams.provider;
 
-    func = scNormFacebookForConvo.validateParameters;
+    func = actionNormFacebookForConversation.validateParameters;
     try {
       func(textMsgParams);
     } catch (e) {
@@ -228,7 +244,7 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
   it('validate error when facebook data missing', () => {
     delete textMsgParams.facebook;
 
-    func = scNormFacebookForConvo.validateParameters;
+    func = actionNormFacebookForConversation.validateParameters;
     try {
       func(textMsgParams);
     } catch (e) {

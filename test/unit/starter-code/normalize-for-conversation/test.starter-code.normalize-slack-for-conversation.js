@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 /**
@@ -11,7 +27,7 @@ const envParams = process.env;
 
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
-const scNormSlackForConvo = require('./../../../../starter-code/normalize-for-conversation/normalize-slack-for-conversation.js');
+const actionNormSlackForConversation = require('./../../../../starter-code/normalize-for-conversation/normalize-slack-for-conversation.js');
 
 const channel = 'CXXXXXXXXX';
 const text = 'Message coming from starter-code/normalize_slack_for_conversation unit test.';
@@ -35,8 +51,8 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
   const namespace = process.env.__OW_NAMESPACE;
   const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
 
-  const owUrl = `https://${apiHost}/api/v1/namespaces`;
-  const expectedOW = {
+  const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
+  const expectedCloudFunctions = {
     annotations: [
       {
         key: 'cloudant_url',
@@ -127,10 +143,10 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
   });
 
   it('validate normalizing works for a regular text message', () => {
-    func = scNormSlackForConvo.main;
-    const mockOW = nock(owUrl)
+    func = actionNormSlackForConversation.main;
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -145,9 +161,9 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         assert.deepEqual(result, expectedResult);
       },
@@ -160,10 +176,10 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
   it('validate normalization works for buttons', () => {
     expectedResult.raw_input_data.slack = buttonMessageParams.slack;
 
-    func = scNormSlackForConvo.main;
-    const mockOW = nock(owUrl)
+    func = actionNormSlackForConversation.main;
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -178,9 +194,9 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         assert.deepEqual(result, expectedResult);
       },
@@ -203,10 +219,10 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
 
     expectedResult.raw_input_data.slack = menuMessageParams.slack;
 
-    func = scNormSlackForConvo.main;
-    const mockOW = nock(owUrl)
+    func = actionNormSlackForConversation.main;
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -221,9 +237,9 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         assert.deepEqual(result, expectedResult);
       },
@@ -245,10 +261,10 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
 
     expectedResult.raw_input_data.slack = textMessageParams.slack;
 
-    func = scNormSlackForConvo.main;
-    const mockOW = nock(owUrl)
+    func = actionNormSlackForConversation.main;
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedCloudFunctions);
 
     const mockCloudantGet = nock(cloudantUrl)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
@@ -263,9 +279,9 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
+          assert(false, 'Mock Cloud Functions Get server did not get called.');
         }
         assert.deepEqual(result, expectedResult);
       },
@@ -277,7 +293,7 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
 
   it('validate error when provider missing', () => {
     delete textMessageParams.provider;
-    func = scNormSlackForConvo.validateParameters;
+    func = actionNormSlackForConversation.validateParameters;
     try {
       func(textMessageParams);
     } catch (e) {
@@ -288,7 +304,7 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
 
   it('validate error when slack data missing', () => {
     delete textMessageParams.slack;
-    func = scNormSlackForConvo.validateParameters;
+    func = actionNormSlackForConversation.validateParameters;
     try {
       func(textMessageParams);
     } catch (e) {

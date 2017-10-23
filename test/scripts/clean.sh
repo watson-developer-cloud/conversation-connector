@@ -2,7 +2,7 @@
 export WSK=${WSK-wsk}
 
 # Cleans all deploy artifacts in the user's namespace corresponding to the pipeline name passed as argument.
-# OW artifacts are named like: ${pipeline_name}_slack, ${pipeline_name}_context, and so on ...
+# Cloud Functions artifacts are named like: ${pipeline_name}_slack, ${pipeline_name}_context, and so on ...
 
 PIPNAME=$1
 

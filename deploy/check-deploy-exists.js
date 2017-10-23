@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 const assert = require('assert');
@@ -8,7 +24,7 @@ const apihost = 'openwhisk.ng.bluemix.net';
 
 /**
  * Accepts a user's Bluemix tokens and org-space, as well as a deployment name,
- *   and returns whether the deployment already exists in the user's OpenWhisk namespace.
+ *   and returns whether the deployment already exists in the user's Cloud Functions namespace.
  *
  * @param  {JSON} params    - Parameters passed into the action
  * @return {Promise}        - status code and message depicting success or error
@@ -29,7 +45,7 @@ function main(params) {
     const wskNamespace = params.state.wsk.namespace;
     const deployName = params.state.name;
 
-    getOpenwhiskFromBluemix(accessToken, refreshToken, wskNamespace)
+    getCloudFunctionsFromBluemix(accessToken, refreshToken, wskNamespace)
       .catch(error => {
         if (typeof error === 'string') {
           reject({
@@ -64,14 +80,14 @@ function main(params) {
 }
 
 /**
- * Get the user's OpenWhisk credentials using his Bluemix access and refresh tokens.
+ * Get the user's Cloud Functions credentials using his Bluemix access and refresh tokens.
  *
  * @param  {string} accessToken  - Bluemix access token
  * @param  {string} refreshToken - Bluemix refresh token
  * @param  {string} namespace    - Bluemix organization_space
- * @return {JSON}                - OpenWhisk credentials: { apihost, apikey }
+ * @return {JSON}                - Cloud Functions credentials: { apihost, apikey }
  */
-function getOpenwhiskFromBluemix(accessToken, refreshToken, namespace) {
+function getCloudFunctionsFromBluemix(accessToken, refreshToken, namespace) {
   const url = `https://${apihost}/bluemix/v2/authenticate`;
 
   const postData = { accessToken, refreshToken };
@@ -129,7 +145,7 @@ function validateParameters(params) {
     "Could not get user's Bluemix credentials."
   );
 
-  // Required: OpenWhisk namespace
+  // Required: Cloud Functions namespace
   assert(
     params.state.wsk && params.state.wsk.namespace,
     "Could not get user's Bluemix credentials."

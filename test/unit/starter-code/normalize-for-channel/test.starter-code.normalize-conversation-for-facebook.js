@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 /**
@@ -5,7 +21,7 @@
  */
 
 const assert = require('assert');
-const scNormForFacebook = require('./../../../../starter-code/normalize-for-channel/normalize-conversation-for-facebook.js');
+const actionNormForFacebook = require('./../../../../starter-code/normalize-for-channel/normalize-conversation-for-facebook.js');
 
 const recipient = {
   id: 'user_id'
@@ -186,7 +202,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
   });
 
   it('validate normalization works for text messages', () => {
-    return scNormForFacebook(textMsgParams).then(
+    return actionNormForFacebook(textMsgParams).then(
       result => {
         assert.deepEqual(result, textRes);
       },
@@ -197,7 +213,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
   });
 
   it('validate normalization works for interactive messages (i.e. output.facebook) ', () => {
-    return scNormForFacebook(interactiveMsgParamsWithoutMsgObj).then(
+    return actionNormForFacebook(interactiveMsgParamsWithoutMsgObj).then(
       result => {
         assert.deepEqual(result, interactiveResWithoutMsgObj);
       },
@@ -208,7 +224,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
   });
 
   it('validate normalization works for interactive messages (i.e. output.facebook.message)', () => {
-    return scNormForFacebook(interactiveMsgParamsWithMsgObj).then(
+    return actionNormForFacebook(interactiveMsgParamsWithMsgObj).then(
       result => {
         assert.deepEqual(result, interactiveResWithMsgObj);
       },
@@ -219,7 +235,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
   });
 
   it('validate normalization when neither an interactive message is detected nor a text message is detected', () => {
-    return scNormForFacebook(interactiveMsgParamsWithMsgObj).then(
+    return actionNormForFacebook(interactiveMsgParamsWithMsgObj).then(
       result => {
         assert.deepEqual(result, interactiveResWithMsgObj);
       },
@@ -232,7 +248,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
   it('validate error when no conversation data', () => {
     delete textMsgParams.conversation;
 
-    return scNormForFacebook(textMsgParams).then(
+    return actionNormForFacebook(textMsgParams).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -245,7 +261,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
   it('validate error when no conversation output', () => {
     delete textMsgParams.conversation.output;
 
-    return scNormForFacebook(textMsgParams).then(
+    return actionNormForFacebook(textMsgParams).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -258,7 +274,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
   it('validate error when no facebook input data', () => {
     delete textMsgParams.raw_input_data;
 
-    return scNormForFacebook(textMsgParams).then(
+    return actionNormForFacebook(textMsgParams).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -271,7 +287,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
   it('validate error when no facebook input data', () => {
     delete textMsgParams.raw_input_data.facebook;
 
-    return scNormForFacebook(textMsgParams).then(
+    return actionNormForFacebook(textMsgParams).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -284,7 +300,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
   it('validate error when no conversation input data', () => {
     delete textMsgParams.raw_input_data.conversation;
 
-    return scNormForFacebook(textMsgParams).then(
+    return actionNormForFacebook(textMsgParams).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -297,7 +313,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
   it('validate error when no facebook channel', () => {
     delete textMsgParams.raw_input_data.facebook.sender;
 
-    return scNormForFacebook(textMsgParams).then(
+    return actionNormForFacebook(textMsgParams).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },

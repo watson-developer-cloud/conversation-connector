@@ -3,7 +3,7 @@
 export WSK=${WSK-wsk}
 export CF=${CF-cf}
 
-echo "Running Convo-Flexible-Bot test suite."
+echo "Running conversation-connector test suite."
 
 CLOUDANT_URL=''
 CLOUDANT_AUTH_DBNAME='authdb'
@@ -62,7 +62,7 @@ processDeployUserTestTokens() {
   ${CF} target -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE} > /dev/null
 }
 
-# Switches the Openwhisk namespace based on the current Bluemix org/space
+# Switches the Cloud Functions namespace based on the current Bluemix org/space
 # where user has logged in.
 changeWhiskKey() {
   echo 'Syncing wsk namespace with CF namespace...'
@@ -87,12 +87,12 @@ changeWhiskKey() {
 ### CHECK OR CREATE CLOUDANT-LITE DATABASE INSTANCE, CREATE AUTH DATABASE
 createCloudantInstanceDatabases() {
   echo 'Checking for or creating cloudant instance...'
-  CLOUDANT_INSTANCE_NAME='convoflex'
-  CLOUDANT_INSTANCE_KEY='bot-key'
+  CLOUDANT_INSTANCE_NAME='conversation-connector'
+  CLOUDANT_INSTANCE_KEY='conversation-connector-key'
 
   ${CF} service ${CLOUDANT_INSTANCE_NAME} > /dev/null
   if [ "$?" != "0" ]; then
-    ${CF} create-service cloudantNoSQLDB Lite convoflex
+    ${CF} create-service cloudantNoSQLDB Lite ${CLOUDANT_INSTANCE_NAME}
   fi
   ${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} > /dev/null
   if [ "$?" != "0" ]; then
@@ -230,7 +230,7 @@ setupTestArtifacts() {
     bash $SETUP_SCRIPT $__TEST_PIPELINE_NAME
   fi
 
-  # Export the Openwhisk credentials for tests
+  # Export the Cloud Functions credentials for tests
   export __OW_API_KEY=`${WSK} property get --auth | tr "\t" "\n" | tail -n 1`
   export __OW_NAMESPACE=`${WSK} namespace list | tail -n +2 | head -n 1`
 }

@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 /**
@@ -5,7 +21,7 @@
  */
 
 const assert = require('assert');
-const scNormForSlack = require('./../../../../starter-code/normalize-for-channel/normalize-conversation-for-slack.js');
+const actionNormForSlack = require('./../../../../starter-code/normalize-for-channel/normalize-conversation-for-slack.js');
 
 const channel = 'CXXXXXXXXX';
 const text = 'Message coming from starter-code/normalize_for_slack unit test.';
@@ -111,7 +127,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
   });
 
   it('validate normalization works', () => {
-    return scNormForSlack(params).then(
+    return actionNormForSlack(params).then(
       result => {
         assert.deepEqual(result, expectedResult);
       },
@@ -132,7 +148,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
       text
     };
 
-    return scNormForSlack(params).then(
+    return actionNormForSlack(params).then(
       result => {
         assert.deepEqual(result, expectedResult);
       },
@@ -150,7 +166,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
     expectedResult.attachments = [{ text }];
     delete expectedResult.text;
 
-    return scNormForSlack(params).then(
+    return actionNormForSlack(params).then(
       result => {
         assert.deepEqual(result, expectedResult);
       },
@@ -167,7 +183,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
     expectedResult.raw_output_data.conversation.output.slack = params.conversation.output.slack;
     delete expectedResult.ts;
 
-    return scNormForSlack(params).then(
+    return actionNormForSlack(params).then(
       result => {
         assert.deepEqual(result, expectedResult);
       },
@@ -181,7 +197,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
     delete params.raw_input_data.slack.event.ts;
     delete expectedResult.ts;
 
-    return scNormForSlack(params).then(
+    return actionNormForSlack(params).then(
       result => {
         assert.deepEqual(result, expectedResult);
       },
@@ -194,7 +210,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
   it('validate error when no conversation data', () => {
     delete params.conversation;
 
-    return scNormForSlack(params).then(
+    return actionNormForSlack(params).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -207,7 +223,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
   it('validate error when no conversation output', () => {
     delete params.conversation.output;
 
-    return scNormForSlack(params).then(
+    return actionNormForSlack(params).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -220,7 +236,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
   it('validate error when no slack input data', () => {
     delete params.raw_input_data;
 
-    return scNormForSlack(params).then(
+    return actionNormForSlack(params).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -233,7 +249,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
   it('validate error when no slack input data', () => {
     delete params.raw_input_data.slack;
 
-    return scNormForSlack(params).then(
+    return actionNormForSlack(params).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -246,7 +262,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
   it('validate error when no conversation input data', () => {
     delete params.raw_input_data.conversation;
 
-    return scNormForSlack(params).then(
+    return actionNormForSlack(params).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
@@ -259,7 +275,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
   it('validate error when no slack channel', () => {
     delete params.raw_input_data.slack.event;
 
-    return scNormForSlack(params).then(
+    return actionNormForSlack(params).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },

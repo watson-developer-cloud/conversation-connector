@@ -27,7 +27,7 @@ In an effort to have clear uniform code across a code base being developed by mu
 
 The above is provided primarily for reference and while it is encouraged reading, we will use eslint and the prettier formatter to automatically apply most of these rules.
 
-Travis will automatically run eslint and prettier when a PR is made. However, it is a best practice to run both prettier and eslint locally to work out any issues before a PR is submitted. Descriptions on how to run these tools manually, as well as descriptions of other best practices the team has identified can be found [here](https://github.ibm.com/watson-engagement-advisor/convo-flexible-bot/wiki/Writing-code-for-convo-flexible-bot).
+Travis will automatically run eslint and prettier when a PR is made. However, it is a best practice to run both prettier and eslint locally to work out any issues before a PR is submitted. Descriptions on how to run these tools manually, as well as descriptions of other best practices the team has identified can be found [here](https://github.ibm.com/watson-engagement-advisor/conversation-connector/wiki/Writing-code-for-conversation-connector).
 
 ## Comments
 
@@ -41,7 +41,7 @@ Each code deliverable should come from the developer's fork of the master repo. 
 
 - It is highly encouraged that PRs be made for small, specific pieces of work. Attempts should be made to not bundle unrelated work into the same PR.
 
-- Automated tests are required for all work being done on this repo. The Istanbul code coverage tool will fail PRs that drop the overall repo's code coverage below 90%. For suggested approaches for writing tests see [here](https://github.ibm.com/watson-engagement-advisor/convo-flexible-bot/wiki/Writing-Test-Code).
+- Automated tests are required for all work being done on this repo. The Istanbul code coverage tool will fail PRs that drop the overall repo's code coverage below 90%. For suggested approaches for writing tests see [here](https://github.ibm.com/watson-engagement-advisor/conversation-connector/wiki/Writing-Test-Code).
 
 - When making PRs please use the closes feature to reference and close the corresponding issue.  This helps ensure that we have an issue to track anything worth making code changes for.  You can read more about this feature [here](https://help.github.com/articles/closing-issues-via-commit-messages/). This feature does work cross repo, simply use the full URL to the wea-backlog issue in your PR comment.
 

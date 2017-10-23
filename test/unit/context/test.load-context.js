@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 const assert = require('assert');
@@ -5,7 +21,7 @@ const nock = require('nock');
 
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 
-const sc = require('../../../context/load-context.js');
+const actionLoadContext = require('../../../context/load-context.js');
 const paramsJson = require('../../resources/payloads/test.unit.context.json').loadContextJson;
 const Cloudant = require('cloudant');
 
@@ -23,7 +39,7 @@ describe('Load Context Unit Tests: validateParams()', () => {
     // merge the two objects, deep copying packageBindings so it doesn't get changed between tests
     // and we only have to read it once
     params = Object.assign({}, JSON.parse(JSON.stringify(paramsJson)));
-    func = sc.validateParams;
+    func = actionLoadContext.validateParams;
   });
 
   it('validate error when no raw_input_data', () => {
@@ -74,11 +90,11 @@ describe('Load Context Unit Tests: deleteCloudantFields()', () => {
     // merge the two objects, deep copying packageBindings so it doesn't get changed between tests
     // and we only have to read it once
     params = Object.assign({}, JSON.parse(JSON.stringify(paramsJson)));
-    func = sc.deleteCloudantFields;
+    func = actionLoadContext.deleteCloudantFields;
   });
 
   it('deleteCloudantFields should delete cloudant revision _id', () => {
-    func = sc.deleteCloudantFields;
+    func = actionLoadContext.deleteCloudantFields;
     // The params for func.
     const p = params.deleteCloudantFields.withCloudantDocId.params;
     const response = func(p);
@@ -86,7 +102,7 @@ describe('Load Context Unit Tests: deleteCloudantFields()', () => {
   });
 
   it('deleteCloudantFields should delete cloudant _rev', () => {
-    func = sc.deleteCloudantFields;
+    func = actionLoadContext.deleteCloudantFields;
     // The params for func.
     const p = params.deleteCloudantFields.withCloudantRev.params;
     const response = func(p);
@@ -94,7 +110,7 @@ describe('Load Context Unit Tests: deleteCloudantFields()', () => {
   });
 
   it('deleteCloudantFields should delete cloudant _revs_info', () => {
-    func = sc.deleteCloudantFields;
+    func = actionLoadContext.deleteCloudantFields;
     // The params for func.
     const p = params.deleteCloudantFields.withCloudantRevsInfo.params;
     const response = func(p);
@@ -103,7 +119,7 @@ describe('Load Context Unit Tests: deleteCloudantFields()', () => {
 });
 
 describe('Load Context Unit Tests: createCloudantObj()', () => {
-  const func = sc.createCloudantObj;
+  const func = actionLoadContext.createCloudantObj;
 
   it('validate Cloudant url should be proper', () => {
     return func(invalidCloudantUrl).then(
@@ -129,7 +145,7 @@ describe('Load Context Unit Tests: getContext()', () => {
     // merge the two objects, deep copying packageBindings so it doesn't get changed between tests
     // and we only have to read it once
     params = Object.assign({}, JSON.parse(JSON.stringify(paramsJson)));
-    func = sc.deleteCloudantFields;
+    func = actionLoadContext.deleteCloudantFields;
   });
 
   it('get context all ok', () => {
@@ -157,7 +173,7 @@ describe('Load Context Unit Tests: getContext()', () => {
       })
       .reply(200, expected);
 
-    func = sc.getContext;
+    func = actionLoadContext.getContext;
 
     return func(db, key).then(
       response => {
@@ -200,7 +216,7 @@ describe('Load Context Unit Tests: getContext()', () => {
       })
       .reply(404, expected);
 
-    func = sc.getContext;
+    func = actionLoadContext.getContext;
 
     return func(db, key).then(
       response => {
@@ -243,7 +259,7 @@ describe('Load Context Unit Tests: getContext()', () => {
       })
       .reply(500, expected);
 
-    func = sc.getContext;
+    func = actionLoadContext.getContext;
 
     return func(db, key).then(
       response => {
@@ -264,7 +280,7 @@ describe('Load Context Unit Tests: getContext()', () => {
 
 describe('Load Context Unit Tests: main()', () => {
   let params = Object.assign({}, JSON.parse(JSON.stringify(paramsJson)));
-  const func = sc.main;
+  const func = actionLoadContext.main;
 
   it('All OK', () => {
     // The expected response for main function when all ok.
@@ -274,12 +290,11 @@ describe('Load Context Unit Tests: main()', () => {
     params = params.main.request;
 
     const cloudantUrl = 'https://pinkunicorns.cloudant.com';
-    // const openwhiskUrl = 'https://openwhisk.ng.bluemix.net';
-    const cloudantContextDbName = 'convo-context';
+    const cloudantContextDbName = 'conversation-context';
 
-    // This is what the mock call should return - the Convo context.
+    // This is what the mock call should return - the conversation context.
     const nockResponseCloudant = expected.conversation.context;
-    const mockResponseOW = {
+    const mockResponseCloudFunctions = {
       annotations: [
         {
           key: 'cloudant_url',
@@ -304,11 +319,11 @@ describe('Load Context Unit Tests: main()', () => {
     const namespace = process.env.__OW_NAMESPACE;
     const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
 
-    const owUrl = `https://${apiHost}/api/v1/namespaces`;
+    const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, mockResponseOW);
+      .reply(200, mockResponseCloudFunctions);
 
     return func(params).then(
       response => {
@@ -316,9 +331,9 @@ describe('Load Context Unit Tests: main()', () => {
           nock.cleanAll();
           assert(false, 'Mock Cloudant server did not get called.');
         }
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW server did not get called.');
+          assert(false, 'Mock Cloud Functions server did not get called.');
         }
         nock.cleanAll();
         assert.deepEqual(response, expected);
@@ -332,19 +347,19 @@ describe('Load Context Unit Tests: main()', () => {
 });
 
 describe('Load Context Unit Tests: getCloudantCreds()', () => {
-  const func = sc.getCloudantCreds; // function to test
+  const func = actionLoadContext.getCloudantCreds; // function to test
 
   it('All OK', () => {
     const cloudantUrl = 'https://pinkunicorns.cloudant.com';
-    const cloudantContextDbName = 'convo-context';
+    const cloudantContextDbName = 'conversation-context';
 
     const apiHost = process.env.__OW_API_HOST;
     const namespace = process.env.__OW_NAMESPACE;
     const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
 
-    const owUrl = `https://${apiHost}/api/v1/namespaces`;
+    const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
 
-    const mockResponseOW = {
+    const mockResponseCloudFunctions = {
       annotations: [
         {
           key: 'cloudant_url',
@@ -361,15 +376,15 @@ describe('Load Context Unit Tests: getCloudantCreds()', () => {
       cloudant_context_dbname: cloudantContextDbName
     };
 
-    const mockOW = nock(owUrl)
+    const mockCloudFunctions = nock(cloudFunctionsUrl)
       .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, mockResponseOW);
+      .reply(200, mockResponseCloudFunctions);
 
     return func().then(
       response => {
-        if (!mockOW.isDone()) {
+        if (!mockCloudFunctions.isDone()) {
           nock.cleanAll();
-          assert(false, 'Mock OW server did not get called.');
+          assert(false, 'Mock Cloud Functions server did not get called.');
         }
         nock.cleanAll();
         assert.deepEqual(response, expected);

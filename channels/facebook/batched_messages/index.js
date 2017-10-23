@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 const openwhisk = require('openwhisk');
 const assert = require('assert');
 
@@ -115,9 +131,9 @@ function runBatchedEntriesInParallel(params) {
 
   return Promise.all(promises).then(results => {
     // Everytime facebook pings the "receive" endpoint/webhook, it expects a "200" string/text
-    // response in return. In openwhisk, if we'd want to return a string response, then it's
+    // response in return. In Cloud Functions, if we'd want to return a string response, then it's
     // necessary that we add a field "text" and the response "200" as the value. The field "text"
-    // tells openwhisk that this endpoint must return a "text" response.
+    // tells Cloud Functions that this endpoint must return a "text" response.
     // We also return a field "failedActionInvocations" which essentially returns the errors
     // for the pipelines that throw an error and "successfulActionInvocations" which returns
     // the response from the pipelines that were invoked successfully. These fields are only needed
@@ -161,7 +177,7 @@ function runBatchedEntriesInParallel(params) {
    * @param {JSON} responses - Array of results received from sub-pipeline invocation
    * @param {var} index - The index of the serial entry for which the pipeline is to
    * be invoked
-   * @param {var} subPipelineName - Name of the openwhisk pipeline
+   * @param {var} subPipelineName - Name of the Cloud Functions pipeline
    * @return {JSON} responses - Array of results received from sub-pipeline invocation
    */
 function runBatchedEntriesInSeries(params, responses, index, subPipelineName) {
@@ -291,8 +307,8 @@ function organizeBatchedEntries(params) {
           "text": "find a restaurant"
         }
       }
-   * @param {var} subPipelineName - Name of the openwhisk pipeline
-   * @return {JSON} Result of openwhisk pipeline/action invocation
+   * @param {var} subPipelineName - Name of the Cloud Functions pipeline
+   * @return {JSON} Result of Cloud Functions pipeline/action invocation
    */
 function invokePipeline(params, subPipelineName) {
   const ow = openwhisk();
@@ -340,7 +356,7 @@ function validateParameters(params) {
   // Required: Channel identifier
   assert(
     params.sub_pipeline,
-    "Subpipeline name does not exist. Please make sure your openwhisk channel package has the binding 'sub_pipeline'"
+    "Subpipeline name does not exist. Please make sure your Cloud Functions channel package has the binding 'sub_pipeline'"
   );
 }
 

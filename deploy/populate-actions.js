@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 const assert = require('assert');
@@ -23,7 +39,7 @@ const AUTHDB_NAME = 'authdb';
 const CONTEXTDB_NAME = 'contextdb';
 
 /**
- * Supplies the user with channel-agnostic OpenWhisk actions,
+ * Supplies the user with channel-agnostic Cloud Functions actions,
  *   as well as required services such as Cloudant context database.
  *
  * @param  {JSON} params    - input parameters required for this action (see validateParameters)
@@ -57,7 +73,7 @@ function main(params) {
     const authKey = uuid();
     let cloudantAccount;
 
-    getOpenwhiskFromBluemix(accessToken, refreshToken, namespace)
+    getCloudFunctionsFromBluemix(accessToken, refreshToken, namespace)
       .then(ow => {
         userWsk = ow;
       })
@@ -151,14 +167,14 @@ function main(params) {
 }
 
 /**
- * Get the user's OpenWhisk credentials using his Bluemix access and refresh tokens.
+ * Get the user's Cloud Functions credentials using his Bluemix access and refresh tokens.
  *
  * @param  {string} accessToken  - Bluemix access token
  * @param  {string} refreshToken - Bluemix refresh token
  * @param  {string} namespace    - Bluemix organization_space
- * @return {JSON}                - OpenWhisk instance object
+ * @return {JSON}                - Cloud Functions instance object
  */
-function getOpenwhiskFromBluemix(accessToken, refreshToken, namespace) {
+function getCloudFunctionsFromBluemix(accessToken, refreshToken, namespace) {
   const url = `https://${apihost}/bluemix/v2/authenticate`;
 
   const postData = { accessToken, refreshToken };
@@ -200,10 +216,10 @@ function getOpenwhiskFromBluemix(accessToken, refreshToken, namespace) {
 }
 
 /**
- * Create and update all non-channel packages onto the given OpenWhisk instance
+ * Create and update all non-channel packages onto the given Cloud Functions instance
  *
- * @param  {Object}   ow         - OpenWhisk instance
- * @param  {string}   namespace  - OpenWhisk namespace
+ * @param  {Object}   ow         - Cloud Functions instance
+ * @param  {string}   namespace  - Cloud Functions namespace
  * @param  {string}   deployName - deployment name
  * @param  {string[]} packages   - array of all package names
  * @return {Promise}             - resolve if all updates succeeded, reject otherwise
@@ -224,8 +240,8 @@ function updateAllPackages(ow, namespace, deployName, packages) {
 /**
  * Inject all necessary annotations into all non-channel packages.
  *
- * @param  {Object}   ow              - OpenWhisk instance
- * @param  {string}   namespace       - OpenWhisk namespace
+ * @param  {Object}   ow              - Cloud Functions instance
+ * @param  {string}   namespace       - Cloud Functions namespace
  * @param  {string}   deployName      - deployment name
  * @param  {string[]} packageNames    - array of all package names
  * @param  {JSON}     cloudantAccount - cloudant instance information
@@ -276,14 +292,14 @@ function updatePackageAnnotations(
 }
 
 /**
- * Takes specified OpenWhisk actions in the supplier namespace and
+ * Takes specified Cloud Functions actions in the supplier namespace and
  *   transfers them to the user's namespace.
  *
- * @param  {Object}   supplier        - supplier's OpenWhisk
- * @param  {Object}   user            - user's OpenWhisk
+ * @param  {Object}   supplier        - supplier's Cloud Functions
+ * @param  {Object}   user            - user's Cloud Functions
  * @param  {string}   deployName      - deployment name
  * @param  {string[]} actionNames     - names of all actions to transfer
- * @param  {string}   namespace       - user's OpenWhisk namespace
+ * @param  {string}   namespace       - user's Cloud Functions namespace
  * @return {Promise}                  - resolution of all action updates
  */
 function transferWskActions(
@@ -311,15 +327,15 @@ function transferWskActions(
         });
       })
       .catch(error => {
-        reject(error.error.error); // OpenWhisk invocation error message wrapped in error keys
+        reject(error.error.error); // Cloud Functions invocation error message wrapped in error keys
       });
   });
 }
 
 /**
- * Get the source of an existing OpenWhisk action.
+ * Get the source of an existing Cloud Functions action.
  *
- * @param  {Object} ow         - OpenWhisk account to get action from
+ * @param  {Object} ow         - Cloud Functions account to get action from
  * @param  {string} actionName - name of action to get
  * @return {Promise}           - resolution of action get
  */
@@ -335,12 +351,12 @@ function getWskAction(ow, actionName) {
 }
 
 /**
- * Create/Update an action to a specified OpenWhisk account.
+ * Create/Update an action to a specified Cloud Functions account.
  *
- * @param  {Object} ow         - Openwhisk account to update action to
+ * @param  {Object} ow         - Cloud Functions account to update action to
  * @param  {string} actionName - name of action to update
  * @param  {string} action     - action source code
- * @param  {string} namespace  - OpenWhisk account's namespace
+ * @param  {string} namespace  - Cloud Functions account's namespace
  * @return {Promise}           - resolution of action update
  */
 function updateWskAction(ow, actionName, action, namespace) {
@@ -355,11 +371,11 @@ function updateWskAction(ow, actionName, action, namespace) {
 /**
  * Calls create cloudant instance action
  *
- * @param  {Object} ow           - OpenWhisk instance
+ * @param  {Object} ow           - Cloud Functions instance
  * @param  {string} accessToken  - Bluemix access token
  * @param  {string} refreshToken - Bluemix refresh token
- * @param  {string} namespace    - OpenWhisk namespace
- * @return {Promise}             - resolution of OpenWhisk invocation
+ * @param  {string} namespace    - Cloud Functions namespace
+ * @return {Promise}             - resolution of Cloud Functions invocation
  */
 function createCloudantInstance(ow, accessToken, refreshToken, namespace) {
   const input = {
@@ -378,10 +394,10 @@ function createCloudantInstance(ow, accessToken, refreshToken, namespace) {
 /**
  * Call create cloudant database action
  *
- * @param  {Object} ow             - OpenWhisk instance
+ * @param  {Object} ow             - Cloud Functions instance
  * @param  {JSON} cloudantAccount  - cloudant instance information
  * @param  {string} dbName         - database name
- * @return {Promise}               - resolution of OpenWhisk invocation
+ * @return {Promise}               - resolution of Cloud Functions invocation
  */
 function createCloudantDatabase(ow, cloudantAccount, dbName) {
   const input = {
@@ -434,12 +450,12 @@ function getConversationCredentialsFromGuid(accessToken, convGuid) {
 /**
  * Calls update auth document action
  *
- * @param  {Object} ow              - OpenWhisk instance
+ * @param  {Object} ow              - Cloud Functions instance
  * @param  {JSON}   convCreds       - Conversation username and password
  * @param  {string} convWorkspace   - Conversation workspace ID
  * @param  {string} authKey         - auth key
  * @param  {JSON}   cloudantAccount - cloudant account information
- * @return {Promise}                - resolution of OpenWhisk invocation
+ * @return {Promise}                - resolution of Cloud Functions invocation
  */
 function updateAuthDocument(
   ow,
@@ -486,10 +502,10 @@ function validateParameters(params) {
     "Could not get user's Bluemix credentials."
   );
 
-  // Required: OpenWhisk namespace
+  // Required: Cloud Functions namespace
   assert(
     params.state.wsk && params.state.wsk.namespace,
-    "Could not get user's OpenWhisk namespace."
+    "Could not get user's Cloud Functions namespace."
   );
 
   // Required: Conversation identifier and workspace

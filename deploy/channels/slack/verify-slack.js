@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corp. 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 const assert = require('assert');
@@ -34,7 +50,7 @@ const webExportActions = ['slack/receive', 'slack/deploy'];
 const AUTHDB_NAME = 'authdb';
 
 /**
- * Supplies the user with slack-specific OpenWhisk actions.
+ * Supplies the user with slack-specific Cloud Functions actions.
  *
  * @param  {JSON} params    - input parameters required for this action (see validateParameters)
  * @return {Promise}        - success or error response of this action
@@ -73,7 +89,7 @@ function main(params) {
     const redirectUri = `https://${apihost}/api/v1/web/${wskNamespace}/${deployName}_slack/deploy.http`;
     const requestUri = `https://${apihost}/api/v1/web/${wskNamespace}/default/${deployName}.json`;
 
-    getOpenwhiskFromBluemix(accessToken, refreshToken, wskNamespace)
+    getCloudFunctionsFromBluemix(accessToken, refreshToken, wskNamespace)
       .then(ow => {
         userWsk = ow;
       })
@@ -173,14 +189,14 @@ function main(params) {
 }
 
 /**
- * Get the user's OpenWhisk credentials using his Bluemix access and refresh tokens.
+ * Get the user's Cloud Functions credentials using his Bluemix access and refresh tokens.
  *
  * @param  {string} accessToken  - Bluemix access token
  * @param  {string} refreshToken - Bluemix refresh token
  * @param  {string} namespace    - Bluemix organization_space
- * @return {JSON}                - OpenWhisk credentials: { apihost, apikey }
+ * @return {JSON}                - Cloud Functions credentials: { apihost, apikey }
  */
-function getOpenwhiskFromBluemix(accessToken, refreshToken, namespace) {
+function getCloudFunctionsFromBluemix(accessToken, refreshToken, namespace) {
   const url = `https://${apihost}/bluemix/v2/authenticate`;
 
   const postData = { accessToken, refreshToken };
@@ -222,10 +238,10 @@ function getOpenwhiskFromBluemix(accessToken, refreshToken, namespace) {
 }
 
 /**
- * Create/Update a slack package in the user's OpenWhisk namespace.
+ * Create/Update a slack package in the user's Cloud Functions namespace.
  *
- * @param  {Object} ow                - user's OpenWhisk
- * @param  {string} namespace         - OpenWhisk namespace
+ * @param  {Object} ow                - user's Cloud Functions
+ * @param  {string} namespace         - Cloud Functions namespace
  * @param  {string} deployName        - deployment name
  * @return {Promise}                  - resolution of package update
  */
@@ -234,15 +250,15 @@ function updatePackageSlack(ow, namespace, deployName) {
 }
 
 /**
- * Takes specified OpenWhisk actions in the supplier namespace and
+ * Takes specified Cloud Functions actions in the supplier namespace and
  *   transfers them to the user's namespace.
  *
- * @param  {Object}   supplier      - supplier's OpenWhisk
- * @param  {Object}   user          - user's OpenWhisk
+ * @param  {Object}   supplier      - supplier's Cloud Functions
+ * @param  {Object}   user          - user's Cloud Functions
  * @param  {string}   deployName    - deployment name
  * @param  {string[]} actionNames   - names of all actions to transfer
  * @param  {string[]} exportActions - actions to web export
- * @param  {string}   namespace     - user's OpenWhisk namespace
+ * @param  {string}   namespace     - user's Cloud Functions namespace
  * @return {Promise}                - resolution of all action updates
  */
 function transferWskActions(
@@ -278,9 +294,9 @@ function transferWskActions(
 }
 
 /**
- * Get the source of an existing OpenWhisk action.
+ * Get the source of an existing Cloud Functions action.
  *
- * @param  {Object} ow         - OpenWhisk account to get action from
+ * @param  {Object} ow         - Cloud Functions account to get action from
  * @param  {string} actionName - name of action to get
  * @return {Promise}           - resolution of action get
  */
@@ -296,11 +312,11 @@ function getWskAction(ow, actionName) {
 }
 
 /**
- * Create/Update an action to a specified OpenWhisk account.
+ * Create/Update an action to a specified Cloud Functions account.
  *
- * @param  {Object} ow            - Openwhisk account to update action to
+ * @param  {Object} ow            - Cloud Functions account to update action to
  * @param  {string} actionName    - name of action to update
- * @param  {string} namespace     - OpenWhisk account's namespace
+ * @param  {string} namespace     - Cloud Functions account's namespace
  * @param  {string} action        - action source code
  * @param  {boolean} exportAction - true if action should be web-exported
  * @return {Promise}              - resolution of action update
@@ -333,8 +349,8 @@ function updateWskAction(ow, actionName, namespace, action, exportAction) {
  * Confirms if all the actions required in the default sequence action
  *   exist in the user's namespace.
  *
- * @param  {Object} ow          - user's OpenWhisk
- * @param  {string} namespace   - OpenWhisk namespace
+ * @param  {Object} ow          - user's Cloud Functions
+ * @param  {string} namespace   - Cloud Functions namespace
  * @param  {string} deployName  - deployment name
  * @return {Promise}            - resolution of action gets
  */
@@ -351,10 +367,10 @@ function checkPipelineActions(ow, namespace, deployName) {
 }
 
 /**
- * Creates the sequence action of the Slack pipeline in the user's OpenWhisk.
+ * Creates the sequence action of the Slack pipeline in the user's Cloud Functions.
  *
- * @param  {Object} ow           - user's OpenWhisk
- * @param  {string} namespace    - OpenWhisk namespace
+ * @param  {Object} ow           - user's Cloud Functions
+ * @param  {string} namespace    - Cloud Functions namespace
  * @param  {string} deployName   - deployment name
  * @return {Promise}             - resolution of sequence action update
  */
@@ -386,8 +402,8 @@ function createPipeline(ow, namespace, deployName) {
 /**
  * Get annotations from a package
  *
- * @param  {Object} ow         - OpenWhisk instance
- * @param  {string} namespace  - OpenWhisk namespace
+ * @param  {Object} ow         - Cloud Functions instance
+ * @param  {string} namespace  - Cloud Functions namespace
  * @param  {string} deployName - deployment name
  * @return {JSON}              - package annotations
  */
@@ -407,11 +423,11 @@ function getAnnotations(ow, namespace, deployName) {
 /**
  * Update annotations in user deployment's Slack package
  *
- * @param  {Object} ow         - OpenWhisk instance
- * @param  {string} namespace  - OpenWhisk namespace
+ * @param  {Object} ow         - Cloud Functions instance
+ * @param  {string} namespace  - Cloud Functions namespace
  * @param  {string} deployName - deployment name
  * @param  {JSON}   pkg        - package object containing annotations
- * @return {Promise}           - resolution of OpenWhisk invocation
+ * @return {Promise}           - resolution of Cloud Functions invocation
  */
 function updateSlackAnnotations(ow, namespace, deployName, pkg) {
   return ow.packages.update({
@@ -459,11 +475,11 @@ function getConversationCredentialsFromGuid(accessToken, convGuid) {
 /**
  * Calls update auth document action
  *
- * @param  {Object} ow              - OpenWhisk instance
+ * @param  {Object} ow              - Cloud Functions instance
  * @param  {JSON}   cloudantAccount - cloudant account information
  * @param  {string} authKey         - auth key
  * @param  {JSON}   doc             - auth document
- * @return {Promise}                - resolution of OpenWhisk invocation
+ * @return {Promise}                - resolution of Cloud Functions invocation
  */
 function updateAuthDocument(ow, cloudantAccount, authKey, doc) {
   const input = {
@@ -511,7 +527,7 @@ function validateParameters(params) {
     "Could not get user's Bluemix credentials."
   );
 
-  // Required: OpenWhisk namespace
+  // Required: Cloud Functions namespace
   assert(
     params.state.wsk && params.state.wsk.namespace,
     "Could not get user's Bluemix credentials."
