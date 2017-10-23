@@ -168,7 +168,7 @@ createPipelines() {
     fi
     PIPELINES=`jq -c '.pipeline[]' ${PROVIDERS_FILE}`
   else
-    PIPELINES=$(printf '{"channel":{"facebook":{"app_secret":"%s","page_access_token":"%s","verification_token":"%s"},"name":"facebook"},"conversation":{"password":"%s","username":"%s","workspace_id":"%s"}, "name":"%s"}' "$FB_SECRET" "$FB_ACCESS_TOKEN" "$FB_VERIFICATION_TOKEN" "$CONVERSATION_PASSWORD" "$CONVERSATION_USERNAME" "$CONVERSATION_WORKSPACE" "$CF_APP_NAME")
+    PIPELINES=$(printf '{"channel":{"facebook":{"app_secret":"%s","page_access_token":"%s","verification_token":"%s"},"name":"facebook"},"conversation":{"password":"%s","username":"%s","workspace_id":"%s"}, "name":"%s"}' "$FACEBOOK_SECRET" "$FACEBOOK_ACCESS_TOKEN" "$FACEBOOK_VERIFICATION_TOKEN" "$CONVERSATION_PASSWORD" "$CONVERSATION_USERNAME" "$CONVERSATION_WORKSPACE" "$CF_APP_NAME")
   fi
 
   IFS=$'\n'
@@ -182,6 +182,10 @@ createPipelines() {
     else
       PIPELINE_NAME="${PIPELINE_NAME}_"
     fi
+
+    # URL encode the pipeline name to be safe
+    PIPELINE_NAME=`echo "$PIPELINE_NAME" | perl -MURI::Escape -ne 'chomp;print uri_escape($_),"\n"'`
+
     PIPELINE_AUTH_KEY=`node -e "{x=require('uuid'); console.log(x.v1())}"`
 
     ## UPDATE ALL RELEVANT RESOURCES

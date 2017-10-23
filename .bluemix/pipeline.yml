@@ -1,0 +1,68 @@
+---
+stages:
+- name: Build Stage
+  inputs:
+  - type: git
+    branch: master
+    service: ${REPO}
+  triggers:
+  - type: commit
+  properties:
+    - name: PROD_REGION_ID
+      value: ${PROD_REGION_ID}
+  jobs:
+  - name: Build
+    type: builder
+    artifact_dir: ''
+    build_type: shell
+    script: |-
+      #!/bin/bash
+      if [ "${PROD_REGION_ID}" != "ibm:yp:us-south" ]; then
+        echo "Deployment is currently supported only in the US South region."
+        exit 1
+      fi
+      sudo apt-get -qq update
+      sudo apt-get -qqy install curl
+      curl http://stedolan.github.io/jq/download/linux64/jq -o jq
+      chmod +x jq
+      curl -s -O https://openwhisk.ng.bluemix.net/cli/go/download/linux/amd64/wsk
+      chmod +x wsk
+      echo "AUTH=$WSK_AUTH" > ~/.wskprops
+      echo "APIHOST=$WSK_HOST" >> ~/.wskprops
+- name: Deploy Stage
+  inputs:
+  - type: job
+    stage: Build Stage
+    job: Build
+  triggers:
+  - type: stage
+  properties:
+    - name: CF_APP_NAME
+      value: ${CF_APP_NAME}
+    - name: FACEBOOK_SECRET
+      value: ${FACEBOOK_SECRET}
+    - name: FACEBOOK_ACCESS_TOKEN
+      value: ${FACEBOOK_ACCESS_TOKEN}
+    - name: FACEBOOK_VERIFICATION_TOKEN
+      value: ${FACEBOOK_VERIFICATION_TOKEN}
+    - name: CONVERSATION_USERNAME
+      value: ${CONVERSATION_USERNAME}
+    - name: CONVERSATION_PASSWORD
+      value: ${CONVERSATION_PASSWORD}
+    - name: CONVERSATION_WORKSPACE
+      value: ${CONVERSATION_WORKSPACE}
+    - name: BUTTON_DEPLOY
+      value: "1"
+  jobs:
+  - name: Deploy
+    type: deployer
+    target:
+      region_id: ${PROD_REGION_ID}
+      organization: ${PROD_ORG_NAME}
+      space: ${PROD_SPACE_NAME}
+      application: ${CF_APP_NAME}
+    script: |-
+      #!/bin/bash
+      export PATH=$(pwd):$PATH
+      chmod a+x ./.bluemix/pipeline-DEPLOY.sh
+      ./.bluemix/pipeline-DEPLOY.sh
