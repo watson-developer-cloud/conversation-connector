@@ -102,11 +102,11 @@ processCfLogin() {
 # where user has logged in.
 changeWhiskKey() {
   echo 'Syncing wsk namespace with CF namespace...'
-  WSK_NAMESPACE="`${CF} target | grep 'Org:' | awk '{print $2}'`_`${CF} target | grep 'Space:' | awk '{print $2}'`"
+  WSK_NAMESPACE="`${CF} target | grep 'org:\|Org:' | awk '{print $2}'`_`${CF} target | grep 'space:\|Space:' | awk '{print $2}'`"
   if [ "${WSK_NAMESPACE}" == `${WSK} namespace list | tail -n +2 | head -n 1` ]; then
     return
   fi
-  TARGET=`${CF} target | grep 'API endpoint:' | awk '{print $3}'`
+  TARGET=`${CF} target | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
   WSK_API_HOST="https://openwhisk.${TARGET#*.}"
 
   ACCESS_TOKEN=`cat ~/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`
