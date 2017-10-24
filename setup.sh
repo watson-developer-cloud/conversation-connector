@@ -180,11 +180,10 @@ createPipelines() {
       echo 'A pipeline is missing a name key, skipping...'
       continue
     else
+      # Remove characters that are not allowed in Cloud Function names
+      PIPELINE_NAME=`echo "$PIPELINE_NAME" | sed 's/[^a-zA-Z0-9]//g'`
       PIPELINE_NAME="${PIPELINE_NAME}_"
     fi
-
-    # URL encode the pipeline name to be safe
-    PIPELINE_NAME=`echo "$PIPELINE_NAME" | perl -MURI::Escape -ne 'chomp;print uri_escape($_),"\n"'`
 
     PIPELINE_AUTH_KEY=`node -e "{x=require('uuid'); console.log(x.v1())}"`
 

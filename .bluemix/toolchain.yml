@@ -24,7 +24,7 @@ connector-build:
      content: $file(pipeline.yml)
      env:
       REPO: "connector-repo"
-      CF_APP_NAME: "{{deploy.parameters.deploy-name}}"
+      CF_APP_NAME: "{{deploy.parameters.deployment-name}}"
       PROD_SPACE_NAME: "{{deploy.parameters.prod-space}}"
       PROD_ORG_NAME: "{{deploy.parameters.prod-organization}}"
       PROD_REGION_ID: "{{deploy.parameters.prod-region}}"
@@ -33,7 +33,7 @@ connector-build:
       FACEBOOK_VERIFICATION_TOKEN: "{{deploy.parameters.facebook-verification-token}}"
       CONVERSATION_USERNAME: "{{deploy.parameters.conversation-username}}"
       CONVERSATION_PASSWORD: "{{deploy.parameters.conversation-password}}"
-      CONVERSASTION_WORKSPACE: "{{deploy.parameters.conversation-workspace}}"
+      CONVERSATION_WORKSPACE: "{{deploy.parameters.conversation-workspace}}"
      execute: true
     services: ["connector-repo"]
   hidden: [form, description]
@@ -48,7 +48,7 @@ deploy:
     prod-region: "{{region}}"
     prod-organization: "{{organization}}"
     prod-space: "{{space}}"
-    deploy-name: "{{name}}"
+    deployment-name: "{{name}}"
     facebook-secret: ""
     facebook-access-token: ""
     facebook-verification-token: ""
