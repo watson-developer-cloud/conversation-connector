@@ -6,43 +6,43 @@
   "type": "object",
   "properties": {
     "prod-region": {
-      "description": "The Bluemix region",
+      "description": "The Bluemix region. Currently, only US South is supported.",
       "type": "string"
     },
     "prod-organization": {
-      "description": "The Bluemix organization",
+      "description": "The Bluemix organization where you want to deploy.",
       "type": "string"
     },
     "prod-space": {
-      "description": "The Bluemix space",
+      "description": "The Bluemix space where you want to deploy.",
       "type": "string"
     },
     "deploy-name": {
-      "description": "The deployment name that will identify the deployed Cloud Functions components",
+      "description": "The deployment name that will identify the deployed Cloud Functions components. Any characters other than A-Z and 0-9 are discarded.",
       "type": "string"
     },
     "facebook-secret": {
-      "description": "The Facebook app secret from https://developers.facebook.com/apps/",
+      "description": "The Facebook app secret from https://developers.facebook.com/apps/.",
       "type": "string"
     },
     "facebook-access-token": {
-      "description": "The Facebook page access token from https://developers.facebook.com/apps/",
+      "description": "The Facebook page access token from https://developers.facebook.com/apps/.",
       "type": "string"
     },
     "facebook-verification-token": {
-      "description": "The Facebook verification token that will be used to verify webhook settings",
+      "description": "The Facebook verification token that will be used to verify webhook settings.",
       "type": "string"
     },
     "conversation-username": {
-      "description": "The Conversation service username from the workspace credentials",
+      "description": "The Conversation service username from the workspace credentials.",
       "type": "string"
     },
     "conversation-password": {
-      "description": "The Conversation service password from the workspace credentials",
+      "description": "The Conversation service password from the workspace credentials.",
       "type": "string"
     },
     "conversation-workspace": {
-      "description": "ID of the Conversation workspace you want to deploy",
+      "description": "ID of the Conversation workspace you want to deploy.",
       "type": "string"
     }
   },
