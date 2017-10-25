@@ -11,7 +11,7 @@
     "url": "git@github.ibm.com:watson-engagement-advisor/convo-flexible-bot.git"
   },
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "devDependencies": {
     "assert": "^1.4.1",
     "eslint": "^3.18.0",
