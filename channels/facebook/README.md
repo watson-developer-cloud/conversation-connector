@@ -1,6 +1,6 @@
 # Deploying a Facebook Messenger app
 
-###NOTICE: This software is still under development and should not be used until this notice is removed.
+### NOTICE: This software is still under development and should not be used until this notice is removed.
 
 You can use either of two methods to deploy your workspace to a Facebook Messenger app:
 
