@@ -1,0 +1,39 @@
+{
+  "name": "conversation-connector",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "./test/scripts/run_tests.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/watson-developer-cloud/conversation-connector.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "assert": "^1.4.1",
+    "eslint": "^3.18.0",
+    "eslint-config-airbnb-base": "^11.1.2",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-prettier": "^2.0.1",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.2.0",
+    "nock": "^9.0.13",
+    "prettier": "^0.22.0",
+    "proxyquire": "^1.8.0",
+    "sinon": "^3.2.1"
+  },
+  "dependencies": {
+    "cloudant": "^1.8.0",
+    "merge": "^1.2.0",
+    "object.omit": "^2.0.1",
+    "object.pick": "^1.2.0",
+    "openwhisk": "^3.5.1",
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1",
+    "uuid": "^3.1.0",
+    "watson-developer-cloud": "^2.29.0"
+  }
+}

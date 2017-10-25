@@ -1,0 +1,20 @@
+language: node_js
+node_js:
+  - "7"
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get -qqy install jq curl
+  - curl -L -o - 'https://cli.run.pivotal.io/stable?release=linux64-binary&version=6.25.0&source=github-rel' > cf.tar.gz
+  - tar zxf cf.tar.gz cf
+  - curl -s -O https://openwhisk.ng.bluemix.net/cli/go/download/linux/amd64/wsk
+  - chmod +x wsk
+  - echo "AUTH=$WSK_AUTH" > ~/.wskprops
+  - echo "APIHOST=$WSK_HOST" >> ~/.wskprops
+before_script:
+  - export PATH=$PATH:$PWD
+install:
+  - npm install
+script:
+  - eslint .
+  - npm test
+  - node ./node_modules/.bin/istanbul check-coverage --statements 90 --branches 90 --lines 90 --functions 90

@@ -1,0 +1,57 @@
+---
+name: "Conversation Connector Toolchain"
+description: "Deploy your own Conversation connector."
+required:
+ - deploy
+ - connector-repo
+
+# Github repos
+connector-repo:
+  service_id: githubpublic
+  parameters:
+    repo_name: "conversation-connector"
+    repo_url: https://github.com/watson-developer-cloud/conversation-connector
+    type: clone
+    has_issues: false
+
+# Pipelines
+connector-build:
+  service_id: pipeline
+  parameters:
+    name: "conversation-connector"
+    ui-pipeline: true
+    configuration:
+     content: $file(pipeline.yml)
+     env:
+      REPO: "connector-repo"
+      CF_APP_NAME: "{{deploy.parameters.deployment-name}}"
+      PROD_SPACE_NAME: "{{deploy.parameters.prod-space}}"
+      PROD_ORG_NAME: "{{deploy.parameters.prod-organization}}"
+      PROD_REGION_ID: "{{deploy.parameters.prod-region}}"
+      FACEBOOK_SECRET: "{{deploy.parameters.facebook-secret}}"
+      FACEBOOK_ACCESS_TOKEN: "{{deploy.parameters.facebook-access-token}}"
+      FACEBOOK_VERIFICATION_TOKEN: "{{deploy.parameters.facebook-verification-token}}"
+      CONVERSATION_USERNAME: "{{deploy.parameters.conversation-username}}"
+      CONVERSATION_PASSWORD: "{{deploy.parameters.conversation-password}}"
+      CONVERSATION_WORKSPACE: "{{deploy.parameters.conversation-workspace}}"
+     execute: true
+    services: ["connector-repo"]
+  hidden: [form, description]
+
+#Deployment
+deploy:
+  schema:
+    $ref: deploy.json
+  service-category: pipeline
+  # Parameters the user will type
+  parameters:
+    prod-region: "{{region}}"
+    prod-organization: "{{organization}}"
+    prod-space: "{{space}}"
+    deployment-name: "{{name}}"
+    facebook-secret: ""
+    facebook-access-token: ""
+    facebook-verification-token: ""
+    conversation-username: ""
+    conversation-password: ""
+    conversation-workspace: ""

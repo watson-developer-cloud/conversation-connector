@@ -1,0 +1,20 @@
+{
+  "extends": "airbnb-base",
+  "plugins": [
+    "import",
+    "prettier"
+  ],
+  "rules": {
+    "arrow-body-style": ["error", "always"],
+    "arrow-parens": ["error", "as-needed"],
+    "comma-dangle": ["error", "never"],
+    "no-underscore-dangle": ["off"],
+    "no-unused-vars": ["error", { "varsIgnorePattern": "main" }],
+    "no-use-before-define": ["error", {"functions": false}],
+    "prettier/prettier": ["warn", {"singleQuote": true}],
+    "strict": ["off"]
+  },
+  "env": {
+    "mocha": true
+  }
+}
