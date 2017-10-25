@@ -18,13 +18,13 @@ You can use either of two methods to deploy your workspace to a Facebook Messeng
 
     Leave this page open so you can follow the instructions as you complete the process.
 
-1.  Under **Tool Integrations**, click the GitHub tile, and then click **Authorize** to grant Bluemix access to your GitHub account.
+1.  Under **Tool Integrations**, click the GitHub tile, and then click **Authorize** to grant Bluemix access to your GitHub account. Log in with your GitHub credentials and complete the authorization process.
 
     **Note:** If you do not see an **Authorize** button, IBM Bluemix might already be authorized. In this case, you can skip this step.
 
 1.  Click the Delivery Pipeline tile.
 
-1.  Select the Bluemix region, organization, and space where you want to deploy. This space will be used to deploy the IBM Cloud Functions artifacts, as well as a Cloudant Lite instance.
+1.  Under **Tool Integrations**, select the Bluemix region, organization, and space where you want to deploy. This space will be used to deploy the IBM Cloud Functions artifacts, as well as a Cloudant Lite instance.
 
     **Note:** Currently, only the US South region is supported.
 
@@ -44,7 +44,9 @@ You can use either of two methods to deploy your workspace to a Facebook Messeng
 
 1.  In the Facebook app page, click **+ Add Product**. Under **Select a product**, hover over **Messenger** and click **Set Up**. 
 
-1.  In the Messenger settings, scroll down to **Token Generation**. Click **Select a Page** and choose the Facebook page you want to use for your app. (If you don't already have a page for your app, click **Create a new page**.)
+1.  In the Messenger settings, scroll down to **Token Generation**. Click **Select a Page** and choose the Facebook page you want to use for your app. 
+
+    **Note:** If you don't already have a page for your app, click **Create a new page**. After you finish creating the page, return to the [Facebook apps page](https://developers.facebook.com/apps/) and navigate back to the Messenger settings for your app. You can then select the page you created.
 
 1.  Copy the page access token and paste it into the **Facebook Page Access Token** field of the deployment form.
 
