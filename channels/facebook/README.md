@@ -18,7 +18,7 @@ You can use either of two methods to deploy your workspace to a Facebook Messeng
 
     Leave this page open so you can follow the instructions as you complete the process.
 
-1.  Under **Tool Integrations**, click the GitHub tile, and then click **Authorize** to grant Bluemix access to your GitHub account. Log in with your Bluemix credentials and complete the authorization process.
+1.  Under **Tool Integrations**, click the GitHub tile, and then click **Authorize** to grant Bluemix access to your GitHub account. Log in with your GitHub credentials and complete the authorization process.
 
     **Note:** If you do not see an **Authorize** button, IBM Bluemix might already be authorized. In this case, you can skip this step.
 
