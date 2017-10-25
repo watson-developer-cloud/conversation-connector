@@ -1,75 +1,59 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Team Process Document**
+# Questions
 
-- [GitHub Workflow](#github-workflow)
-- [Coding Style](#coding-style)
-  - [Comments](#comments)
-- [Delivering Code](#delivering-code)
-  - [Making PRs](#making-prs)
-- [GitHub Story Process](#github-story-process)
+If you are having problems using the product or have a question about the IBM
+Watson Services, please ask a question on
+[dW Answers](https://developer.ibm.com/answers/questions/ask/?topics=watson)
+or [Stack Overflow](http://stackoverflow.com/questions/ask?tags=ibm-watson).
 
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+# Code
 
-# GitHub Workflow
-
-The team follows the Forking Workflow documented [here](https://www.atlassian.com/git/tutorials/comparing-workflows#forking-workflow).
-
-There are two main exceptions:
-
-1. We will make use of two project maintainers, instead of one. Essentially developers fork the main repo, develop in their own fork as they wish, and then make a PR using GitHub Enterprise. The PR should be reviewed and merged by one of the project maintainers.
-
-2. We are not using bitbucket, pull requests can be made using GitHub Enterprise instead.
-
-# Coding Style
-
-In an effort to have clear uniform code across a code base being developed by multiple individuals we will adopt the [airbnb style guildlines](https://github.com/airbnb/javascript)
+In an effort to have clear uniform code across a code base being developed by multiple individuals we will adopt the [Airbnb style guidelines](https://github.com/airbnb/javascript).
 
 The above is provided primarily for reference and while it is encouraged reading, we will use eslint and the prettier formatter to automatically apply most of these rules.
 
-Travis will automatically run eslint and prettier when a PR is made. However, it is a best practice to run both prettier and eslint locally to work out any issues before a PR is submitted. Descriptions on how to run these tools manually, as well as descriptions of other best practices the team has identified can be found [here](https://github.ibm.com/watson-engagement-advisor/conversation-connector/wiki/Writing-code-for-conversation-connector).
+Travis will automatically run eslint and prettier when a PR is made. However, it is a best practice to run both prettier and eslint locally to work out any issues before a PR is submitted.
 
-## Comments
+# Issues
 
-We should likely identify a tool to run when a PR is made but for now this is simply a reminder that we need more comments in the code. Actions and functions should have some description of what they do.  Major algorithms that are difficult to understand should have some inline function comments.
+If you encounter an issue with the product, you are welcome to submit
+a [bug report](https://github.com/watson-developer-cloud/conversation-connector/issues).
+Before that, please search for similar issues. It's possible somebody has
+already encountered this issue.
 
-# Delivering Code
+# Pull Requests
 
-Each code deliverable should come from the developer's fork of the master repo. GitHub Enterprise can be used to create the Pull Request (PR).
+If you want to contribute to the repository, follow these steps:
 
-## Making PRs
+1. Fork the repo.
+2. Develop and test your code changes: `npm install && npm test`.
+3. Travis-CI will run the tests once your changes are merged.
+4. Add a test for your changes. Only refactoring and documentation changes require no new tests.
+5. Make the test pass.
+6. Commit your changes.
+7. Push to your fork and submit a pull request.
 
-- It is highly encouraged that PRs be made for small, specific pieces of work. Attempts should be made to not bundle unrelated work into the same PR.
+# Developer's Certificate of Origin 1.1
 
-- Automated tests are required for all work being done on this repo. The Istanbul code coverage tool will fail PRs that drop the overall repo's code coverage below 90%. For suggested approaches for writing tests see [here](https://github.ibm.com/watson-engagement-advisor/conversation-connector/wiki/Writing-Test-Code).
+By making a contribution to this project, I certify that:
 
-- When making PRs please use the closes feature to reference and close the corresponding issue.  This helps ensure that we have an issue to track anything worth making code changes for.  You can read more about this feature [here](https://help.github.com/articles/closing-issues-via-commit-messages/). This feature does work cross repo, simply use the full URL to the wea-backlog issue in your PR comment.
+(a) The contribution was created in whole or in part by me and I
+   have the right to submit it under the open source license
+   indicated in the file; or
 
-- Assuming all checks pass, you have an associated issue for the work, and an automated test exists for the new changes; assign the PR to one of the project maintainers, Ashima Arora or David Terry. We will involve others to help with the review if necessary. For folks looking for tips on how to do a code review this is a [nice reference](https://ralbz001189.raleigh.ibm.com/qse/QSE.nsf/html/code_review_checklist.html).
+(b) The contribution is based upon previous work that, to the best
+   of my knowledge, is covered under an appropriate open source
+   license and I have the right under that license to submit that
+   work with modifications, whether created in whole or in part
+   by me, under the same open source license (unless I am
+   permitted to submit under a different license), as indicated
+   in the file; or
 
-- The maintainer should review and merge the PR if it looks good. All merges should squash the commits into a single commit on the master branch.
+(c) The contribution was provided directly to me by some other
+   person who certified (a), (b) or (c) and I have not modified
+   it.
 
-Note: A PR with failing checks, with no automated tests, or with no associated github issue, will be automatically rejected.
-
-# GitHub Story Process
-
-With an increased focus on stories and their associated points, we should be filing github issues in such a way that the team gets credit for all our work. 
-
-When filing issues:
-
-1. Make sure it has the Squad: Developer tag on it
-2. Make sure it is assigned to a sprint
-3. Make sure it is a story or associated with a story. If associating with a story please # mention the number of the story. We no longer get credit for estimates on tasks or unlabeled issues.
-4. Make sure the story has points on it.  Every week burndown charts are generated that check on story closure rate so making stories that feel like about a week's worth of work is best. Since stories are typically a collection of related work it might make sense to put checklists of small items in the story if there are a few things that can be batched up into a week's worth of work.  Alternatively, consider making a story and associate child tasks, estimate those, and roll those estimates into the story. The latter is preferred but we can try both and see what works better.  The main point is having everything in github and closing things weekly is going to give us the most credit for what we are doing.
-
-For help with estimating story points see the below information: 
-
-| Estimation Guide  |
-| ------------- |
-| 1 Point (1 day) |
-| 2 Points (1-2 days) |
-| 3 Points (3-5 days) |
-| 5 Points (5 days) |
-| 8 Points (5-10 days) |
-| 13 Points (10-15 days) |
-| 18 Points (15 days) |
+(d) I understand and agree that this project and the contribution
+   are public and that a record of the contribution (including all
+   personal information I submit with it, including my sign-off) is
+   maintained indefinitely and may be redistributed consistent with
+   this project or the open source license(s) involved.
