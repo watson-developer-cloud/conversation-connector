@@ -28,7 +28,7 @@ You can use either of two methods to deploy your workspace to a Facebook Messeng
 
 1.  Make sure the Bluemix US South region is selected. Other regions are not currently supported.
 
-1.  Select the Bluemix region, organization, and space where you want to deploy. This space will be used to deploy the IBM Cloud Functions artifacts, as well as a Cloudant Lite service instance.
+1.  Select the Bluemix organization and space where you want to deploy. This space will be used to deploy the IBM Cloud Functions artifacts, as well as a Cloudant Lite service instance.
 
     **Note:** Make sure your Bluemix account has an open slot for the new Cloudant Lite service instance (if it does not already exist from a previous deployment).
 
