@@ -181,7 +181,7 @@ createPipelines() {
       continue
     else
       # Remove characters that are not allowed in Cloud Function names
-      PIPELINE_NAME=`echo "$PIPELINE_NAME" | sed 's/[^a-zA-Z0-9]//g'`
+      PIPELINE_NAME=`echo "$PIPELINE_NAME" | LANG=C sed 's/[^a-zA-Z0-9]//g'`
       PIPELINE_NAME="${PIPELINE_NAME}_"
     fi
 
