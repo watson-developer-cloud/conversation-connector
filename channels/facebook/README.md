@@ -8,27 +8,31 @@ You can use either of two methods to deploy your workspace to a Facebook Messeng
 
 - Use [manual deployment](#manual-deployment) if you want to deploy your app by modifying configuration files and running scripts. You might want to use this method if you are customizing the Conversation connector, or if you need to repair or update components of an existing deployment.
 
+**Note:** This process is intended to deploy an existing Watson Conversation workspace. If you have not yet built a workspace, you must do so first. For more information, see the [Conversation documentation](https://console.bluemix.net/docs/services/conversation/index.html#about).
+
 ## Automated deployment
 
 1.  If you are not already logged in to IBM Bluemix, [log in](https://console.bluemix.net/login) before continuing.
 
-1.  Right-click this button to launch the deployment in a new tab or window:
+1.  Click this button to launch the deployment. (Open the link in a new tab or window, so you can leave this page open.)
 
     [![Deploy to Bluemix](https://bluemix.net/deploy/button.png)](https://console.bluemix.net/devops/setup/deploy/?repository=https://github.com/watson-developer-cloud/conversation-connector)
-
-    Leave this page open so you can follow the instructions as you complete the process.
 
 1.  Under **Tool Integrations**, click the GitHub tile, and then click **Authorize** to grant Bluemix access to your GitHub account. Log in with your GitHub credentials and complete the authorization process.
 
     **Note:** If you do not see an **Authorize** button, IBM Bluemix might already be authorized. In this case, you can skip this step.
 
-1.  Click the Delivery Pipeline tile.
+1.  Verify the values in the GitHub fields. In most cases, you can accept the default values. However, if you already have a GitHub repository called `conversation-connector`, you must edit the value in the **Repository Name** field to specify a different name for the new repository that will be created.
 
-1.  Under **Tool Integrations**, select the Bluemix region, organization, and space where you want to deploy. This space will be used to deploy the IBM Cloud Functions artifacts, as well as a Cloudant Lite instance.
+1.  Under **Tool Integrations**, click the Delivery Pipeline tile.
 
-    **Note:** Currently, only the US South region is supported.
+1.  Make sure the Bluemix US South region is selected. Other regions are not currently supported.
 
-1.  In the **App name** field, type a name for your deployment. This name will help you find your Cloud Functions assets later. You can type any string, but only alphanumeric characters (A-Z and 0-9) are kept.
+1.  Select the Bluemix region, organization, and space where you want to deploy. This space will be used to deploy the IBM Cloud Functions artifacts, as well as a Cloudant Lite service instance.
+
+    **Note:** Make sure your Bluemix account has an open slot for the new Cloudant Lite service instance (if it does not already exist from a previous deployment).
+
+1.  In the **Deployment name** field, type a name for your deployment. This name will help you find your Cloud Functions assets later. You can type any string, but only alphanumeric characters (A-Z and 0-9) are kept.
 
 1.  Go to [https://developers.facebook.com/apps/](https://developers.facebook.com/apps/). Log in with your Facebook credentials if necessary.
 
@@ -64,7 +68,7 @@ You can use either of two methods to deploy your workspace to a Facebook Messeng
 
 1.  In the Facebook app settings, go to the Messenger settings and scroll to the **Webhooks** section. Click **Setup Webhooks**.
 
-1.  In the **New Page Subscription** window, paste the request URL from the clipboard into the **Callback URL** field. In the **Verify Token** field, specify the same Facebook verification token that you created earlier. Under **Subscription Fields**, select **messages** and **messaging_postbacks**. Then click **Verify and Save**.
+1.  In the **New Page Subscription** window, paste the request URL from the clipboard into the **Callback URL** field. In the **Verify Token** field, specify the same Facebook verification token that you specified earlier in the **Facebook Verification Token** field. Under **Subscription Fields**, select **messages** and **messaging_postbacks**. Then click **Verify and Save**.
 
 1.  After the verification finishes, go back to the **Webhooks** section in the Messenger settings and click **Select a Page**. Select the same page you selected during token generation, and then click **Subscribe**.
 
@@ -73,6 +77,8 @@ You can use either of two methods to deploy your workspace to a Facebook Messeng
 That's it. You're all set. You can now go to Facebook Messenger, search for your Facebook bot (or the Facebook page you subscribed to), and talk to it!
 
 ## Manual deployment
+
+**Note:** The manual deployment process is supported only on Linux/UNIX and macOS systems.
 
 1.  Clone or download this GitHub repo to your local file system.
 
@@ -86,6 +92,8 @@ That's it. You're all set. You can now go to Facebook Messenger, search for your
     `cf login -a https://api.ng.bluemix.net/`
 
     Select the Bluemix organization and space where you want to deploy.
+
+    **Note:** Currently, only the US South region is supported.
 
 1.  Go to https://console.ng.bluemix.net/openwhisk/learn/cli and then do the following:
 
@@ -117,7 +125,9 @@ That's it. You're all set. You can now go to Facebook Messenger, search for your
 
 1.  In `providers.json`, add a value for `verfication_token`. This can be any string you want to use as a verification token. Make a record of this value, which you will need later. (Facebook will use this verification token to verify your webhook URL.)
 
-1.  In `providers.json`, make sure the channel `name` is set to `facebook`, and also add an appropriate pipeline `name`. For more information about the pipeline, please refer to the [main repository README](../../README.md).
+1.  In `providers.json`, make sure the channel `name` is set to `facebook`.
+
+1.  In `providers.json`, edit the pipeline `name` to specify a name for your deployment. This name will help you find your Cloud Functions assets later. Only alphanumeric characters (A-Z and 0-9) are kept.
 
 1.  In `providers.json`, edit the `conversation` object to specify the username, password, and workspace ID of the workspace you are deploying.
 
@@ -125,7 +135,7 @@ That's it. You're all set. You can now go to Facebook Messenger, search for your
 
 1.  `cd` to the root of the repository and run `./setup.sh -s`. This creates the Facebook Cloud Functions package, as well as all the other packages in your namespace.
 
-1.  Copy the generated `${pipeline-name}_facebook/receive` endpoint URL. You can copy this directly from the terminal window after the script completes (look for a message that begins `Your Request URL is:`). If you need to find the endpoint URL later, follow these steps:
+1.  Copy the generated request URL. You can copy this directly from the terminal window after the script completes (look for a message that begins `Your Request URL is:`). If you need to find the endpoint URL later, follow these steps:
 
     1.  Go to https://console.ng.bluemix.net/openwhisk/editor.
 
