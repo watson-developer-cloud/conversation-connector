@@ -8,7 +8,7 @@ You can use either of two methods to deploy your workspace to a Facebook Messeng
 
 - Use [manual deployment](#manual-deployment) if you want to deploy your app by modifying configuration files and running scripts. You might want to use this method if you are customizing the Conversation connector, or if you need to repair or update components of an existing deployment.
 
-**Note:** This process is intended to deploy an existing Watson Conversation workspace. If you have not yet built a workspace, you must do so first. For more information, see the [Conversation documentation](https://console.bluemix.net/docs/services/conversation/index.html#about).
+**Note:** This process is intended to connect an existing Watson Conversation workspace to a Facebook app. If you have not yet built a workspace, you must do so first. For more information, see the [Conversation documentation](https://console.bluemix.net/docs/services/conversation/index.html#about).
 
 ## Automated deployment
 
