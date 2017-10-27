@@ -58,7 +58,7 @@
       "items": [
         {
           "type": "label",
-          "title": "Region"
+          "title": "Region (must be US South)"
         },
         {
           "type": "label",
