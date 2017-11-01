@@ -1,7 +1,5 @@
 # Deploying a Facebook Messenger app
 
-### NOTICE: This software is still under development and should not be used until this notice is removed.
-
 You can use either of two methods to deploy your workspace to a Facebook Messenger app:
 
 - Use [automated deployment](#automated-deployment) if you want to quickly deploy your app by filling out a form with the required information. The deployment process is automated using a Bluemix DevOps toolchain.
@@ -80,7 +78,7 @@ That's it. You're all set. You can now go to Facebook Messenger, search for your
 
 **Note:** The manual deployment process is supported only on Linux/UNIX and macOS systems.
 
-1.  Clone or download this GitHub repo to your local file system.
+1.  Clone or download this GitHub repository to your local file system.
 
 1.  If you have not done so already, install the following prerequisite software:
 
@@ -113,15 +111,17 @@ That's it. You're all set. You can now go to Facebook Messenger, search for your
 
 1.  In the navigation pane, click **Dashboard**.
 
-1.  Click **Show** and then copy the displayed app secret to the clipboard. Paste this value into the `providers.json` file.
+1.  Click **Show** and then copy the displayed app secret to the clipboard.
 
-1.  In the Facebook app page, click **+ Add Product**. Under **Select a product**, hover over **Messenger** and click **Set Up**. 
+1.  In the root directory of your local copy of the repository, edit the `providers.json` file.  Paste the app secret value into the `app_secret` field of the `facebook` object.
 
-1.  In the Messenger settings, scroll down to **Token Generation**. Click **Select a Page** and choose the Facebook page you want to use for your app. 
+1.  In the Facebook app page, click **+ Add Product**. Under **Select a product**, hover over **Messenger** and click **Set Up**.
+
+1.  In the Messenger settings, scroll down to **Token Generation**. Click **Select a Page** and choose the Facebook page you want to use for your app.
 
     **Note:** If you don't already have a page for your app, click **Create a new page**. After you finish creating the page, return to the [Facebook apps page](https://developers.facebook.com/apps/) and navigate back to the Messenger settings for your app. You can then select the page you created.
 
-1.  Copy the page access token and paste it into the `providers.json` file.
+1.  Copy the page access token. In `providers.json`, paste the value into the corresponding field of the `facebook` object.
 
 1.  In `providers.json`, add a value for `verfication_token`. This can be any string you want to use as a verification token. Make a record of this value, which you will need later. (Facebook will use this verification token to verify your webhook URL.)
 
