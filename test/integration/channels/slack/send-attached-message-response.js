@@ -28,6 +28,7 @@ const assert = require('assert');
 function main(params) {
   return new Promise(resolve => {
     validateParameters(params);
+    const auth = params.auth;
 
     const payload = JSON.parse(params.slack.payload);
 
@@ -38,7 +39,11 @@ function main(params) {
         {
           text: 'Message coming from Slack integration test.'
         }
-      ]
+      ],
+      raw_input_data: {
+        provider: 'slack',
+        auth
+      }
     });
   });
 }
@@ -71,6 +76,9 @@ function validateParameters(params) {
 
   // Required: Slack original message
   assert(payload.original_message, 'No Slack original message provided.');
+
+  // Required: auth
+  assert(params.auth, 'No auth provided.');
 }
 
 module.exports = main;

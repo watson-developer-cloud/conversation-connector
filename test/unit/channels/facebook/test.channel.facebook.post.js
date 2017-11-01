@@ -25,11 +25,7 @@ const nock = require('nock');
 
 const envParams = process.env;
 
-const apiHost = envParams.__OW_API_HOST;
-const namespace = envParams.__OW_NAMESPACE;
-
 process.env.__OW_ACTION_NAME = `/${envParams.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
-const packageName = envParams.__OW_ACTION_NAME.split('/')[2];
 
 const facebookPost = require('./../../../../channels/facebook/post/index.js');
 
@@ -46,29 +42,6 @@ const errorNoMessageText = 'Message object not provided.';
 describe('Facebook Post Unit Tests', () => {
   let postParams = {};
   let func;
-  let auth;
-
-  const cloudantUrl = 'https://some-cloudant-url.com';
-  const cloudantAuthDbName = 'abc';
-  const cloudantAuthKey = '123';
-
-  const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
-  const expectedCloudFunctions = {
-    annotations: [
-      {
-        key: 'cloudant_url',
-        value: cloudantUrl
-      },
-      {
-        key: 'cloudant_auth_dbname',
-        value: cloudantAuthDbName
-      },
-      {
-        key: 'cloudant_auth_key',
-        value: cloudantAuthKey
-      }
-    ]
-  };
 
   const expectedResult = {
     text: 200,
@@ -91,40 +64,25 @@ describe('Facebook Post Unit Tests', () => {
       },
       recipient: {
         id: envParams.__TEST_FACEBOOK_SENDER_ID
-      }
-    };
-
-    auth = {
-      facebook: {
-        app_secret: envParams.__TEST_FACEBOOK_APP_SECRET,
-        verification_token: envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN,
-        page_access_token: envParams.__TEST_FACEBOOK_PAGE_ACCESS_TOKEN
+      },
+      raw_input_data: {
+        provider: 'facebook',
+        auth: {
+          facebook: {
+            app_secret: envParams.__TEST_FACEBOOK_APP_SECRET,
+            verification_token: envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN,
+            page_access_token: envParams.__TEST_FACEBOOK_PAGE_ACCESS_TOKEN
+          }
+        }
       }
     };
   });
 
   it('validate facebook/post works as intended', () => {
     func = facebookPost.main;
-    const mockCloudFunctions = nock(cloudFunctionsUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedCloudFunctions);
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, auth);
 
     return func(postParams).then(
       result => {
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!mockCloudFunctions.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloud Functions Get server did not get called.');
-        }
         assert.deepEqual(expectedResult, result);
       },
       error => {
@@ -136,27 +94,8 @@ describe('Facebook Post Unit Tests', () => {
   it('validate error when bad uri supplied', () => {
     func = facebookPost.postFacebook;
 
-    const mockCloudFunctions = nock(cloudFunctionsUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedCloudFunctions);
-
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, auth);
-
     return func(postParams, badUri, postParams.page_access_token).then(
       result => {
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!mockCloudFunctions.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloud Functions Get server did not get called.');
-        }
         assert(false, result);
       },
       error => {
@@ -169,27 +108,8 @@ describe('Facebook Post Unit Tests', () => {
   it('validate error when not 200 uri supplied', () => {
     func = facebookPost.postFacebook;
 
-    const mockCloudFunctions = nock(cloudFunctionsUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedCloudFunctions);
-
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, auth);
-
     return func(postParams, movedUri, postParams.page_access_token).then(
       result => {
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!mockCloudFunctions.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloud Functions Get server did not get called.');
-        }
         assert(false, result);
       },
       error => {
@@ -201,35 +121,10 @@ describe('Facebook Post Unit Tests', () => {
 
   it('validate error when page access token absent in auth', () => {
     func = facebookPost.main;
-
-    const badAuth = {
-      facebook: {
-        app_secret: envParams.__TEST_FACEBOOK_APP_SECRET,
-        verification_token: envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN
-      }
-    };
-
-    const mockCloudFunctions = nock(cloudFunctionsUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedCloudFunctions);
-
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, badAuth);
+    delete postParams.raw_input_data.auth.facebook.page_access_token;
 
     return func(postParams).then(
       result => {
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!mockCloudFunctions.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloud Functions Get server did not get called.');
-        }
         assert(false, result);
       },
       error => {

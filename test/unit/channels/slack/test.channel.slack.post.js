@@ -37,33 +37,26 @@ const errorNoText = 'Message text not provided.';
 describe('Slack Post Unit Tests', () => {
   let options;
   let expectedResult;
-  let auth;
 
   let func;
 
-  const cloudantUrl = 'https://some-cloudant-url.com';
-  const cloudantAuthDbName = 'abc';
-  const cloudantAuthKey = '123';
-
-  const apiHost = process.env.__OW_API_HOST;
-  const namespace = process.env.__OW_NAMESPACE;
-  let packageName;
-
-  let owMock;
-  let cloudantMock;
-  const owHost = `https://${apiHost}`;
   const slackHost = 'https://slack.com';
-
-  before(() => {
-    process.env.__OW_ACTION_NAME = `/${envParams.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
-    packageName = process.env.__OW_ACTION_NAME.split('/')[2];
-  });
 
   beforeEach(() => {
     options = {
       channel: envParams.__TEST_SLACK_CHANNEL,
       bot_access_token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
-      text
+      text,
+      raw_input_data: {
+        provider: 'slack',
+        auth: {
+          slack: {
+            verification_token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
+            access_token: envParams.__TEST_SLACK_ACCESS_TOKEN,
+            bot_access_token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
+          }
+        }
+      }
     };
 
     expectedResult = {
@@ -73,18 +66,6 @@ describe('Slack Post Unit Tests', () => {
       token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
     };
 
-    auth = {
-      slack: {
-        client_id: envParams.__TEST_SLACK_CLIENT_ID,
-        client_secret: envParams.__TEST_SLACK_CLIENT_SECRET,
-        verification_token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
-        access_token: envParams.__TEST_SLACK_ACCESS_TOKEN,
-        bot_access_token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
-      }
-    };
-
-    owMock = createCloudFunctionsMock();
-    cloudantMock = createCloudantMock();
     createSlackMock();
   });
 
@@ -93,14 +74,6 @@ describe('Slack Post Unit Tests', () => {
 
     return func(options).then(
       result => {
-        if (!cloudantMock.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!owMock.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
-        }
         assert.deepEqual(result, expectedResult);
       },
       error => {
@@ -118,14 +91,6 @@ describe('Slack Post Unit Tests', () => {
 
     return func(options).then(
       result => {
-        if (!cloudantMock.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!owMock.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
-        }
         assert.deepEqual(result, expectedResult);
       },
       error => {
@@ -134,39 +99,8 @@ describe('Slack Post Unit Tests', () => {
     );
   });
 
-  it('validate error when create cloudant object is init on null url', () => {
-    return slackPost
-      .createCloudantObj(null)
-      .then(() => {
-        assert(false, 'Action succeeded unexpectedly');
-      })
-      .catch(error => {
-        assert.equal(error.message, 'invalid url');
-      });
-  });
-
-  it('validate error when retrieve auth doc failed', () => {
-    nock.cleanAll();
-    createCloudFunctionsMock();
-    nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(true)
-      .replyWithError(mockError);
-
-    return slackPost
-      .main(options)
-      .then(() => {
-        assert(false, 'Aciton succeeded unexpectedly.');
-      })
-      .catch(error => {
-        assert.equal(error.description, mockError);
-      });
-  });
-
   it('validate error when slack server throws error', () => {
     nock.cleanAll();
-    createCloudFunctionsMock();
-    createCloudantMock();
     nock(slackHost).post('/api/chat.postMessage').replyWithError(mockError);
 
     return slackPost
@@ -181,8 +115,6 @@ describe('Slack Post Unit Tests', () => {
 
   it('validate error when slack server throws response error', () => {
     nock.cleanAll();
-    createCloudFunctionsMock();
-    createCloudantMock();
     nock(slackHost).post('/api/chat.postMessage').reply(400, mockError);
 
     return slackPost
@@ -219,36 +151,6 @@ describe('Slack Post Unit Tests', () => {
       assert.equal(e.message, errorNoText);
     }
   });
-
-  function createCloudFunctionsMock() {
-    const expectedOW = {
-      annotations: [
-        {
-          key: 'cloudant_url',
-          value: cloudantUrl
-        },
-        {
-          key: 'cloudant_auth_dbname',
-          value: cloudantAuthDbName
-        },
-        {
-          key: 'cloudant_auth_key',
-          value: cloudantAuthKey
-        }
-      ]
-    };
-
-    return nock(owHost)
-      .get(`/api/v1/namespaces/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
-  }
-
-  function createCloudantMock() {
-    return nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(true)
-      .reply(200, auth);
-  }
 
   function createSlackMock() {
     return nock(slackHost).post('/api/chat.postMessage').reply(200, {});

@@ -28,26 +28,10 @@ process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/acti
 
 const actionSlackDeploy = require('./../../../channels/slack/deploy/index.js');
 const actionSlackReceive = require('./../../../channels/slack/receive/index.js');
-const actionSlackPost = require('./../../../channels/slack/post/index.js');
 
-const actionFacebookPost = require('./../../../channels/facebook/post/index.js');
 const actionFacebookReceive = require('./../../../channels/facebook/receive/index.js');
 
-const actionCallConversation = require('./../../../conversation/call-conversation.js');
-
-const actionStarterCodeNormSlackForConv = require('./../../../starter-code/normalize-for-conversation/normalize-slack-for-conversation.js');
-const actionStarterCodeNormFacebookForConv = require('./../../../starter-code/normalize-for-conversation/normalize-facebook-for-conversation.js');
-
-const actions = [
-  actionSlackDeploy,
-  actionSlackReceive,
-  actionSlackPost,
-  actionFacebookPost,
-  actionFacebookReceive,
-  actionCallConversation,
-  actionStarterCodeNormSlackForConv,
-  actionStarterCodeNormFacebookForConv
-];
+const actions = [actionSlackDeploy, actionSlackReceive, actionFacebookReceive];
 
 const errorNoCloudantUrl = 'cloudant_url absent in cloudant credentials.';
 const errorNoCloudantAuthDbName = 'cloudant_auth_dbname absent in cloudant credentials.';

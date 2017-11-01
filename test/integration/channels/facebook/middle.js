@@ -40,7 +40,10 @@ function main(params) {
     recipient: {
       id: params.facebook.sender.id
     },
-    message: params.facebook.message
+    message: params.facebook.message,
+    raw_input_data: {
+      auth: params.auth
+    }
   };
 }
 
@@ -57,6 +60,11 @@ function validateParams(params) {
   // Required: The parameters of the channel provider
   if (!params.facebook) {
     throw new Error('No facebook data or event parameters provided.');
+  }
+
+  // Required: Auth
+  if (!params.auth) {
+    throw new Error('No auth provided.');
   }
 }
 

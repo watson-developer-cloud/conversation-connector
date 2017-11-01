@@ -39,6 +39,13 @@ describe('starter-code integration tests for slack', () => {
   let params;
   let expectedResult;
   let slackData;
+  const auth = {
+    conversation: {
+      username: envParams.__TEST_CONVERSATION_USERNAME,
+      password: envParams.__TEST_CONVERSATION_PASSWORD,
+      workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
+    }
+  };
 
   beforeEach(() => {
     params = {
@@ -59,6 +66,7 @@ describe('starter-code integration tests for slack', () => {
         event_time: 1234567890
       },
       provider: 'slack',
+      auth,
       channel_id: 'D024BE91L',
       message: inputText,
       context: {}
@@ -77,6 +85,7 @@ describe('starter-code integration tests for slack', () => {
         },
         slack: params.slack,
         provider: 'slack',
+        auth,
         cloudant_context_key: 'slack_TXXXXXXXX_e808d814-9143-4dce-aec7-68af02e650a8_U2147483697_D024BE91L'
       },
       raw_output_data: {

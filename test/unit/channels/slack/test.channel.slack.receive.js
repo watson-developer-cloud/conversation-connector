@@ -38,7 +38,7 @@ describe('Slack Receive Unit Tests', () => {
   let messageResult;
   let payloadParams;
   let payloadResult;
-  let auth;
+
   const incorrectToken = 'incorrect_token';
 
   let func = slackReceive.main;
@@ -54,6 +54,14 @@ describe('Slack Receive Unit Tests', () => {
   let owMock;
   const owHost = `https://${apiHost}`;
   let cloudantMock;
+
+  const auth = {
+    slack: {
+      client_id: envParams.__TEST_SLACK_CLIENT_ID,
+      client_secret: envParams.__TEST_SLACK_CLIENT_SECRET,
+      verification_token: envParams.__TEST_SLACK_VERIFICATION_TOKEN
+    }
+  };
 
   before(() => {
     process.env.__OW_ACTION_NAME = `/${envParams.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
@@ -81,7 +89,8 @@ describe('Slack Receive Unit Tests', () => {
           channel: envParams.__TEST_SLACK_CHANNEL
         }
       },
-      provider: 'slack'
+      provider: 'slack',
+      auth
     };
 
     challengeParams = {
@@ -115,15 +124,8 @@ describe('Slack Receive Unit Tests', () => {
       slack: {
         payload: JSON.stringify(payload)
       },
-      provider: 'slack'
-    };
-
-    auth = {
-      slack: {
-        client_id: envParams.__TEST_SLACK_CLIENT_ID,
-        client_secret: envParams.__TEST_SLACK_CLIENT_SECRET,
-        verification_token: envParams.__TEST_SLACK_VERIFICATION_TOKEN
-      }
+      provider: 'slack',
+      auth
     };
 
     nock.cleanAll();
@@ -251,6 +253,7 @@ describe('Slack Receive Unit Tests', () => {
       'x-slack-retry-num': 1
     };
     func = slackReceive.main;
+    delete messageResult.auth;
 
     return func(messageParams).then(
       () => {

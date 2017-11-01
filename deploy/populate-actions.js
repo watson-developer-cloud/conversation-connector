@@ -86,7 +86,7 @@ function main(params) {
         );
       })
       .then(result => {
-        cloudantAccount = result.response.result.message;
+        cloudantAccount = result.message;
       })
       .then(() => {
         return updateAllPackages(

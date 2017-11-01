@@ -33,6 +33,13 @@ describe('starter-code integration tests for facebook', () => {
   let params;
   let expectedResult;
   let facebookData;
+  const auth = {
+    conversation: {
+      username: envParams.__TEST_CONVERSATION_USERNAME,
+      password: envParams.__TEST_CONVERSATION_PASSWORD,
+      workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
+    }
+  };
 
   beforeEach(() => {
     params = {
@@ -47,7 +54,8 @@ describe('starter-code integration tests for facebook', () => {
           text: 'hello, world!'
         }
       },
-      provider: 'facebook'
+      provider: 'facebook',
+      auth
     };
 
     expectedResult = {
@@ -57,6 +65,7 @@ describe('starter-code integration tests for facebook', () => {
       raw_input_data: {
         facebook: params.facebook,
         provider: 'facebook',
+        auth,
         cloudant_context_key: 'facebook_1481847138543615_e808d814-9143-4dce-aec7-68af02e650a8_185643828639058',
         conversation: { input: { text: 'hello, world!' } }
       },

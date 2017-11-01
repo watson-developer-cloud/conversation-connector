@@ -21,7 +21,6 @@
  */
 
 const assert = require('assert');
-const nock = require('nock');
 
 const envParams = process.env;
 
@@ -39,34 +38,12 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
   let textMsgResult;
   let buttonClickParams;
   let buttonClickResult;
-
   let func;
-  let auth;
 
-  const cloudantUrl = 'https://some-cloudant-url.com';
-  const cloudantAuthDbName = 'abc';
-  const cloudantAuthKey = '123';
-
-  const apiHost = process.env.__OW_API_HOST;
-  const namespace = process.env.__OW_NAMESPACE;
-  const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
-
-  const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
-  const expectedCloudFunctions = {
-    annotations: [
-      {
-        key: 'cloudant_url',
-        value: cloudantUrl
-      },
-      {
-        key: 'cloudant_auth_dbname',
-        value: cloudantAuthDbName
-      },
-      {
-        key: 'cloudant_auth_key',
-        value: cloudantAuthKey
-      }
-    ]
+  const auth = {
+    conversation: {
+      workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
+    }
   };
 
   beforeEach(() => {
@@ -82,7 +59,8 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
           text: 'hello, world!'
         }
       },
-      provider: 'facebook'
+      provider: 'facebook',
+      auth
     };
 
     buttonClickParams = {
@@ -98,7 +76,8 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
           title: 'Click here'
         }
       },
-      provider: 'facebook'
+      provider: 'facebook',
+      auth
     };
 
     textMsgResult = {
@@ -110,6 +89,7 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
       raw_input_data: {
         facebook: textMsgParams.facebook,
         provider: 'facebook',
+        auth,
         cloudant_context_key: `facebook_user_id_${envParams.__TEST_CONVERSATION_WORKSPACE_ID}_page_id`
       }
     };
@@ -123,40 +103,17 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
       raw_input_data: {
         facebook: buttonClickParams.facebook,
         provider: 'facebook',
+        auth,
         cloudant_context_key: `facebook_user_id_${envParams.__TEST_CONVERSATION_WORKSPACE_ID}_page_id`
-      }
-    };
-
-    auth = {
-      conversation: {
-        workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
       }
     };
   });
 
   it('validate normalizing works for a regular text message', () => {
     func = actionNormFacebookForConversation.main;
-    const mockCloudFunctions = nock(cloudFunctionsUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedCloudFunctions);
-
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, auth);
 
     return func(textMsgParams).then(
       result => {
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!mockCloudFunctions.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloud Functions Get server did not get called.');
-        }
         assert.deepEqual(result, textMsgResult);
       },
       error => {
@@ -167,27 +124,9 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
 
   it('validate normalizing works for an event when a button is clicked', () => {
     func = actionNormFacebookForConversation.main;
-    const mockCloudFunctions = nock(cloudFunctionsUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedCloudFunctions);
-
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, auth);
 
     return func(buttonClickParams).then(
       result => {
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!mockCloudFunctions.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloud Functions Get server did not get called.');
-        }
         assert.deepEqual(result, buttonClickResult);
       },
       error => {
@@ -200,30 +139,12 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
     delete textMsgParams.facebook.message;
 
     func = actionNormFacebookForConversation.main;
-    const mockCloudFunctions = nock(cloudFunctionsUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedCloudFunctions);
-
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, auth);
 
     return func(textMsgParams).then(
       result => {
         assert(false, result);
       },
       error => {
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!mockCloudFunctions.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloud Functions Get server did not get called.');
-        }
         assert.equal(error, errorNoMsgOrPostbackTypeEvent);
       }
     );

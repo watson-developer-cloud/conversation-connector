@@ -16,7 +16,7 @@
 
 'use strict';
 
-const Cloudant = require('cloudant');
+const request = require('request');
 /**
  * Utility functions for Cloudant
  */
@@ -27,45 +27,99 @@ const Cloudant = require('cloudant');
  * @param  {string} cloudant_url Cloudant instance base url
  * @return {object} response body/error json
  */
-function clearContextDb(dbName, cloudantUrl) {
-  const cloudant = Cloudant({
-    url: cloudantUrl,
-    plugin: 'retry',
-    retryAttempts: 5,
-    retryTimeout: 1000
+function clearContextDb(cloudantUrl, dbName) {
+  return retriableDestroyDatabase(cloudantUrl, dbName).then(() => {
+    return retriableCreateDatabase(cloudantUrl, dbName);
   });
-  if (typeof cloudant !== 'object') {
-    throw new Error(
-      `CloudantAccount returned an unexpected object type: ${typeof cloudant}`
+}
+
+function retriableDestroyDatabase(cloudantUrl, dbName) {
+  return new Promise((resolve, reject) => {
+    return request(
+      {
+        method: 'DELETE',
+        url: `${cloudantUrl}/${dbName}`
+      },
+      (error, response, body) => {
+        if (error) {
+          const errorString = typeof error === 'string'
+            ? JSON.parse(error).error
+            : error.error;
+          if (errorString === 'service_unavailable') {
+            sleep(500)
+              .then(() => {
+                return retriableCreateDatabase(cloudantUrl, dbName);
+              })
+              .then(resolve)
+              .catch(reject);
+          } else {
+            reject(error);
+          }
+        } else if (response.statusCode >= 500) {
+          sleep(500)
+            .then(() => {
+              return retriableCreateDatabase(cloudantUrl, dbName);
+            })
+            .then(resolve)
+            .catch(reject);
+        } else if (response.statusCode < 200 || response.statusCode >= 400) {
+          const responseBody = JSON.parse(response.body);
+          reject(responseBody);
+        } else {
+          resolve(body);
+        }
+      }
     );
-  }
-
-  destroyDb(cloudant, dbName).then(() => {
-    return createDb(cloudant, dbName);
   });
 }
 
-function destroyDb(cloudant, dbName) {
+function retriableCreateDatabase(cloudantUrl, dbName) {
   return new Promise((resolve, reject) => {
-    cloudant.db.destroy(dbName, (err, data) => {
-      if (data) {
-        resolve();
-      } else {
-        reject(err);
+    return request(
+      {
+        method: 'PUT',
+        url: `${cloudantUrl}/${dbName}`
+      },
+      (error, response, body) => {
+        if (error) {
+          const errorString = typeof error === 'string'
+            ? JSON.parse(error).error
+            : error.error;
+          if (errorString === 'service_unavailable') {
+            sleep(500)
+              .then(() => {
+                return retriableCreateDatabase(cloudantUrl, dbName);
+              })
+              .then(resolve)
+              .catch(reject);
+          } else {
+            reject(error);
+          }
+        } else if (response.statusCode >= 500) {
+          sleep(500)
+            .then(() => {
+              return retriableCreateDatabase(cloudantUrl, dbName);
+            })
+            .then(resolve)
+            .catch(reject);
+        } else if (response.statusCode < 200 || response.statusCode >= 400) {
+          const responseBody = JSON.parse(response.body);
+          if (responseBody.error === 'file_exists') {
+            resolve({});
+          } else {
+            reject(responseBody);
+          }
+        } else {
+          resolve(body);
+        }
       }
-    });
+    );
   });
 }
 
-function createDb(cloudant, dbName) {
-  return new Promise((resolve, reject) => {
-    cloudant.db.create(dbName, (err, body) => {
-      if (!err) {
-        resolve(body);
-      } else {
-        reject(err);
-      }
-    });
+function sleep(ms) {
+  return new Promise(resolve => {
+    setTimeout(resolve, ms);
   });
 }
 

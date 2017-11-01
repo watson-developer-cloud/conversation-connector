@@ -124,7 +124,8 @@ function runBatchedEntriesInParallel(params) {
         parallelEntries[keys[i]],
         responses,
         0,
-        subPipelineName
+        subPipelineName,
+        params.auth
       )
     );
   }
@@ -180,17 +181,24 @@ function runBatchedEntriesInParallel(params) {
    * @param {var} subPipelineName - Name of the Cloud Functions pipeline
    * @return {JSON} responses - Array of results received from sub-pipeline invocation
    */
-function runBatchedEntriesInSeries(params, responses, index, subPipelineName) {
+function runBatchedEntriesInSeries(
+  params,
+  responses,
+  index,
+  subPipelineName,
+  auth
+) {
   if (index < params.length) {
     const payload = params[index];
-    return invokePipeline(payload, subPipelineName)
+    return invokePipeline(payload, subPipelineName, auth)
       .then(result => {
         responses.push(result);
         return runBatchedEntriesInSeries(
           params,
           responses,
           index + 1,
-          subPipelineName
+          subPipelineName,
+          auth
         );
       })
       .catch(e => {
@@ -199,7 +207,8 @@ function runBatchedEntriesInSeries(params, responses, index, subPipelineName) {
           params,
           responses,
           index + 1,
-          subPipelineName
+          subPipelineName,
+          auth
         );
       });
   }
@@ -310,13 +319,14 @@ function organizeBatchedEntries(params) {
    * @param {var} subPipelineName - Name of the Cloud Functions pipeline
    * @return {JSON} Result of Cloud Functions pipeline/action invocation
    */
-function invokePipeline(params, subPipelineName) {
+function invokePipeline(params, subPipelineName, auth) {
   const ow = openwhisk();
   return new Promise((resolve, reject) => {
-    // Add the provider name i.e. facebook to the params
+    // Add the provider name i.e. facebook to the params and pass auth separately
     const payload = {
       facebook: params,
-      provider: 'facebook'
+      provider: 'facebook',
+      auth
     };
 
     // Invoke the pipeline sequence

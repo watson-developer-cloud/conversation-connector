@@ -125,6 +125,7 @@ createCloudantInstanceDatabases() {
       break
     fi
   done
+  export __TEST_CLOUDANT_URL="${CLOUDANT_URL}"
   echo 'Created Cloudant Auth and Context dbs.'
 }
 
@@ -165,7 +166,8 @@ createWhiskArtifacts() {
   cd starter-code; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
   cd conversation; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
   cd context; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
-
+  cd deploy; ./setup.sh; cd ..
+  
   cd channels;
   cd facebook; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
   cd slack; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..;cd ..;
@@ -275,7 +277,7 @@ destroyWhiskArtifactsAndDatabases() {
 
 runTestSuite() {
   # Run tests with coverage
-  istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive -s 5000 -t 10000 -R spec
+  istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive -s 5000 -t 20000 -R spec
   RETCODE=$?
 }
 

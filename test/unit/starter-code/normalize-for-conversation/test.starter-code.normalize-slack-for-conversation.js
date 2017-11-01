@@ -21,7 +21,6 @@
  */
 
 const assert = require('assert');
-const nock = require('nock');
 
 const envParams = process.env;
 
@@ -41,33 +40,7 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
   let buttonPayload;
   let buttonMessageParams;
   let func;
-  let auth;
 
-  const cloudantUrl = 'https://some-cloudant-url.com';
-  const cloudantAuthDbName = 'abc';
-  const cloudantAuthKey = '123';
-
-  const apiHost = process.env.__OW_API_HOST;
-  const namespace = process.env.__OW_NAMESPACE;
-  const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
-
-  const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
-  const expectedCloudFunctions = {
-    annotations: [
-      {
-        key: 'cloudant_url',
-        value: cloudantUrl
-      },
-      {
-        key: 'cloudant_auth_dbname',
-        value: cloudantAuthDbName
-      },
-      {
-        key: 'cloudant_auth_key',
-        value: cloudantAuthKey
-      }
-    ]
-  };
   beforeEach(() => {
     textMessageParams = {
       slack: {
@@ -87,6 +60,13 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
         event_time: 1234567890
       },
       provider: 'slack',
+      auth: {
+        conversation: {
+          username: envParams.__TEST_CONVERSATION_USERNAME,
+          password: envParams.__TEST_CONVERSATION_PASSWORD,
+          workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
+        }
+      },
       context: {}
     };
 
@@ -99,6 +79,13 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
       raw_input_data: {
         slack: textMessageParams.slack,
         provider: 'slack',
+        auth: {
+          conversation: {
+            username: envParams.__TEST_CONVERSATION_USERNAME,
+            password: envParams.__TEST_CONVERSATION_PASSWORD,
+            workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
+          }
+        },
         cloudant_context_key: `slack_TXXXXXXXX_${envParams.__TEST_CONVERSATION_WORKSPACE_ID}_U2147483697_CXXXXXXXXX`
       }
     };
@@ -132,39 +119,22 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
         payload: JSON.stringify(buttonPayload)
       },
       provider: 'slack',
+      auth: {
+        conversation: {
+          username: envParams.__TEST_CONVERSATION_USERNAME,
+          password: envParams.__TEST_CONVERSATION_PASSWORD,
+          workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
+        }
+      },
       context: {}
-    };
-
-    auth = {
-      conversation: {
-        workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
-      }
     };
   });
 
   it('validate normalizing works for a regular text message', () => {
     func = actionNormSlackForConversation.main;
-    const mockCloudFunctions = nock(cloudFunctionsUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedCloudFunctions);
-
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, auth);
 
     return func(textMessageParams).then(
       result => {
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!mockCloudFunctions.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloud Functions Get server did not get called.');
-        }
         assert.deepEqual(result, expectedResult);
       },
       error => {
@@ -177,27 +147,9 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
     expectedResult.raw_input_data.slack = buttonMessageParams.slack;
 
     func = actionNormSlackForConversation.main;
-    const mockCloudFunctions = nock(cloudFunctionsUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedCloudFunctions);
-
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, auth);
 
     return func(buttonMessageParams).then(
       result => {
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!mockCloudFunctions.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloud Functions Get server did not get called.');
-        }
         assert.deepEqual(result, expectedResult);
       },
       error => {
@@ -220,27 +172,9 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
     expectedResult.raw_input_data.slack = menuMessageParams.slack;
 
     func = actionNormSlackForConversation.main;
-    const mockCloudFunctions = nock(cloudFunctionsUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedCloudFunctions);
-
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, auth);
 
     return func(menuMessageParams).then(
       result => {
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!mockCloudFunctions.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloud Functions Get server did not get called.');
-        }
         assert.deepEqual(result, expectedResult);
       },
       error => {
@@ -262,27 +196,9 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
     expectedResult.raw_input_data.slack = textMessageParams.slack;
 
     func = actionNormSlackForConversation.main;
-    const mockCloudFunctions = nock(cloudFunctionsUrl)
-      .get(`/${namespace}/packages/${packageName}`)
-      .reply(200, expectedCloudFunctions);
-
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, auth);
 
     return func(textMessageParams).then(
       result => {
-        if (!mockCloudantGet.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!mockCloudFunctions.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloud Functions Get server did not get called.');
-        }
         assert.deepEqual(result, expectedResult);
       },
       error => {
