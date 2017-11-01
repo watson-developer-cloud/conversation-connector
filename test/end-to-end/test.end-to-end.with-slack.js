@@ -19,6 +19,8 @@
 const assert = require('assert');
 const openwhisk = require('openwhisk');
 
+const clearContextDb = require('../utils/cloudant-utils.js').clearContextDb;
+
 const safeExtractErrorMessage = require('./../utils/helper-methods.js').safeExtractErrorMessage;
 
 const carDashboardReplyWelcome = 'Hi. It looks like a nice drive today. What would you like me to do?  ';
@@ -31,7 +33,7 @@ const updateMessageResponse = "I'll buy a small shirt for you.";
 const envParams = process.env;
 
 const pipelineName = envParams.__TEST_PIPELINE_NAME;
-
+const cloudantUrl = process.env.__TEST_CLOUDANT_URL;
 /**
  * Slack prerequisites test suite verifies the Slack package is properly deployed in Cloud Functions
  */
@@ -165,12 +167,14 @@ describe('End-to-End tests: with Slack package', () => {
   // to slack/receive. The architecture will flow the response to slack/post, and slack/post will
   // send its response to this ow.action invocation. No context is used in this test.
   it('validate when conversation is text input to text output', () => {
-    return ow.actions
-      .invoke({
-        name: noContextPipeline,
-        result: true,
-        blocking: true,
-        params
+    return clearContextDb(cloudantUrl, 'contextdb')
+      .then(() => {
+        return ow.actions.invoke({
+          name: noContextPipeline,
+          result: true,
+          blocking: true,
+          params
+        });
       })
       .then(
         result => {
@@ -187,12 +191,14 @@ describe('End-to-End tests: with Slack package', () => {
   // Under validated circumstances, context package should load and save context
   // to complete a single-turn conversation successfully.
   it('context pipeline works for single Conversation turn', () => {
-    return ow.actions
-      .invoke({
-        name: contextPipeline,
-        result: true,
-        blocking: true,
-        params
+    return clearContextDb(cloudantUrl, 'contextdb')
+      .then(() => {
+        return ow.actions.invoke({
+          name: contextPipeline,
+          result: true,
+          blocking: true,
+          params
+        });
       })
       .then(
         result => {
@@ -211,12 +217,14 @@ describe('End-to-End tests: with Slack package', () => {
 
     updatedParams.event.user = 'UXXXXXXXXX1';
 
-    return ow.actions
-      .invoke({
-        name: contextPipeline,
-        result: true,
-        blocking: true,
-        params: updatedParams
+    return clearContextDb(cloudantUrl, 'contextdb')
+      .then(() => {
+        return ow.actions.invoke({
+          name: contextPipeline,
+          result: true,
+          blocking: true,
+          params: updatedParams
+        });
       })
       .then(result => {
         assert.deepEqual(result, expectedResult);

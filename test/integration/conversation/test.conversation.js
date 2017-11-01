@@ -42,7 +42,14 @@ describe('conversation integration tests', () => {
             text: 'Turn on lights'
           }
         },
-        provider: 'slack'
+        provider: 'slack',
+        auth: {
+          conversation: {
+            username: envParams.__TEST_CONVERSATION_USERNAME,
+            password: envParams.__TEST_CONVERSATION_PASSWORD,
+            workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
+          }
+        }
       }
     };
 

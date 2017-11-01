@@ -27,7 +27,7 @@ const openwhisk = require('openwhisk');
 const actionPopulateActions = 'populate-actions';
 const actionVerifySlack = 'verify-slack';
 
-describe('deploy verify-slack intergration tests', () => {
+describe('deploy verify-slack integration tests', () => {
   const ow = openwhisk();
 
   let params;

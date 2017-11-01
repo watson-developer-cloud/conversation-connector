@@ -28,6 +28,7 @@ const assert = require('assert');
 function main(params) {
   return new Promise(resolve => {
     validateParameters(params);
+    const auth = params.auth;
 
     const attachments = [
       {
@@ -59,7 +60,11 @@ function main(params) {
     resolve({
       channel: params.slack.event.channel,
       text: params.slack.event.text,
-      attachments
+      attachments,
+      raw_input_data: {
+        provider: 'slack',
+        auth
+      }
     });
   });
 }
@@ -87,6 +92,9 @@ function validateParameters(params) {
 
   // Required: Slack input text
   assert(params.slack.event.text, 'No Slack input text provided.');
+
+  // Required: auth
+  assert(params.auth, 'No auth provided.');
 }
 
 module.exports = main;

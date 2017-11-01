@@ -40,21 +40,8 @@ const conversationErrorMsg = 'Internal Server Error';
 describe('conversation unit tests', () => {
   let params = {};
   let func;
-  let auth;
-
-  const cloudantUrl = 'https://some-cloudant-url.com';
-  const cloudantAuthDbName = 'abc';
-  const cloudantAuthKey = '123';
-
-  const apiHost = process.env.__OW_API_HOST;
-  const namespace = process.env.__OW_NAMESPACE;
-  const packageName = process.env.__OW_ACTION_NAME.split('/')[2];
 
   const conversationUrl = 'https://ibm.com:80';
-
-  let owMock;
-  const owHost = `https://${apiHost}`;
-  let cloudantMock;
 
   const conversationResponse = {
     intents: [],
@@ -113,6 +100,13 @@ describe('conversation unit tests', () => {
         }
       },
       provider: 'slack',
+      auth: {
+        conversation: {
+          username: envParams.__TEST_CONVERSATION_USERNAME,
+          password: envParams.__TEST_CONVERSATION_PASSWORD,
+          workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
+        }
+      },
       conversation: {
         input: {
           text: 'Turn on lights'
@@ -140,21 +134,18 @@ describe('conversation unit tests', () => {
             text: 'Turn on lights'
           }
         },
-        provider: 'slack'
-      }
-    };
-
-    auth = {
-      conversation: {
-        username: envParams.__TEST_CONVERSATION_USERNAME,
-        password: envParams.__TEST_CONVERSATION_PASSWORD,
-        workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
+        provider: 'slack',
+        auth: {
+          conversation: {
+            username: envParams.__TEST_CONVERSATION_USERNAME,
+            password: envParams.__TEST_CONVERSATION_PASSWORD,
+            workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
+          }
+        }
       }
     };
 
     nock.cleanAll();
-    owMock = createCloudFunctionsMock();
-    cloudantMock = createCloudantMock();
     createConversationUrlMock();
   });
 
@@ -193,14 +184,6 @@ describe('conversation unit tests', () => {
 
     return func(params).then(
       result => {
-        if (!cloudantMock.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!owMock.isDone()) {
-          nock.cleanAll();
-          assert(false, 'Mock OW Get server did not get called.');
-        }
         assert.deepEqual(result, expected);
       },
       error => {
@@ -218,12 +201,6 @@ describe('conversation unit tests', () => {
 
     return func(params).then(
       result => {
-        if (!cloudantMock.isDone()) {
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!owMock.isDone()) {
-          assert(false, 'Mock OW Get server did not get called.');
-        }
         assert.deepEqual(result, expected);
       },
       error => {
@@ -238,12 +215,6 @@ describe('conversation unit tests', () => {
 
     return func(params).then(
       result => {
-        if (!cloudantMock.isDone()) {
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!owMock.isDone()) {
-          assert(false, 'Mock OW Get server did not get called.');
-        }
         assert.deepEqual(result, expected);
       },
       error => {
@@ -253,18 +224,10 @@ describe('conversation unit tests', () => {
   });
 
   it('should throw AssertionError for missing conversation object in auth data', () => {
-    const badAuth = auth;
-    delete badAuth.conversation;
+    delete params.raw_input_data.auth.conversation;
 
     nock.cleanAll();
-    owMock = createCloudFunctionsMock();
     createConversationUrlMock();
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, badAuth);
 
     func = conversation.main;
     return func(params)
@@ -272,30 +235,16 @@ describe('conversation unit tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       })
       .catch(e => {
-        if (!mockCloudantGet.isDone()) {
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!owMock.isDone()) {
-          assert(false, 'Mock OW Get server did not get called.');
-        }
         assert.equal('AssertionError', e.name);
         assert.equal(errorNoConversationObjInAuth, e.message);
       });
   });
 
   it('should throw AssertionError for missing conversation username in auth data', () => {
-    const badAuth = auth;
-    delete badAuth.conversation.username;
+    delete params.raw_input_data.auth.conversation.username;
 
     nock.cleanAll();
-    owMock = createCloudFunctionsMock();
     createConversationUrlMock();
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, badAuth);
 
     func = conversation.main;
     return func(params)
@@ -303,30 +252,16 @@ describe('conversation unit tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       })
       .catch(e => {
-        if (!mockCloudantGet.isDone()) {
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!owMock.isDone()) {
-          assert(false, 'Mock OW Get server did not get called.');
-        }
         assert.equal('AssertionError', e.name);
         assert.equal(errorNoConversationUsernameInAuth, e.message);
       });
   });
 
   it('should throw AssertionError for missing conversation password in auth data', () => {
-    const badAuth = auth;
-    delete badAuth.conversation.password;
+    delete params.raw_input_data.auth.conversation.password;
 
     nock.cleanAll();
-    owMock = createCloudFunctionsMock();
     createConversationUrlMock();
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, badAuth);
 
     func = conversation.main;
     return func(params)
@@ -334,30 +269,16 @@ describe('conversation unit tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       })
       .catch(e => {
-        if (!mockCloudantGet.isDone()) {
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!owMock.isDone()) {
-          assert(false, 'Mock OW Get server did not get called.');
-        }
         assert.equal('AssertionError', e.name);
         assert.equal(errorNoConversationPassInAuth, e.message);
       });
   });
 
   it('should throw AssertionError for missing conversation workspace_id in auth data', () => {
-    const badAuth = auth;
-    delete badAuth.conversation.workspace_id;
+    delete params.raw_input_data.auth.conversation.workspace_id;
 
     nock.cleanAll();
-    owMock = createCloudFunctionsMock();
     createConversationUrlMock();
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, badAuth);
 
     func = conversation.main;
     return func(params)
@@ -365,30 +286,16 @@ describe('conversation unit tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       })
       .catch(e => {
-        if (!mockCloudantGet.isDone()) {
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!owMock.isDone()) {
-          assert(false, 'Mock OW Get server did not get called.');
-        }
         assert.equal('AssertionError', e.name);
         assert.equal(errorNoConversationWorkspaceIdInAuth, e.message);
       });
   });
 
   it('should throw Conversation error for wrong conversation workspace_id', () => {
-    const badAuth = auth;
-    badAuth.conversation.workspace_id = badWorkspaceId;
+    params.raw_input_data.auth.conversation.workspace_id = badWorkspaceId;
 
     nock.cleanAll();
-    owMock = createCloudFunctionsMock();
     createConversationUrlMock();
-    const mockCloudantGet = nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(() => {
-        return true;
-      })
-      .reply(200, badAuth);
 
     params.url = conversationUrl;
 
@@ -398,20 +305,12 @@ describe('conversation unit tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       })
       .catch(e => {
-        if (!mockCloudantGet.isDone()) {
-          assert(false, 'Mock Cloudant Get server did not get called.');
-        }
-        if (!owMock.isDone()) {
-          assert(false, 'Mock OW Get server did not get called.');
-        }
         assert.equal(errorIncorrectConversationWorkspaceIdInAuth, e.message);
       });
   });
 
   it('validate error when conversation message throws error', () => {
     nock.cleanAll();
-    owMock = createCloudFunctionsMock();
-    cloudantMock = createCloudantMock();
     nock(conversationUrl)
       .post(uri => {
         return uri.indexOf(
@@ -443,79 +342,6 @@ describe('conversation unit tests', () => {
         assert.equal(error.message, mockError);
       });
   }).retries(4);
-
-  it('validate error when create cloudant object is init on null url', () => {
-    return conversation
-      .createCloudantObj(null)
-      .then(() => {
-        assert(false, 'Action succeeded unexpectedly');
-      })
-      .catch(error => {
-        assert.equal(error.message, 'invalid url');
-      });
-  });
-
-  it('validate error when retrieve doc throws an error', () => {
-    nock.cleanAll();
-    createCloudFunctionsMock();
-
-    nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(true)
-      .replyWithError({ statusCode: 400, message: mockError });
-
-    nock(`https://${cloudantUrl.split('@')[1]}`)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(true)
-      .reply(200, auth)
-      .put(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .reply(200, {});
-
-    const cloudantCreds = {
-      cloudant_url: cloudantUrl,
-      cloudant_auth_dbname: cloudantAuthDbName,
-      cloudant_auth_key: cloudantAuthKey
-    };
-
-    return conversation
-      .loadAuth(cloudantCreds)
-      .then(() => {
-        assert(false, 'Action succeeded unexpectedly.');
-      })
-      .catch(error => {
-        assert.deepEqual(error.description, mockError);
-      });
-  });
-
-  function createCloudFunctionsMock() {
-    const expectedOW = {
-      annotations: [
-        {
-          key: 'cloudant_url',
-          value: cloudantUrl
-        },
-        {
-          key: 'cloudant_auth_dbname',
-          value: cloudantAuthDbName
-        },
-        {
-          key: 'cloudant_auth_key',
-          value: cloudantAuthKey
-        }
-      ]
-    };
-
-    return nock(owHost)
-      .get(`/api/v1/namespaces/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
-  }
-
-  function createCloudantMock() {
-    return nock(cloudantUrl)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(true)
-      .reply(200, auth);
-  }
 
   function createConversationUrlMock() {
     return nock(conversationUrl)

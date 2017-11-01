@@ -109,7 +109,8 @@ function main(params) {
           // Get the appropriate payload for action invocation i.e. depending on whether it's a
           // a batched message or not we construct the appropriate payload
           const [actionParams, actionName] = getPayloadForActionInvocation(
-            params
+            params,
+            auth
           );
           // Invoke appropriate Cloud Functions action
           return invokeAction(actionParams, actionName);
@@ -135,20 +136,24 @@ function main(params) {
  * @param {JSON} params Params coming into this action
  * @return actionParams, actionName
  */
-function getPayloadForActionInvocation(params) {
+function getPayloadForActionInvocation(params, auth) {
   let actionName;
   let actionParams;
   // Check if it's a batched message
   if (isBatchedMessage(params)) {
     // Set action params and action name for batched messages invocation
     actionParams = params;
+    // Attach auth to params
+    actionParams.auth = auth;
     actionName = params.batched_messages;
   } else {
     // Set action params and action name for subpipeline invocation
     actionParams = {
       facebook: params.entry[0].messaging[0],
-      provider: 'facebook'
+      provider: 'facebook',
+      auth
     };
+
     actionName = params.sub_pipeline;
   }
   // Return action params and action name for the action that is to be invoked

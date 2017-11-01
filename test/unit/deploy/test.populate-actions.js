@@ -273,12 +273,7 @@ describe('Populate-Actions Unit Tests', () => {
           ) === 0;
         })
         .query(true)
-        .reply(
-          200,
-          createInvocationResult(
-            createInvocationResult({ code: 200, message: 'OK' })
-          )
-        )
+        .reply(200, createInvocationResult({ code: 200, message: 'OK' }))
     );
   }
 

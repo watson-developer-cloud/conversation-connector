@@ -58,7 +58,7 @@ function main(params) {
         if (isDuplicateMessage(params)) {
           reject(extractSlackParameters(params));
         } else {
-          resolve(extractSlackParameters(params));
+          resolve(addAuthToParams(extractSlackParameters(params), auth));
         }
       })
       .catch(err => {
@@ -68,6 +68,10 @@ function main(params) {
         });
       });
   });
+}
+
+function addAuthToParams(params, auth) {
+  return Object.assign({ auth }, params);
 }
 
 /**
