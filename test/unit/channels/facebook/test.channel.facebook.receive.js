@@ -36,7 +36,13 @@ const apiKey = envParams.__OW_API_KEY;
 const namespace = envParams.__OW_NAMESPACE;
 const packageName = envParams.__OW_ACTION_NAME.split('/')[2];
 
-const facebookCloudFunctionsResources = require('./../../../resources/payloads/test.unit.facebook.receive.json');
+// The following parameters are set to a dummy value for unit tests
+// since the values flowing in through envParams will affect the Facebook
+// signature. Setting these to a default ensures test outputs produce the
+// same result irrespective of the env variables.
+const appSecret = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+const recipientId = 'xxxxxxxxxxxxxxx';
+const senderId = 'xxxxxxxxxxxxxxxx';
 
 const facebookReceive = require('./../../../../channels/facebook/receive/index.js');
 
@@ -92,6 +98,59 @@ describe('Facebook Receive Unit Tests', () => {
     ]
   };
 
+  // The following is a mock response sent by the pipeline action
+  const facebookCloudFunctionsResources = {
+    owSuccessResponse: {
+      duration: 2838,
+      name: 'facebook-185643828639058-pipeline',
+      subject: 'xyz@ibm.com',
+      activationId: '2747c146f7e34f97b6cb1183f53xxxxx',
+      publish: false,
+      annotations: [
+        { key: 'topmost', value: true },
+        {
+          key: 'path',
+          value: 'bluemixOrg_bluemixSpace/facebook-185643828639058-pipeline'
+        },
+        { key: 'kind', value: 'sequence' },
+        {
+          key: 'limits',
+          value: { timeout: 60000, memory: 256, logs: 10 }
+        }
+      ],
+      version: '0.0.73',
+      response: {
+        result: {
+          text: 200,
+          params: {
+            recipient: { id: senderId },
+            page_id: recipientId,
+            message: {
+              text: "Hello! I'm doing good. I'm here to help you. Just say the word."
+            },
+            workspace_id: '08e17ca1-5b33-487a-83c9-xxxxxxxxxx'
+          },
+          url: 'https://graph.facebook.com/v2.6/me/messages'
+        },
+        success: true,
+        status: 'success'
+      },
+      end: 1503426996862,
+      logs: [
+        '54430e1301534f9ebe2560a975xxxxxx',
+        '5ebec5e8c08c4eff81cce37d1dxxxxxx',
+        '30db5311de7b446bae33fa3c72xxxxxx',
+        'c2eba4516e2541ccae96d1005exxxxxx',
+        '9ba4b24337c54cc694455cf780xxxxxx',
+        'd57124ee95334508b3df5e07c9xxxxxx',
+        '7510eb4e01ce47f19729aaff04xxxxxx',
+        'd6aa36cdcc9f4ffea8fe012054xxxxxx'
+      ],
+      start: 1503426993595,
+      namespace: 'bluemixOrg_bluemixSpace'
+    }
+  };
+
   beforeEach(() => {
     cloudFunctionsStub = sinon.stub().returns(
       openwhisk({
@@ -113,22 +172,22 @@ describe('Facebook Receive Unit Tests', () => {
 
     messageParams = {
       __ow_headers: {
-        'x-hub-signature': envParams.__TEST_FACEBOOK_X_HUB_SIGNATURE
+        'x-hub-signature': 'sha=ea4e385ab7d9511d2dda34b82e57fdbb16e3f75d'
       },
       verification_token: envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN,
-      app_secret: envParams.__TEST_FACEBOOK_APP_SECRET,
+      app_secret: appSecret,
       object: 'page',
       entry: [
         {
-          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
+          id: recipientId,
           time: 1458692752478,
           messaging: [
             {
               sender: {
-                id: envParams.__TEST_FACEBOOK_SENDER_ID
+                id: senderId
               },
               recipient: {
-                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+                id: recipientId
               },
               message: {
                 text: 'hello, world!'
@@ -152,19 +211,19 @@ describe('Facebook Receive Unit Tests', () => {
       sub_pipeline: subPipelineActionName,
       batched_messages: batchedMessageActionName,
       __ow_headers: {
-        'x-hub-signature': 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738'
+        'x-hub-signature': 'sha1=a7012d9f2bc141777afc02b28f302978d60c73c7'
       },
       verification_token: envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN,
       object: 'page',
       entry: [
         {
-          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
+          id: recipientId,
           time: 1458692752478,
           messaging: [
             {
               sender: '12345',
               recipient: {
-                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+                id: recipientId
               },
               timestamp: 1458692752467,
               message: {
@@ -173,10 +232,10 @@ describe('Facebook Receive Unit Tests', () => {
             },
             {
               sender: {
-                id: envParams.__TEST_FACEBOOK_SENDER_ID
+                id: senderId
               },
               recipient: {
-                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+                id: recipientId
               },
               timestamp: 1458692752468,
               message: {
@@ -186,15 +245,15 @@ describe('Facebook Receive Unit Tests', () => {
           ]
         },
         {
-          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
+          id: recipientId,
           time: 1458692752489,
           messaging: [
             {
               sender: {
-                id: envParams.__TEST_FACEBOOK_SENDER_ID
+                id: senderId
               },
               recipient: {
-                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+                id: recipientId
               },
               timestamp: 1458692752488,
               message: {
@@ -227,7 +286,7 @@ describe('Facebook Receive Unit Tests', () => {
 
     auth = {
       facebook: {
-        app_secret: envParams.__TEST_FACEBOOK_APP_SECRET,
+        app_secret: appSecret,
         verification_token: envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN,
         page_access_token: envParams.__TEST_FACEBOOK_PAGE_ACCESS_TOKEN
       }

@@ -1,0 +1,60 @@
+{
+  "slack": {
+    "cloudant": {
+      "dbname": "authdb",
+      "url": "https://pinkunicorns.cloudant.com"
+    },
+    "saveAuth": {
+      "newDeploymentAllOk": {
+        "request": {
+          "auth": {
+            "access_token": "xoxp-176389621495-176389622103-175070850417-2f7cc0xxxxxxxxxxxxxxxxxxxxxxx",
+            "bot_access_token": "xoxb-1764574xxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "client_id": "176389621495.1750xxxxxxxxxxx",
+            "client_secret": "8e1075aed344xxxxxxxxxxxx",
+            "redirect_uri": "https://forcloudfunctions-prod.mybluemix.net/slack/deploy.json",
+            "verification_token": "BrfPhxxxxxxxxxxxxx"
+          },
+          "key": "slack_b123"
+        },
+        "response": [
+          {},
+          {
+            "access_token": "xoxp-176389621495-176389622103-175070850417-2f7cc0xxxxxxxxxxxxxxxxxxxxxxx",
+            "bot_access_token": "xoxb-1764574xxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "client_id": "176389621495.1750xxxxxxxxxxx",
+            "client_secret": "8e1075aed344xxxxxxxxxxxx",
+            "redirect_uri": "https://forcloudfunctions-prod.mybluemix.net/slack/deploy.json",
+            "verification_token": "BrfPhxxxxxxxxxxxxx"
+          }
+        ]
+      }
+    },
+    "main": {
+      "allOk": {
+        "request": {
+          "auth": {
+            "access_token": "xoxp-176389621495-176389622103-175070850417-2f7cc0xxxxxxxxxxxxxxxxxxxxxxx",
+            "bot_access_token": "xoxb-1764574xxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "client_id": "176389621495.1750xxxxxxxxxxx",
+            "client_secret": "8e1075aed344xxxxxxxxxxxx",
+            "redirect_uri": "https://forcloudfunctions-prod.mybluemix.net/slack/deploy.json",
+            "verification_token": "BrfPhxxxxxxxxxxxxx"
+          },
+          "key": "slack_U56DFBX7H"
+        },
+        "response": [
+          {},
+          {
+            "access_token": "xoxp-176389621495-176389622103-175070850417-2f7cc0xxxxxxxxxxxxxxxxxxxxxxx",
+            "bot_access_token": "xoxb-1764574xxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "client_id": "176389621495.1750xxxxxxxxxxx",
+            "client_secret": "8e1075aed344xxxxxxxxxxxx",
+            "redirect_uri": "https://forcloudfunctions-prod.mybluemix.net/slack/deploy.json",
+            "verification_token": "BrfPhxxxxxxxxxxxxx"
+          }
+        ]
+      }
+    }
+  }
+}

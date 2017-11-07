@@ -43,6 +43,8 @@ describe('Facebook Post Unit Tests', () => {
   let postParams = {};
   let func;
 
+  const facebookHost = 'https://graph.facebook.com';
+
   const expectedResult = {
     text: 200,
     url: defaultPostUrl,
@@ -76,6 +78,8 @@ describe('Facebook Post Unit Tests', () => {
         }
       }
     };
+
+    createFacebookMock();
   });
 
   it('validate facebook/post works as intended', () => {
@@ -160,4 +164,13 @@ describe('Facebook Post Unit Tests', () => {
       }
     );
   });
+
+  function createFacebookMock() {
+    return nock(facebookHost)
+      .post('/v2.6/me/messages')
+      .query({
+        access_token: envParams.__TEST_FACEBOOK_PAGE_ACCESS_TOKEN
+      })
+      .reply(200, {});
+  }
 });
