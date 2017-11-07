@@ -13,25 +13,35 @@ RETCODE=0
 
 ### MAIN
 main() {
-  loadEnvVars
-  processCfLogin
-  processDeployUserTestTokens
-  changeWhiskKey
-  createCloudantInstanceDatabases
-  createWhiskArtifacts
-  setupTestArtifacts
-  runTestSuite
-  destroyTestArtifacts
-  destroyWhiskArtifactsAndDatabases
+  if [ "$TRAVIS_PULL_REQUEST" ] && [ "$TRAVIS_BRANCH" == "develop" ]; then
+    # Run only unit tests for a PR originating from a contributor against the head branch "develop"
+    loadEnvVars 'test/resources/.unit.env'
+    runTestSuite 'test/unit/'
+  else
+    if [ -z "$TRAVIS" ]; then
+      # Build is not running in Travis. Load environment variables.
+      loadEnvVars 'test/resources/.env'
+    fi
+    # Run full test suite
+    processCfLogin
+    processDeployUserTestTokens
+    changeWhiskKey
+    createCloudantInstanceDatabases
+    createWhiskArtifacts
+    setupTestArtifacts
+    runTestSuite
+    destroyTestArtifacts
+    destroyWhiskArtifactsAndDatabases
+  fi
   echo 'Done.'
 }
 
 ### Loads the test environment variables
 loadEnvVars() {
-  echo 'Loading env variables from test/resources/.env'
+  echo "Loading env variables from $1"
   # Read the master test creds file.
   IFS=$'\n'
-  for line in $(cat test/resources/.env); do
+  for line in $(cat $1); do
     if [ -n "$line" ]; then
       export $line
     fi
@@ -127,6 +137,8 @@ createCloudantInstanceDatabases() {
   done
   export __TEST_CLOUDANT_URL="${CLOUDANT_URL}"
   echo 'Created Cloudant Auth and Context dbs.'
+
+  export __TEST_CLOUDANT_URL="${CLOUDANT_URL}"
 }
 
 ### CREATE AUTHENTICATION DATABASE DOCUMENT
@@ -166,11 +178,22 @@ createWhiskArtifacts() {
   cd starter-code; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
   cd conversation; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
   cd context; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
-  cd deploy; ./setup.sh; cd ..
-  
+
   cd channels;
   cd facebook; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
-  cd slack; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..;cd ..;
+  cd slack; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..;
+  cd ..
+
+  ## UPDATE RESOURCES USED ONLY FOR DEPLOY
+  cd starter-code; ./setup.sh; cd ..
+  cd conversation; ./setup.sh; cd ..
+  cd context; ./setup.sh; cd ..
+
+  cd channels;
+  cd slack; ./setup.sh; cd ..
+  cd ..
+
+  cd deploy; ./setup.sh; cd ..
 
   ## CREATE CREDENTIALS DOCUMENT IN AUTH DATABASE
   createAuthDoc # creates the Auth doc JSON and stores it into $AUTH_DOC
@@ -276,8 +299,11 @@ destroyWhiskArtifactsAndDatabases() {
 }
 
 runTestSuite() {
+  echo "Running tests: $1"
+
   # Run tests with coverage
-  istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive -s 5000 -t 20000 -R spec
+  istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive $1 -s 5000 -t 20000 -R spec
+
   RETCODE=$?
 }
 

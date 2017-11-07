@@ -26,9 +26,16 @@ const assert = require('assert');
 const nock = require('nock');
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
-const facebookCloudFunctionsResources = require('./../../../resources/payloads/test.unit.facebook.receive.json');
 
 const errorNoSubpipelineName = "Subpipeline name does not exist. Please make sure your Cloud Functions channel package has the binding 'sub_pipeline'";
+
+// The following parameters are set to a dummy value for unit tests
+// since the values flowing in through envParams will affect the Facebook
+// signature. Setting these to a default ensures test outputs produce the
+// same result irrespective of the env variables.
+const appSecret = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+const recipientId = 'xxxxxxxxxxxxxxx';
+const senderId = 'xxxxxxxxxxxxxxxx';
 
 describe('Facebook Batched Messages Unit Tests', () => {
   let invocationResults = {};
@@ -47,6 +54,102 @@ describe('Facebook Batched Messages Unit Tests', () => {
 
   const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
 
+  // The following is a mock response sent by the pipeline action
+  const facebookCloudFunctionsResources = {
+    owSuccessResponse: {
+      duration: 2838,
+      name: 'facebook-185643828639058-pipeline',
+      subject: 'xyz@ibm.com',
+      activationId: '2747c146f7e34f97b6cb1183f53xxxxx',
+      publish: false,
+      annotations: [
+        { key: 'topmost', value: true },
+        {
+          key: 'path',
+          value: 'bluemixOrg_bluemixSpace/facebook-185643828639058-pipeline'
+        },
+        { key: 'kind', value: 'sequence' },
+        {
+          key: 'limits',
+          value: { timeout: 60000, memory: 256, logs: 10 }
+        }
+      ],
+      version: '0.0.73',
+      response: {
+        result: {
+          text: 200,
+          params: {
+            recipient: { id: senderId },
+            page_id: recipientId,
+            message: {
+              text: "Hello! I'm doing good. I'm here to help you. Just say the word."
+            },
+            workspace_id: '08e17ca1-5b33-487a-83c9-xxxxxxxxxx'
+          },
+          url: 'https://graph.facebook.com/v2.6/me/messages'
+        },
+        success: true,
+        status: 'success'
+      },
+      end: 1503426996862,
+      logs: [
+        '54430e1301534f9ebe2560a975xxxxxx',
+        '5ebec5e8c08c4eff81cce37d1dxxxxxx',
+        '30db5311de7b446bae33fa3c72xxxxxx',
+        'c2eba4516e2541ccae96d1005exxxxxx',
+        '9ba4b24337c54cc694455cf780xxxxxx',
+        'd57124ee95334508b3df5e07c9xxxxxx',
+        '7510eb4e01ce47f19729aaff04xxxxxx',
+        'd6aa36cdcc9f4ffea8fe012054xxxxxx'
+      ],
+      start: 1503426993595,
+      namespace: 'bluemixOrg_bluemixSpace'
+    },
+    owFailureResponse: {
+      name: 'BaseOperationError',
+      message: 'Action invocation failed, API returned error code. Check syntax errors? Action returned with status code 400, message: Bad Request',
+      error: {
+        duration: 651,
+        name: 'facebook-connector-pipeline',
+        subject: 'xyz@ibm.com',
+        activationId: '46a8fcba2c274db296f3e5602c6xxxxx',
+        publish: false,
+        annotations: [
+          { key: 'topmost', value: true },
+          {
+            key: 'path',
+            value: 'bluemixOrg_bluemixSpace/facebook-connector-pipeline'
+          },
+          { key: 'kind', value: 'sequence' },
+          {
+            key: 'limits',
+            value: { timeout: 60000, memory: 256, logs: 10 }
+          }
+        ],
+        version: '0.0.73',
+        response: {
+          result: {
+            error: 'Action returned with status code 400, message: Bad Request'
+          },
+          success: false,
+          status: 'application error'
+        },
+        end: 1503428120503,
+        logs: [
+          '2d62dd422176461ab03f45215cxxxxxx',
+          'bc17b9f6dfd54a51a80cf1fe48xxxxxx',
+          '1d4034e8e9944a908d196bc182xxxxxx',
+          '53105abf69fc4e978dd9499d91xxxxxx',
+          'cd2c94cfcf4d4722a9f76374b2xxxxxx',
+          'cdd064b2ae1547608ab1f95289xxxxxx',
+          'fc334eddb5414159a50ae97c45xxxxxx',
+          'b9fe26f1e5c34062b3e8135530xxxxxx'
+        ],
+        start: 1503428119764,
+        namespace: 'bluemixOrg_bluemixSpace'
+      }
+    }
+  };
   beforeEach(() => {
     CloudFunctionsStub = sinon.stub().returns(
       openwhisk({
@@ -70,7 +173,7 @@ describe('Facebook Batched Messages Unit Tests', () => {
       failedActionInvocations: [
         {
           activationId: '46a8fcba2c274db296f3e5602c6xxxxx',
-          errorMessage: `Recipient id: 185643828639058 , Sender id: 1481847138543615 -- POST https://${apiHost}/api/v1/namespaces/${namespace}/actions/facebook-connector-pipeline Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"`
+          errorMessage: `Recipient id: ${recipientId} , Sender id: ${senderId} -- POST https://${apiHost}/api/v1/namespaces/${namespace}/actions/facebook-connector-pipeline Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"`
         }
       ],
       successfulActionInvocations: [
@@ -81,9 +184,9 @@ describe('Facebook Batched Messages Unit Tests', () => {
               message: {
                 text: "Hello! I'm doing good. I'm here to help you. Just say the word."
               },
-              page_id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
+              page_id: recipientId,
               recipient: {
-                id: envParams.__TEST_FACEBOOK_SENDER_ID
+                id: senderId
               },
               workspace_id: '08e17ca1-5b33-487a-83c9-xxxxxxxxxx'
             },
@@ -97,20 +200,20 @@ describe('Facebook Batched Messages Unit Tests', () => {
     batchedMessageParams = {
       sub_pipeline: 'facebook-connector-pipeline',
       __ow_headers: {
-        'x-hub-signature': 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738'
+        'x-hub-signature': 'sha1=01d4a593a537a6b987f0178c0e18531e5b296ef6'
       },
       verification_token: envParams.__TEST_FACEBOOK_VERIFICATION_TOKEN,
-      app_secret: envParams.__TEST_FACEBOOK_APP_SECRET,
+      app_secret: appSecret,
       object: 'page',
       entry: [
         {
-          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
+          id: recipientId,
           time: 1458692752478,
           messaging: [
             {
               sender: '12345',
               recipient: {
-                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+                id: recipientId
               },
               timestamp: 1458692752467,
               message: {
@@ -119,10 +222,10 @@ describe('Facebook Batched Messages Unit Tests', () => {
             },
             {
               sender: {
-                id: envParams.__TEST_FACEBOOK_SENDER_ID
+                id: senderId
               },
               recipient: {
-                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+                id: recipientId
               },
               timestamp: 1458692752468,
               message: {
@@ -132,15 +235,15 @@ describe('Facebook Batched Messages Unit Tests', () => {
           ]
         },
         {
-          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
+          id: recipientId,
           time: 1458692752489,
           messaging: [
             {
               sender: {
-                id: envParams.__TEST_FACEBOOK_SENDER_ID
+                id: senderId
               },
               recipient: {
-                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+                id: recipientId
               },
               timestamp: 1458692752488,
               message: {
