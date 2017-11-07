@@ -1,0 +1,120 @@
+{
+  "cloudant": {
+      "dbname": "authdb",
+      "url": "https://pinkunicorns.cloudant.com"
+  },
+  "slack/deploy": {
+    "saveSlackAuth": {
+      "key": "85239056-0789-4838-9c31-39f1d431c99e",
+      "tests":{
+        "newDeploymentAllOk": {
+          "request": {
+            "params": {
+              "code": "code",
+              "state":{
+                "slack": {
+                  "client_id": "176389621495.1750xxxxxxxxxxx",
+                  "client_secret": "8e1075aed344xxxxxxxxxxxx",
+                  "redirect_uri": "https://forcloudfunctions-prod.mybluemix.net/slack/deploy.json",
+                  "verification_token": "BrfPhxxxxxxxxxxxxx"
+                },
+                "conversation": {
+                  "workspace_id": "e808d814-9143-4dce-aec7-68af0xxxxxxx",
+                  "username": "8d71b8fd-xxxx-1111-xxxx-2256216d19fc",
+                  "password": "xx1AFqNxxxxx"
+                }
+              }
+            },
+            "slackOAuthBody": {
+              "access_token": "xoxp-176389621495-176389622103-175070850417-2f7cc0xxxxxxxxxxxxxxxxxxxxxxx",
+              "bot":{
+                "bot_access_token": "xoxb-1764574xxxxxxxxxxxxxxxxxxxxxxxxxx",
+                "bot_user_id": "U56DFBX7H" 
+              }            
+            }
+          },
+          "response": [
+            {},
+            {
+              "ok":true,
+              "id": "85239056-0789-4838-9c31-39f1d431c99e","rev":"17-1501225f77b403b7f334f1b82db352ef"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "slack/receive": {
+    "loadSlackAuth": {
+      "key": "85239056-0789-4838-9c31-39f1d431c99e",
+      "tests":{
+        "allOk": {
+          "request": {
+            "params": {
+              "raw_input_data": {
+                "provider": "slack",
+                "provider": "slack",
+                "slack": {
+                  "authed_users": [
+                    "U5T4J7PFG"
+                  ]
+                }
+              }
+            }
+          },
+          "response": {
+            "slack": {
+              "client_id": "176389621495.1750xxxxxxxxxxx",
+              "client_secret": "8e1075aed344xxxxxxxxxxxx",
+              "redirect_uri": "https://forcloudfunctions-prod.mybluemix.net/slack/deploy.json",
+              "verification_token": "BrfPhxxxxxxxxxxxxx",
+              "bot_access_token": "xoxb-1764574xxxxxxxxxxxxxxxxxxxxxxxxxx",
+              "access_token": "xoxp-176389621495-176389622103-175070850417-2f7cc0xxxxxxxxxxxxxxxxxxxxxxx"
+            },
+            "conversation": {
+              "workspace_id": "e808d814-9143-4dce-aec7-68af0xxxxxxx",
+              "username": "8d71b8fd-xxxx-1111-xxxx-2256216d19fc",
+              "password": "xx1AFqNxxxxx"
+            }
+          }
+        }
+      }
+    }
+  },
+  "slack/post": {
+    "loadSlackAuth": {
+      "key": "85239056-0789-4838-9c31-39f1d431c99e",
+      "tests":{
+        "allOk": {
+          "request": {
+            "params": {
+              "raw_input_data": {
+                "provider": "slack",
+                "slack": {
+                  "authed_users": [
+                    "U5T4J7PFG"
+                  ]
+                }
+              }
+            }
+          },
+          "response": {
+            "slack": {
+              "client_id": "176389621495.1750xxxxxxxxxxx",
+              "client_secret": "8e1075aed344xxxxxxxxxxxx",
+              "redirect_uri": "https://forcloudfunctions-prod.mybluemix.net/slack/deploy.json",
+              "verification_token": "BrfPhxxxxxxxxxxxxx",
+              "bot_access_token": "xoxb-1764574xxxxxxxxxxxxxxxxxxxxxxxxxx",
+              "access_token": "xoxp-176389621495-176389622103-175070850417-2f7cc0xxxxxxxxxxxxxxxxxxxxxxx"
+            },
+            "conversation": {
+              "workspace_id": "e808d814-9143-4dce-aec7-68af0xxxxxxx",
+              "username": "8d71b8fd-xxxx-1111-xxxx-2256216d19fc",
+              "password": "xx1AFqNxxxxx"
+            }
+          }
+        }
+      }
+    }
+  }
+}
