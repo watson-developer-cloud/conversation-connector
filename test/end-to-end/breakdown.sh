@@ -2,8 +2,45 @@
 
 export WSK=${WSK-wsk}
 
-${WSK} action delete test-pipeline-slack | grep -v 'ok'
-${WSK} action delete test-pipeline-context-slack | grep -v 'ok'
+DEPLOY_NAME=$1
+
+${WSK} action delete $1-endtoend-slack-nocontext > /dev/null
+${WSK} action delete $1-endtoend-slack-nocontext_slack/receive > /dev/null
+${WSK} action delete $1-endtoend-slack-nocontext_slack/post > /dev/null
+${WSK} action delete $1-endtoend-slack-nocontext_conversation/call-conversation > /dev/null
+${WSK} action delete $1-endtoend-slack-nocontext_starter-code/pre-conversation > /dev/null
+${WSK} action delete $1-endtoend-slack-nocontext_starter-code/post-conversation > /dev/null
+${WSK} action delete $1-endtoend-slack-nocontext_starter-code/pre-normalize > /dev/null
+${WSK} action delete $1-endtoend-slack-nocontext_starter-code/post-normalize > /dev/null
+${WSK} action delete $1-endtoend-slack-nocontext_starter-code/normalize-slack-for-conversation > /dev/null
+${WSK} action delete $1-endtoend-slack-nocontext_starter-code/normalize-conversation-for-slack > /dev/null
+${WSK} package delete $1-endtoend-slack-nocontext_slack > /dev/null
+${WSK} package delete $1-endtoend-slack-nocontext_conversation > /dev/null
+${WSK} package delete $1-endtoend-slack-nocontext_starter-code > /dev/null
+
+${WSK} action delete $1-endtoend-slack-withcontext > /dev/null
+${WSK} action delete $1-endtoend-slack-withcontext_slack/receive > /dev/null
+${WSK} action delete $1-endtoend-slack-withcontext_slack/post > /dev/null
+${WSK} action delete $1-endtoend-slack-withcontext_conversation/call-conversation > /dev/null
+${WSK} action delete $1-endtoend-slack-withcontext_context/load-context > /dev/null
+${WSK} action delete $1-endtoend-slack-withcontext_context/save-context > /dev/null
+${WSK} action delete $1-endtoend-slack-withcontext_starter-code/pre-conversation > /dev/null
+${WSK} action delete $1-endtoend-slack-withcontext_starter-code/post-conversation > /dev/null
+${WSK} action delete $1-endtoend-slack-withcontext_starter-code/pre-normalize > /dev/null
+${WSK} action delete $1-endtoend-slack-withcontext_starter-code/post-normalize > /dev/null
+${WSK} action delete $1-endtoend-slack-withcontext_starter-code/normalize-slack-for-conversation > /dev/null
+${WSK} action delete $1-endtoend-slack-withcontext_starter-code/normalize-conversation-for-slack > /dev/null
+${WSK} package delete $1-endtoend-slack-withcontext_slack > /dev/null
+${WSK} package delete $1-endtoend-slack-withcontext_conversation > /dev/null
+${WSK} package delete $1-endtoend-slack-withcontext_context > /dev/null
+${WSK} package delete $1-endtoend-slack-withcontext_starter-code > /dev/null
+
+curl -s -XDELETE ${__TEST_CLOUDANT_URL}/contextdb > /dev/null
+curl -s -XDELETE ${__TEST_CLOUDANT_URL}/authdb > /dev/null
+curl -s -XPUT ${__TEST_CLOUDANT_URL}/contextdb > /dev/null
+curl -s -XPUT ${__TEST_CLOUDANT_URL}/authdb > /dev/null
+
+
 ${WSK} action delete test-pipeline-facebook | grep -v 'ok'
 ${WSK} action delete test-pipeline-context-facebook | grep -v 'ok'
 

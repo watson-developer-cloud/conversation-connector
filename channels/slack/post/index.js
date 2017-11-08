@@ -24,6 +24,7 @@ const mustUrlEncodeUrls = [
   'https://slack.com/api/chat.update',
   'https://slack.com/api/chat.postEphemeral'
 ];
+const slackResponseHookUrl = 'hooks.slack.com';
 
 /**
  * Receives a Slack POST JSON object and sends the object to the Slack API.
@@ -39,11 +40,9 @@ function main(params) {
 
     const auth = params.raw_input_data.auth;
 
-    const postParams = extractSlackParameters(params);
+    const postParams = extractSlackParameters(useAuth(params, auth));
 
-    return postSlack(useAuth(postParams, auth), postUrl)
-      .then(resolve)
-      .catch(reject);
+    return postSlack(postParams, postUrl).then(resolve).catch(reject);
   });
 }
 
@@ -60,7 +59,7 @@ function postSlack(slackParams, postUrl) {
       {
         url: postUrl,
         method: 'POST',
-        form: stringifyUrlAttachments(slackParams, postUrl)
+        form: modifyPostParams(slackParams, postUrl)
       },
       (error, response) => {
         if (error) {
@@ -87,10 +86,14 @@ function postSlack(slackParams, postUrl) {
  * @param  {string} postUrl  - the POST url which determines if the parameters should be encoded
  * @return {JSON}            - result parameters after encoding
  */
-function stringifyUrlAttachments(params, postUrl) {
-  const slackParams = Object.assign({}, params);
+function modifyPostParams(params, postUrl) {
+  let slackParams = Object.assign({}, params);
   if (slackParams.attachments && mustUrlEncodeUrls.indexOf(postUrl) >= 0) {
     slackParams.attachments = JSON.stringify(slackParams.attachments);
+  } else if (postUrl.indexOf(slackResponseHookUrl) >= 0) {
+    // if the post URL is a hook URL provided by Slack, then this is an interactive message update,
+    //  and the parameters need to be stringified before being sent
+    slackParams = JSON.stringify(slackParams);
   }
   return slackParams;
 }
@@ -103,18 +106,7 @@ function stringifyUrlAttachments(params, postUrl) {
  *  @return JSON containing all and only the parameter that Slack chat.postMessage API needs
  */
 function extractSlackParameters(params) {
-  const noIncludeKeys = [
-    'client_id',
-    'client_secret',
-    'redirect_uri',
-    'verification_token',
-    'access_token',
-    'bot_access_token',
-    'bot_user_id',
-    'raw_input_data',
-    'raw_output_data',
-    'url'
-  ];
+  const noIncludeKeys = ['raw_input_data', 'raw_output_data', 'url'];
   const slackParams = {};
 
   Object.keys(params).forEach(key => {
@@ -138,6 +130,12 @@ function validateParameters(params) {
   // Required: Message to send
   assert(params.text, 'Message text not provided.');
 
+  // Required: Bot ID
+  assert(
+    params.raw_input_data && params.raw_input_data.bot_id,
+    'Bot ID not provided.'
+  );
+
   // Required: auth
   assert(
     params.raw_input_data && params.raw_input_data.auth,
@@ -156,8 +154,17 @@ function validateParameters(params) {
  */
 function useAuth(params, auth) {
   const returnParams = params;
-  assert(auth.slack.bot_access_token, 'bot_access_token absent in auth.');
-  returnParams.token = auth.slack.bot_access_token;
+
+  const botId = params.raw_input_data.bot_id;
+  assert(botId, 'No bot user found in parameters.');
+  const botAccessToken = auth &&
+    auth.slack &&
+    auth.slack.bot_users &&
+    auth.slack.bot_users[botId] &&
+    auth.slack.bot_users[botId].bot_access_token;
+  assert(botAccessToken, 'bot_access_token absent in auth.');
+
+  returnParams.token = botAccessToken;
   return returnParams;
 }
 
@@ -165,5 +172,6 @@ module.exports = {
   main,
   name: 'slack/post',
   validateParameters,
-  postSlack
+  postSlack,
+  modifyPostParams
 };

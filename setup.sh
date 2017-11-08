@@ -181,8 +181,13 @@ createPipelines() {
       continue
     else
       # Remove characters that are not allowed in Cloud Function names
-      PIPELINE_NAME=`echo "$PIPELINE_NAME" | LANG=C sed 's/[^a-zA-Z0-9]//g'`
-      PIPELINE_NAME="${PIPELINE_NAME}_"
+      if [[ "${PIPELINE_NAME}" =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{0,255}$ ]]; then
+        PIPELINE_NAME="${PIPELINE_NAME}_"
+      else
+        echo "One of your pipeline deployment names contains invalid characters."
+        echo "Please use only the following characters in your deployment name: \"a-z A-Z 0-9 -\". Additionally, your deployment name cannot start with a -, and your name cannot be longer than 256 characters."
+        exit 1
+      fi
     fi
 
     PIPELINE_AUTH_KEY=`node -e "{x=require('uuid'); console.log(x.v1())}"`
@@ -233,11 +238,11 @@ createPipelines() {
         sequence="${PIPELINE_NAME}starter-code/pre-normalize,${PIPELINE_NAME}starter-code/normalize-${CHANNEL}-for-conversation,${PIPELINE_NAME}context/load-context,${PIPELINE_NAME}starter-code/pre-conversation,${PIPELINE_NAME}conversation/call-conversation,${PIPELINE_NAME}starter-code/post-conversation,${PIPELINE_NAME}context/save-context,${PIPELINE_NAME}starter-code/normalize-conversation-for-${CHANNEL},${PIPELINE_NAME}starter-code/post-normalize,${PIPELINE_NAME}${CHANNEL}/post"
         echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(wsk namespace list | tail -n +2 | head -n 1)/${PIPELINE_NAME}facebook/receive.text"
       else
-        sequence="${PIPELINE_NAME}${CHANNEL}/receive,${PIPELINE_NAME}starter-code/pre-normalize,${PIPELINE_NAME}starter-code/normalize-${CHANNEL}-for-conversation,${PIPELINE_NAME}context/load-context,${PIPELINE_NAME}starter-code/pre-conversation,${PIPELINE_NAME}conversation/call-conversation,${PIPELINE_NAME}starter-code/post-conversation,${PIPELINE_NAME}context/save-context,${PIPELINE_NAME}starter-code/normalize-conversation-for-${CHANNEL},${PIPELINE_NAME}starter-code/post-normalize,${PIPELINE_NAME}${CHANNEL}/post"
-        echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(wsk namespace list | tail -n +2 | head -n 1)/default/${PIPELINE_NAME%_}.json"
+        sequence="${PIPELINE_NAME}starter-code/pre-normalize,${PIPELINE_NAME}starter-code/normalize-${CHANNEL}-for-conversation,${PIPELINE_NAME}context/load-context,${PIPELINE_NAME}starter-code/pre-conversation,${PIPELINE_NAME}conversation/call-conversation,${PIPELINE_NAME}starter-code/post-conversation,${PIPELINE_NAME}context/save-context,${PIPELINE_NAME}starter-code/normalize-conversation-for-${CHANNEL},${PIPELINE_NAME}starter-code/post-normalize,${PIPELINE_NAME}${CHANNEL}/post"
+        echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(wsk namespace list | tail -n +2 | head -n 1)/${PIPELINE_NAME}slack/receive.json"
       fi
       # node -e 'console.log(process.argv[1].split(",").join("\n"));' "$sequence"
-      ${WSK} action update ${PIPELINE_NAME%_} --sequence ${sequence} -a web-export true > /dev/null
+      ${WSK} action update ${PIPELINE_NAME%_} --sequence ${sequence} > /dev/null
     fi
   done
   IFS=$' \t\n'

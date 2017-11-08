@@ -1,13 +1,11 @@
 # Deploying with the Conversation connector
 
-**Important: The Conversation connector currently supports deployment to Facebook Messenger only. Deployment to Slack is coming soon.**
-
 The Conversation connector is a set of IBM Cloud Functions components that mediate communication between your Conversation workspace and a Slack or Facebook app, storing session data in a Cloudant database. You can use the connector to quickly deploy your workspace as a chat bot that Slack or Facebook Messenger users can interact with.
 
 For information about how to deploy your workspace using the Conversation connector, see the appropriate README:
 
 - [Deploying a Facebook Messenger app](channels/facebook/README.md)
-- Deploying a Slack app (coming soon)
+- [Deploying a Slack app](channels/slack/README.md)
 
 The following sections provide detailed information about the architecture of the Conversation connector.
 
@@ -170,73 +168,13 @@ where `<deployment_name>` is the deployment name you specify during deployment. 
 
 In addition to the Cloud Functions actions, the deployment creates two Cloudant databases that support the connector. These databases are created using the Cloudant service instance created in the specified IBM Cloud organization and space during the deployment process. (If you deploy multiple Conversation connectors for different workspaces or channels, the same Cloudant service instance and databases are used for all of them.)
 
-- **`authdb`**: Used to store authentication information, including Conversation service credentials and channel tokens. This database contains a separate authentication document for each deployment, storing the authentication information for a particular Conversation workspace and channel app. This information consists of Conversation service credentials and channel tokens, which the Conversation connector uses when communicating with the Conversation service and with the channel.
+- **`authdb`**: Used to store authentication information. This database contains a separate authentication document for each deployment, storing the authentication information for a particular Conversation workspace and channel app. This information consists of Conversation service credentials and channel tokens, which the Conversation connector uses when communicating with the Conversation service and with the channel. Each document in the `authdb` database is associated with a particular deployment using a UUID that is generated during the deployment process.
 
-    The following example shows the contents of an authentication document that stores the information for a Slack deployment:
+    The appropriate Cloudant URL, database name, and authorization key are stored in an annotation on each Cloud Functions package that needs to access the database. The actions in the package use the information in these annotations to retrieve the correct document from the `authdb` database.
 
-    ```json
-    {
-       "conversation": {
-          "password": "xxxxxx",
-          "username": "xxxxxx",
-          "workspace_id": "xxxxxx"
-       },
-       "slack": {
-          "verification_token": "xxxxxx",
-          "access_token": "xxxxxx",
-          "bot_access_token": "xxxxxx"
-       }
-     }
-    ```
+- **`contextdb`**: Used to store the most recent Conversation dialog context returned from the workspace. The `save-context` action stores the context JSON in the database after each Conversation response, and the `load-context` action loads it from the database before the next user message is sent. For more information about what the context can contain, see the [Conversation documentation](https://console.bluemix.net/docs/services/conversation/dialog-build.html#context).
 
-    Each document in the `authdb` database is associated with a particular deployment using a UUID that is generated during the deployment process. The appropriate Cloudant URL, database name, and authorization key are stored in an annotation on each Cloud Functions package that needs to access the database. The following example shows a package authentication containing database access details:
-
-    ```json
-     [
-       {
-          "key": "cloudant_url",
-          "value": "https://your-cloudant-instance-url"
-       },
-       {
-          "key": "cloudant_auth_dbname",
-          "value": "authdb"
-       },
-       {
-          "key": "cloudant_auth_key",
-          "value": "123456abcd"
-       }
-    ]
-    ```
-
-    The actions can easily use the information in these package annotations to retrieve the correct document from the `authdb` database.
-
-- **`contextdb`**: Used to store the most recent Conversation returned from the workspace. The `save-context` action stores the context in the database after each Conversation response, and the `load-context` action loads it from the database before the next user message is sent.
-
-    The following example shows the contents of a context document in the `contextdb` database:
-
-    ```json
-    {
-    "conversation_id": "123abc",
-    "system": {
-       "branch_exited_reason": "completed",
-       "dialog_request_counter": 1,
-       "branch_exited": true,
-       "dialog_turn_counter": 1,
-       "dialog_stack": [
-          {
-             "dialog_node": "root"
-          }
-       ],
-       "_node_output_map": {
-          "Anything else": [
-                0
-             ]
-          }
-       }
-    }
-    ```
-
-    As with the `authdb` database, Cloud Functions package annotations are used to store the Cloudant url for accessing the database. The `cloudant_context_key` value in the `raw_input_data` field is generated on the fly by the `normalize-channel-for-conversation` action, and is then passed along the pipeline for `load-context` and `save-context` to use.
+    As with the `authdb` database, Cloud Functions package annotations are used to store the Cloudant url for accessing the database.
 
 For more information about how the Cloud Functions actions interact with Cloudant, see the [Node SDK for Cloudant](https://github.com/cloudant/nodejs-cloudant). For more information about the underlying Cloudant REST APIs, see the [Cloudant documentation](https://docs.cloudant.com/document.html).
 

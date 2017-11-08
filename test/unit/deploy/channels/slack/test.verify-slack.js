@@ -293,7 +293,7 @@ describe('Verify-Slack Unit Tests', () => {
 
   function generateOkResult() {
     const redirectUrl = `${owHost}/api/v1/web/${userNamespace}/${deployName}_slack/deploy.http`;
-    const requestUrl = `${owHost}/api/v1/web/${userNamespace}/default/${deployName}.json`;
+    const requestUrl = `${owHost}/api/v1/web/${userNamespace}/${deployName}_slack/receive.json`;
 
     const state = JSON.stringify({
       signature: createHmacKey(slackClientId, slackClientSecret),

@@ -86,7 +86,7 @@ describe('starter-code integration tests for slack', () => {
         slack: params.slack,
         provider: 'slack',
         auth,
-        cloudant_context_key: 'slack_TXXXXXXXX_e808d814-9143-4dce-aec7-68af02e650a8_U2147483697_D024BE91L'
+        cloudant_context_key: `slack_TXXXXXXXX_${process.env.__TEST_CONVERSATION_WORKSPACE_ID}_U2147483697_D024BE91L`
       },
       raw_output_data: {
         conversation: {
