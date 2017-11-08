@@ -13,7 +13,7 @@ RETCODE=0
 
 ### MAIN
 main() {
-  if [ "$TRAVIS_PULL_REQUEST" ] && [ "$TRAVIS_BRANCH" == "develop" ]; then
+  if [ "$TRAVIS_BRANCH" == "develop" ]; then
     # Run only unit tests for a PR originating from a contributor against the head branch "develop"
     loadEnvVars 'test/resources/.unit.env'
     runTestSuite 'test/unit/'

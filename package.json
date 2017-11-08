@@ -1,5 +1,5 @@
 {
-  "name": "convo-flexible-bot",
+  "name": "conversation-connector",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.ibm.com:watson-engagement-advisor/convo-flexible-bot.git"
+    "url": "https://github.com/watson-developer-cloud/conversation-connector.git"
   },
   "author": "",
   "license": "Apache-2.0",
