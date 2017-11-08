@@ -9,8 +9,8 @@ required:
 connector-repo:
   service_id: githubpublic
   parameters:
-    repo_name: "convo-flexible-bot"
-    repo_url: https://github.ibm.com/watson-engagement-advisor/convo-flexible-bot
+    repo_name: "conversation-connector"
+    repo_url: https://github.com/watson-developer-cloud/conversation-connector
     type: clone
     has_issues: false
 
