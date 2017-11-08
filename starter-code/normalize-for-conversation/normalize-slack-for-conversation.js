@@ -38,6 +38,7 @@ function main(params) {
       raw_input_data: {
         slack: params.slack,
         provider: 'slack',
+        bot_id: params.bot_id,
         auth,
         cloudant_context_key: generateCloudantKey(params, auth)
       }
@@ -110,9 +111,9 @@ function generateCloudantKey(params, auth) {
   const slackChannelId = slackPayload
     ? slackPayload.channel && slackPayload.channel.id
     : slackEvent && slackEvent.channel;
-  const slackWorkspaceId = auth.conversation.workspace_id;
+  const conversationWorkspaceId = auth.conversation.workspace_id;
 
-  return `slack_${slackTeamId}_${slackWorkspaceId}_${slackUserId}_${slackChannelId}`;
+  return `slack_${slackTeamId}_${conversationWorkspaceId}_${slackUserId}_${slackChannelId}`;
 }
 
 /**

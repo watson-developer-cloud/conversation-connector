@@ -66,7 +66,7 @@ describe('starter-code integration tests for facebook', () => {
         facebook: params.facebook,
         provider: 'facebook',
         auth,
-        cloudant_context_key: 'facebook_1481847138543615_e808d814-9143-4dce-aec7-68af02e650a8_185643828639058',
+        cloudant_context_key: `facebook_1481847138543615_${process.env.__TEST_CONVERSATION_WORKSPACE_ID}_185643828639058`,
         conversation: { input: { text: 'hello, world!' } }
       },
       message: { text: 'Output text from mock-conversation.' },

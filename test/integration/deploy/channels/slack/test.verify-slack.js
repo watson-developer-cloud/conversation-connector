@@ -59,7 +59,7 @@ describe('deploy verify-slack integration tests', () => {
     const deploymentName = 'test-integration-verifyslack';
     params.state.name = deploymentName;
 
-    const requestUrl = `https://${process.env.__OW_API_HOST}/api/v1/web/${params.state.wsk.namespace}/default/${params.state.name}.json`;
+    const requestUrl = `https://${process.env.__OW_API_HOST}/api/v1/web/${params.state.wsk.namespace}/${params.state.name}_slack/receive.json`;
     const redirectUrl = `https://${process.env.__OW_API_HOST}/api/v1/web/${params.state.wsk.namespace}/${params.state.name}_slack/deploy.http`;
 
     const state = JSON.stringify({

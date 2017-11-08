@@ -67,7 +67,7 @@ describe('End-to-End tests: Slack Deploy UI', () => {
     const deploymentName = 'test-e2e-slack-deploy';
     params.state.name = deploymentName;
 
-    const requestUrl = `https://${process.env.__OW_API_HOST}/api/v1/web/${params.state.wsk.namespace}/default/${deploymentName}.json`;
+    const requestUrl = `https://${process.env.__OW_API_HOST}/api/v1/web/${params.state.wsk.namespace}/${deploymentName}_slack/receive.json`;
     const redirectUrl = `https://${process.env.__OW_API_HOST}/api/v1/web/${params.state.wsk.namespace}/${deploymentName}_slack/deploy.http`;
 
     const state = JSON.stringify({
@@ -128,7 +128,7 @@ describe('End-to-End tests: Slack Deploy UI', () => {
     params.state.name = deploymentName;
     params.state.deploy_url = deployUrl;
 
-    const requestUrl = `https://${process.env.__OW_API_HOST}/api/v1/web/${params.state.wsk.namespace}/default/${deploymentName}.json`;
+    const requestUrl = `https://${process.env.__OW_API_HOST}/api/v1/web/${params.state.wsk.namespace}/${deploymentName}_slack/receive.json`;
     const redirectUrl = `https://${process.env.__OW_API_HOST}/api/v1/web/${params.state.wsk.namespace}/${deploymentName}_slack/deploy.http`;
 
     const state = JSON.stringify({

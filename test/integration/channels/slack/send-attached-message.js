@@ -62,7 +62,9 @@ function main(params) {
       text: params.slack.event.text,
       attachments,
       raw_input_data: {
+        bot_id: params.bot_id,
         provider: 'slack',
+        slack: params.slack,
         auth
       }
     });
@@ -92,6 +94,9 @@ function validateParameters(params) {
 
   // Required: Slack input text
   assert(params.slack.event.text, 'No Slack input text provided.');
+
+  // Required: Bot ID
+  assert(params.bot_id, 'No bot ID provided.');
 
   // Required: auth
   assert(params.auth, 'No auth provided.');

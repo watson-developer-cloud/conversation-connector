@@ -31,8 +31,21 @@ const actionsToPopulate = [
   'slack/deploy'
 ];
 
-const defaultPipelineActions = [
+const requiredActions = [
   'slack/receive',
+  'starter-code/pre-normalize',
+  'starter-code/normalize-slack-for-conversation',
+  'context/load-context',
+  'starter-code/pre-conversation',
+  'conversation/call-conversation',
+  'starter-code/post-conversation',
+  'context/save-context',
+  'starter-code/normalize-conversation-for-slack',
+  'starter-code/post-normalize',
+  'slack/post'
+];
+
+const defaultPipelineActions = [
   'starter-code/pre-normalize',
   'starter-code/normalize-slack-for-conversation',
   'context/load-context',
@@ -87,7 +100,7 @@ function main(params) {
     let authKey;
 
     const redirectUri = `https://${apihost}/api/v1/web/${wskNamespace}/${deployName}_slack/deploy.http`;
-    const requestUri = `https://${apihost}/api/v1/web/${wskNamespace}/default/${deployName}.json`;
+    const requestUri = `https://${apihost}/api/v1/web/${wskNamespace}/${deployName}_slack/receive.json`;
 
     getCloudFunctionsFromBluemix(accessToken, refreshToken, wskNamespace)
       .then(ow => {
@@ -357,8 +370,8 @@ function updateWskAction(ow, actionName, namespace, action, exportAction) {
 function checkPipelineActions(ow, namespace, deployName) {
   return new Promise((resolve, reject) => {
     const promises = [];
-    for (let i = 0; i < defaultPipelineActions.length; i += 1) {
-      const pipelineAction = `${deployName}_${defaultPipelineActions[i]}`;
+    for (let i = 0; i < requiredActions.length; i += 1) {
+      const pipelineAction = `${deployName}_${requiredActions[i]}`;
       promises.push(ow.actions.get({ name: pipelineAction, namespace }));
     }
 
@@ -387,13 +400,7 @@ function createPipeline(ow, namespace, deployName) {
         kind: 'sequence',
         code: '',
         components: pipelineActions
-      },
-      annotations: [
-        {
-          key: 'web-export',
-          value: true
-        }
-      ]
+      }
     },
     namespace
   });

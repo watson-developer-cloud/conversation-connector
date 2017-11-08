@@ -41,6 +41,8 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
   let buttonMessageParams;
   let func;
 
+  const botId = 'bot-id';
+
   beforeEach(() => {
     textMessageParams = {
       slack: {
@@ -60,14 +62,15 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
         event_time: 1234567890
       },
       provider: 'slack',
+      context: {},
+      bot_id: botId,
       auth: {
         conversation: {
           username: envParams.__TEST_CONVERSATION_USERNAME,
           password: envParams.__TEST_CONVERSATION_PASSWORD,
           workspace_id: envParams.__TEST_CONVERSATION_WORKSPACE_ID
         }
-      },
-      context: {}
+      }
     };
 
     expectedResult = {
@@ -79,6 +82,7 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
       raw_input_data: {
         slack: textMessageParams.slack,
         provider: 'slack',
+        bot_id: botId,
         auth: {
           conversation: {
             username: envParams.__TEST_CONVERSATION_USERNAME,
@@ -119,6 +123,7 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
         payload: JSON.stringify(buttonPayload)
       },
       provider: 'slack',
+      bot_id: botId,
       auth: {
         conversation: {
           username: envParams.__TEST_CONVERSATION_USERNAME,

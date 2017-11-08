@@ -45,7 +45,14 @@ function main(params) {
     const wskNamespace = params.state.wsk.namespace;
     const deployName = params.state.name;
 
-    getCloudFunctionsFromBluemix(accessToken, refreshToken, wskNamespace)
+    checkRegex(deployName)
+      .then(() => {
+        return getCloudFunctionsFromBluemix(
+          accessToken,
+          refreshToken,
+          wskNamespace
+        );
+      })
       .catch(error => {
         if (typeof error === 'string') {
           reject({
@@ -76,6 +83,26 @@ function main(params) {
           });
         }
       );
+  });
+}
+
+/**
+ * Checks whether the deployment name is valid to use.
+ *
+ * @param  {string}  deploymentName - deployment name
+ * @return {Promise}                - resolve if deployment name is valid, reject otherwise
+ */
+function checkRegex(deploymentName) {
+  return new Promise((resolve, reject) => {
+    const matchString = /^([a-zA-Z0-9][a-zA-Z0-9-]{0,255})$/;
+
+    if (!matchString.test(deploymentName)) {
+      reject(
+        'Deployment name contains invalid characters. Please use only the following characters in your deployment name: "a-z A-Z 0-9 -". Additionally, your deployment name cannot start with a -, and your name cannot be longer than 256 characters.'
+      );
+    } else {
+      resolve(deploymentName);
+    }
   });
 }
 
