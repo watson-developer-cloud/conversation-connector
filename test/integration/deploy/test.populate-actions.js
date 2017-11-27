@@ -65,5 +65,5 @@ describe('deploy populate-actions integration tests', () => {
       .catch(error => {
         assert(false, error);
       });
-  }).retries(4);
+  });
 });

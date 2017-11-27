@@ -29,7 +29,7 @@ const checkDeployExistsAction = require('./../../../deploy/check-deploy-exists.j
 const owHost = 'https://openwhisk.ng.bluemix.net';
 
 const userNamespace = 'sampleorganization_samplespace';
-const deployName = 'sample_deployment_name';
+const deployName = 'sample-deployment-name';
 const mockError = 'mock-error';
 const errorNoNamespaceFound = `Could not find user namespace: ${userNamespace}.`;
 
@@ -160,6 +160,21 @@ describe('Check-Deploy-Exists Unit Tests', () => {
         assert.deepEqual(error, {
           code: 400,
           message: `Deployment "${deployName}" already exists.`
+        });
+      });
+  });
+
+  it('validate error when deploy name contains invalid characters', () => {
+    params.state.name = 'invalid*deployment*name';
+
+    return checkDeployExistsAction(params)
+      .then(() => {
+        assert(false, 'Action succeeded unexpectedly.');
+      })
+      .catch(error => {
+        assert.deepEqual(error, {
+          code: 400,
+          message: 'Deployment name contains invalid characters. Please use only the following characters in your deployment name: "a-z A-Z 0-9 -". Additionally, your deployment name cannot start with a -, and your name cannot be longer than 256 characters.'
         });
       });
   });

@@ -59,16 +59,9 @@ const packageContent = {
   ]
 };
 
-const authDocContent = {
-  slack: {
-    client_id: slackClientId,
-    client_secret: slackClientSecret,
-    verification_token: slackVerificationToken
-  }
-};
-
 describe('Slack Deploy Unit Tests', () => {
   let params;
+  let authDocContent;
 
   before(() => {
     process.env.__OW_ACTION_NAME = `${userNamespace}/slack/deploy`;
@@ -84,6 +77,14 @@ describe('Slack Deploy Unit Tests', () => {
         })
       ),
       code: 'sample_oauth_code'
+    };
+
+    authDocContent = {
+      slack: {
+        client_id: slackClientId,
+        client_secret: slackClientSecret,
+        verification_token: slackVerificationToken
+      }
     };
 
     createCloudFunctionsMock();
@@ -130,7 +131,7 @@ describe('Slack Deploy Unit Tests', () => {
   });
 
   it('validate error when not enough input parameters', () => {
-    delete params.state;
+    delete params.code;
 
     return actionSlackDeploy
       .main(params)
@@ -140,7 +141,7 @@ describe('Slack Deploy Unit Tests', () => {
       .catch(error => {
         assert.deepEqual(JSON.parse(error.body), {
           code: 400,
-          message: 'No verification state provided.'
+          message: 'No Slack authentication code provided.'
         });
       });
   });
@@ -179,7 +180,7 @@ describe('Slack Deploy Unit Tests', () => {
     nock(`https://${cloudantHost.split('@')[1]}`)
       .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
       .query(true)
-      .reply(200, {})
+      .replyWithError({ statusCode: 404 })
       .put(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
       .reply(200, {});
 
@@ -194,41 +195,7 @@ describe('Slack Deploy Unit Tests', () => {
           message: `No auth db entry for key ${cloudantAuthKey}. Re-run setup.`
         });
       });
-  });
-
-  it('validate okay when retrieve doc retrieves no docs', () => {
-    nock.cleanAll();
-    createCloudFunctionsMock();
-    createSlackMock();
-
-    nock(cloudantHost)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(true)
-      .replyWithError({ statusCode: 404 });
-
-    nock(`https://${cloudantHost.split('@')[1]}`)
-      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .query(true)
-      .reply(200, authDocContent)
-      .put(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
-      .reply(200, {});
-
-    const db = cloudant({
-      url: cloudantUrl,
-      plugin: 'retry',
-      retryAttempts: 5,
-      retryTimeout: 1000
-    }).use(cloudantAuthDbName);
-
-    return actionSlackDeploy
-      .retrieveDoc(db, cloudantAuthKey)
-      .then(result => {
-        assert.deepEqual(result, {});
-      })
-      .catch(error => {
-        assert(false, error);
-      });
-  });
+  }).retries(4);
 
   it('validate error when retrieve doc throws an error', () => {
     nock.cleanAll();
@@ -306,6 +273,57 @@ describe('Slack Deploy Unit Tests', () => {
       })
       .catch(error => {
         assert.equal(error.message, 'invalid url');
+      });
+  });
+
+  it('validate error when no state and auth returned empty', () => {
+    delete params.state;
+
+    nock.cleanAll();
+    createCloudFunctionsMock();
+    createSlackMock();
+    nock(cloudantHost)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(true)
+      .replyWithError({ statusCode: 404, message: mockError });
+
+    nock(`https://${cloudantHost.split('@')[1]}`)
+      .get(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .query(true)
+      .replyWithError({ statusCode: 404, message: mockError })
+      .put(`/${cloudantAuthDbName}/${cloudantAuthKey}`)
+      .reply(200, {});
+
+    return actionSlackDeploy
+      .main(params)
+      .then(() => {
+        assert(false, 'Action succeeded unexpectedly.');
+      })
+      .catch(error => {
+        assert.deepEqual(JSON.parse(error.body), {
+          code: 400,
+          message: 'No deployment information found.'
+        });
+      });
+  });
+
+  it('validate okay when authed users empty', () => {
+    authDocContent.slack.bot_users = {};
+    nock.cleanAll();
+    createCloudFunctionsMock();
+    createSlackMock();
+    createCloudantMock();
+
+    return actionSlackDeploy
+      .main(params)
+      .then(result => {
+        assert.deepEqual(JSON.parse(result.body), {
+          code: 200,
+          message: 'Authorized successfully!'
+        });
+      })
+      .catch(error => {
+        assert(false, error);
       });
   });
 

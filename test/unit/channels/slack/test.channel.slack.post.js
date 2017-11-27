@@ -40,23 +40,30 @@ describe('Slack Post Unit Tests', () => {
 
   let func;
 
+  const botId = 'bot-id';
+
   const slackHost = 'https://slack.com';
 
   beforeEach(() => {
     options = {
       channel: envParams.__TEST_SLACK_CHANNEL,
-      bot_access_token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
       text,
       raw_input_data: {
+        bot_id: botId,
         provider: 'slack',
         auth: {
           slack: {
             verification_token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
             access_token: envParams.__TEST_SLACK_ACCESS_TOKEN,
-            bot_access_token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
+            bot_access_token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
+            bot_users: {}
           }
         }
       }
+    };
+    options.raw_input_data.auth.slack.bot_users[botId] = {
+      access_token: envParams.__TEST_SLACK_ACCESS_TOKEN,
+      bot_access_token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
     };
 
     expectedResult = {
@@ -97,6 +104,15 @@ describe('Slack Post Unit Tests', () => {
         assert(false, error);
       }
     );
+  });
+
+  it('validate post params modified differently for slack hooks url', () => {
+    const postParams = slackPost.modifyPostParams(
+      expectedResult,
+      'https://hooks.slack.com/sample_page'
+    );
+
+    assert.deepEqual(postParams, JSON.stringify(expectedResult));
   });
 
   it('validate error when slack server throws error', () => {

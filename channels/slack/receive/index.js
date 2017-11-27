@@ -16,13 +16,14 @@
 
 'use strict';
 
-const Cloudant = require('cloudant');
 const assert = require('assert');
+const Cloudant = require('cloudant');
 const openwhisk = require('openwhisk');
 
 const CLOUDANT_URL = 'cloudant_url';
 const CLOUDANT_AUTH_DBNAME = 'cloudant_auth_dbname';
 const CLOUDANT_AUTH_KEY = 'cloudant_auth_key';
+
 /**
  * Receives a subscription message from Slack
  *   and returns the appropriate information depending of subscription event received.
@@ -33,12 +34,15 @@ const CLOUDANT_AUTH_KEY = 'cloudant_auth_key';
  */
 function main(params) {
   return new Promise((resolve, reject) => {
-    validateParameters(params);
+    try {
+      validateParameters(params);
+    } catch (error) {
+      reject(error);
+    }
+
     let cloudantCreds;
 
-    if (isBotMessage(params)) {
-      reject({ bot_id: isBotMessage(params) });
-    }
+    // IGNORE/REJECT THESE OBJECTS OUTRIGHT
     if (isUrlVerification(params)) {
       const challenge = params.challenge || '';
       reject({
@@ -46,75 +50,89 @@ function main(params) {
         challenge
       });
     }
+    if (isBotMessage(params)) {
+      reject({ bot_id: isBotMessage(params) });
+    }
+    if (isDuplicateMessage(params)) {
+      reject(params);
+    }
+
+    const ow = openwhisk();
+    // the __OW_ACTION_NAME environment vairable is the name of this resource
+    //  and is of the format: /org_space/deploymentName_package/action ;
+    //  so  split('/') would return ['', 'org_space', 'deploymentName_package', 'action']
+    //      split('/')[2].split('_') would return ['deploymentName', 'package']
+    //  and split('/')[2].split('_')[0] returns the deploymentName
+    const deploymentName = process.env.__OW_ACTION_NAME
+      .split('/')[2]
+      .split('_')[0];
 
     getCloudantCreds()
-      .then(creds => {
-        cloudantCreds = creds;
+      .then(credentials => {
+        cloudantCreds = credentials;
         return loadAuth(cloudantCreds);
       })
       .then(auth => {
-        verifyUserIdentity(params, auth); // Verify the user's identity.
+        try {
+          verifyUserIdentity(params, auth);
+        } catch (error) {
+          throw error;
+        }
 
-        if (isDuplicateMessage(params)) {
-          reject(extractSlackParameters(params));
+        // FILTER BY CHANNEL, GROUP, OR DIRECTED MESSAGE
+        if (isDirectMessage(params)) {
+          const slackParams = extractSlackParameters(params, auth);
+
+          ow.actions.invoke({
+            name: deploymentName,
+            blocking: false,
+            result: false,
+            params: slackParams,
+            namespace: process.env.__OW_NAMESPACE
+          });
+
+          const originalMessage = params.payload &&
+            JSON.parse(params.payload) &&
+            JSON.parse(params.payload).original_message;
+          if (originalMessage) {
+            resolve(originalMessage);
+          } else {
+            resolve(slackParams);
+          }
         } else {
-          resolve(addAuthToParams(extractSlackParameters(params), auth));
+          const modifiedParams = modifyIncomingMessage(params, auth);
+          // null modified params means the message wasn't directed to this bot
+          if (modifiedParams) {
+            const slackParams = extractSlackParameters(modifiedParams, auth);
+
+            ow.actions.invoke({
+              name: deploymentName,
+              blocking: false,
+              result: false,
+              params: slackParams,
+              namespace: process.env.__OW_NAMESPACE
+            });
+
+            const originalMessage = params.payload &&
+              JSON.parse(params.payload) &&
+              JSON.parse(params.payload).original_message;
+            if (originalMessage) {
+              resolve(originalMessage);
+            } else {
+              resolve(slackParams);
+            }
+          } else {
+            reject(extractSlackParameters(params, auth));
+          }
         }
       })
-      .catch(err => {
+      .catch(error => {
         reject({
-          code: 401,
-          err
+          code: 400,
+          error
         });
       });
   });
-}
-
-function addAuthToParams(params, auth) {
-  return Object.assign({ auth }, params);
-}
-
-/**
- * Extracts and converts the input parametrs to only parameters that were passed by Slack.
- *
- * @param  {JSON} params - Parameters passed into the action,
- *                       including Slack parameters and package bindings
- * @return {JSON} - JSON containing all and only Slack parameters
- *                    and indicators that the JSON is coming from Slack channel package
- */
-function extractSlackParameters(params) {
-  const noIncludeKeys = [
-    '__ow_headers',
-    '__ow_method',
-    '__ow_path',
-    '__ow_verb'
-  ];
-
-  const slackParams = {};
-  Object.keys(params).forEach(key => {
-    if (noIncludeKeys.indexOf(key) < 0) {
-      slackParams[key] = params[key];
-    }
-  });
-
-  return {
-    slack: slackParams,
-    provider: 'slack'
-  };
-}
-
-/**
- * Returns true if the message received was a duplicate/retry message.
- *
- * @param  {JSON}  params - Parameters passed into the action
- * @return {Boolean}      - true only if a duplicate message was detected
- */
-function isDuplicateMessage(params) {
-  return params.__ow_headers &&
-    params.__ow_headers['x-slack-retry-reason'] &&
-    params.__ow_headers['x-slack-retry-num'] &&
-    params.__ow_headers['x-slack-retry-reason'] === 'http_timeout' &&
-    params.__ow_headers['x-slack-retry-num'] > 0;
 }
 
 /**
@@ -134,48 +152,128 @@ function isUrlVerification(params) {
  * @return {Boolean}      - true only if the message was from a bot
  */
 function isBotMessage(params) {
-  const slackEvent = params.event;
-  const botId = (slackEvent && slackEvent.bot_id) ||
-    (slackEvent && slackEvent.message && slackEvent.message.bot_id);
+  const event = params.event;
+  const botId = (event && event.bot_id) ||
+    (event && event.message && event.message.bot_id);
   return botId;
 }
 
 /**
- * Validates the required parameters for running this action.
+ * Returns true if the message received was a duplicate/retry message.
  *
- * @param  {JSON} params - the parameters passed into the action
+ * @param  {JSON}  params - Parameters passed into the action
+ * @return {Boolean}      - true only if a duplicate message was detected
  */
-function validateParameters(params) {
-  const token = params.token ||
-    (params.payload &&
-      JSON.parse(params.payload) &&
-      JSON.parse(params.payload).token);
-  assert(token, 'Verification token is absent.');
+function isDuplicateMessage(params) {
+  return params.__ow_headers &&
+    params.__ow_headers['x-slack-retry-reason'] &&
+    params.__ow_headers['x-slack-retry-num'] &&
+    params.__ow_headers['x-slack-retry-reason'] === 'http_timeout' &&
+    params.__ow_headers['x-slack-retry-num'] > 0;
 }
 
 /**
- *  Uses the loaded auth info to match known
- *  verification token against the provided verification_token.
+ * Returns true if the message is coming from a direct message channel
+ *  and false if the message is coming from a group channel.
  *
- *  @params - {JSON} Slack params to be updated with the auth token
- *  @auth - {JSON} loaded auth data
- *
- *  @return updated Slack params containing the token required for posting
+ * @param  {JSON}  params - Parameters passed into the action
+ * @return {Boolean}      - true if is a direct message
  */
-function verifyUserIdentity(params, auth) {
-  const verificationTokenProvided = params.token ||
+function isDirectMessage(params) {
+  const event = params.event;
+  const payload = params.payload && JSON.parse(params.payload);
+  const channel = (event && event.channel) ||
+    (payload && payload.channel && payload.channel.id);
+
+  assert(channel, 'No channel provided by server.');
+
+  return channel.charAt(0) === 'D';
+}
+
+/**
+ * Returns the bot id of the message or null if not found
+ *
+ * @param  {string[]} authedUsers - list of authorized bot users
+ * @param  {JSON} auth            - auth document
+ * @return {string}               - bot id
+ */
+function getBotIdFromAuthedUsers(authedUsers, auth) {
+  if (!authedUsers) {
+    return null;
+  }
+
+  // NOTE: only the first authorized bot recognized by the auth document is
+  //  configured to respond in the deployment pipeline
+  for (let i = 0; i < authedUsers.length; i += 1) {
+    if (auth.slack.bot_users[authedUsers[i]]) {
+      return authedUsers[i];
+    }
+  }
+  return null;
+}
+
+function modifyIncomingMessage(params, auth) {
+  // payload messages are messages sent by bot
+  //  and therefore do not have @tags
+  if (params.payload) {
+    return params;
+  }
+
+  let message = params.event.text;
+  const botUser = getBotIdFromAuthedUsers(params.authed_users, auth);
+
+  const searchRegex = `<@${botUser}>`;
+  const searchIndex = message.search(searchRegex);
+
+  if (searchIndex >= 0) {
+    message = message.substring(0, searchIndex) +
+      message.substring(searchIndex + 12);
+
+    const slackParams = params;
+    slackParams.event.text = message;
+
+    return slackParams;
+  }
+
+  return null;
+}
+
+/**
+ * Extracts and converts the input parametrs to only parameters that were passed by Slack.
+ *
+ * @param  {JSON} params - Parameters passed into the action,
+ *                       including Slack parameters and package bindings
+ * @return {JSON} - JSON containing all and only Slack parameters
+ *                    and indicators that the JSON is coming from Slack channel package
+ */
+function extractSlackParameters(params, auth) {
+  const noIncludeKeys = [
+    '__ow_headers',
+    '__ow_method',
+    '__ow_path',
+    '__ow_verb'
+  ];
+
+  const slackParams = {};
+  Object.keys(params).forEach(key => {
+    if (noIncludeKeys.indexOf(key) < 0) {
+      slackParams[key] = params[key];
+    }
+  });
+
+  // add bot user id to root
+  const botId = getBotIdFromAuthedUsers(params.authed_users, auth) ||
     (params.payload &&
       JSON.parse(params.payload) &&
-      JSON.parse(params.payload).token);
+      JSON.parse(params.payload).original_message &&
+      JSON.parse(params.payload).original_message.user);
 
-  const verificationTokenStored = auth.slack.verification_token;
-
-  assert(verificationTokenStored, 'Verification token not known');
-  assert.equal(
-    verificationTokenStored,
-    verificationTokenProvided,
-    'Verification token is incorrect.'
-  );
+  return {
+    slack: slackParams,
+    provider: 'slack',
+    bot_id: botId,
+    auth
+  };
 }
 
 /**
@@ -192,47 +290,94 @@ function verifyUserIdentity(params, auth) {
  */
 function getCloudantCreds() {
   return new Promise((resolve, reject) => {
-    // Get annotations of the current package.
+    // Get annotations of the current package
     const packageName = extractCurrentPackageName(process.env.__OW_ACTION_NAME);
+
     getPackageAnnotations(packageName)
       .then(annotations => {
-        // Construct a Cloudant creds json obj
+        // Construct a Cloudant creds json object
         const cloudantCreds = {};
-        annotations.forEach(a => {
-          cloudantCreds[a.key] = a.value;
+        annotations.forEach(annotation => {
+          cloudantCreds[annotation.key] = annotation.value;
         });
         checkCloudantCredentials(cloudantCreds);
         resolve(cloudantCreds);
       })
       .catch(reject);
   });
-}
 
-/**
- *  Verifies that cloudant creds contain all the keys
- *  necessary for db operations.
- *
- *  @cloudantCreds - {JSON} Cloudant credentials JSON
- *  eg: {
- *       cloudant_url: 'https://some-cloudant-url.com',
- *       cloudant_auth_dbname: 'abc',
- *       cloudant_auth_key: '123'
- *     };
- */
-function checkCloudantCredentials(cloudantCreds) {
-  // Verify that all required Cloudant credentials are present.
-  assert(
-    cloudantCreds[CLOUDANT_URL],
-    'cloudant_url absent in cloudant credentials.'
-  );
-  assert(
-    cloudantCreds[CLOUDANT_AUTH_DBNAME],
-    'cloudant_auth_dbname absent in cloudant credentials.'
-  );
-  assert(
-    cloudantCreds[CLOUDANT_AUTH_KEY],
-    'cloudant_auth_key absent in cloudant credentials.'
-  );
+  /**
+   *  Gets the package name from the action name that lives in it.
+   *
+   *  @actionName  {string} Full name of the action from which
+   *               package name is to be extracted.
+   *
+   *  @return - package name
+   *  eg: full action name = '/org_space/pkg/action' then,
+   *      package name = 'pkg'
+   */
+  function extractCurrentPackageName(actionName) {
+    return actionName.split('/')[2];
+  }
+
+  /**
+   *  Gets the annotations for the package specified.
+   *
+   *  @packageName  {string} Name of the package whose annotations are needed
+   *
+   *  @return - package annotations array
+   *  eg: [
+   *     {
+   *       key: 'cloudant_url',
+   *       value: 'https://some-cloudant-url'
+   *     },
+   *     {
+   *       key: 'cloudant_auth_dbname',
+   *       value: 'authdb'
+   *     },
+   *     {
+   *       key: 'cloudant_auth_key',
+   *       value: '123456'
+   *     }
+   *   ]
+   */
+  function getPackageAnnotations(packageName) {
+    return new Promise((resolve, reject) => {
+      openwhisk().packages
+        .get(packageName)
+        .then(pkg => {
+          resolve(pkg.annotations);
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   *  Verifies that cloudant creds contain all the keys
+   *  necessary for db operations.
+   *
+   *  @cloudantCreds - {JSON} Cloudant credentials JSON
+   *  eg: {
+   *       cloudant_url: 'https://some-cloudant-url.com',
+   *       cloudant_auth_dbname: 'abc',
+   *       cloudant_auth_key: '123'
+   *     };
+   */
+  function checkCloudantCredentials(cloudantCreds) {
+    // Verify that all required Cloudant credentials are present.
+    assert(
+      cloudantCreds[CLOUDANT_URL],
+      'cloudant_url absent in cloudant credentials.'
+    );
+    assert(
+      cloudantCreds[CLOUDANT_AUTH_DBNAME],
+      'cloudant_auth_dbname absent in cloudant credentials.'
+    );
+    assert(
+      cloudantCreds[CLOUDANT_AUTH_KEY],
+      'cloudant_auth_key absent in cloudant credentials.'
+    );
+  }
 }
 
 /**
@@ -270,18 +415,11 @@ function loadAuth(cloudantCreds) {
     const cloudantAuthKey = cloudantCreds[CLOUDANT_AUTH_KEY];
 
     createCloudantObj(cloudantUrl)
-      .then(cloudantObj => {
-        return retrieveDoc(
-          cloudantObj.use(cloudantAuthDbName),
-          cloudantAuthKey
-        );
+      .then(cloudant => {
+        return retrieveDoc(cloudant.use(cloudantAuthDbName), cloudantAuthKey);
       })
-      .then(auth => {
-        resolve(auth);
-      })
-      .catch(err => {
-        reject(err);
-      });
+      .then(resolve)
+      .catch(reject);
   });
 }
 
@@ -303,8 +441,8 @@ function createCloudantObj(cloudantUrl) {
         retryTimeout: 1000
       });
       resolve(cloudant);
-    } catch (err) {
-      reject(err);
+    } catch (error) {
+      reject(error);
     }
   });
 }
@@ -321,10 +459,8 @@ function retrieveDoc(db, key) {
   return new Promise((resolve, reject) => {
     db.get(
       key,
-      {
-        // We need to add revision ids to prevent Cloudant update conflicts during writes
-        revs_info: true
-      },
+      // We need to add revision ids to prevent Cloudant update conflicts during writes
+      { revs_info: true },
       (error, response) => {
         if (error) {
           reject(error);
@@ -336,58 +472,57 @@ function retrieveDoc(db, key) {
 }
 
 /**
- *  Gets the annotations for the package specified.
+ *  Uses the loaded auth info to match known
+ *  verification token against the provided verification_token.
  *
- *  @packageName  {string} Name of the package whose annotations are needed
+ *  @params - {JSON} Slack params to be updated with the auth token
+ *  @auth - {JSON} loaded auth data
  *
- *  @return - package annotations array
- *  eg: [
- *     {
- *       key: 'cloudant_url',
- *       value: 'https://some-cloudant-url'
- *     },
- *     {
- *       key: 'cloudant_auth_dbname',
- *       value: 'authdb'
- *     },
- *     {
- *       key: 'cloudant_auth_key',
- *       value: '123456'
- *     }
- *   ]
+ *  @return updated Slack params containing the token required for posting
  */
-function getPackageAnnotations(packageName) {
-  return new Promise((resolve, reject) => {
-    openwhisk().packages
-      .get(packageName)
-      .then(pkg => {
-        resolve(pkg.annotations);
-      })
-      .catch(reject);
-  });
+function verifyUserIdentity(params, auth) {
+  const verificationTokenProvided = params.token ||
+    (params.payload &&
+      JSON.parse(params.payload) &&
+      JSON.parse(params.payload).token);
+
+  const verificationTokenStored = auth.slack && auth.slack.verification_token;
+
+  assert(verificationTokenStored, 'Verification token not known.');
+  assert.equal(
+    verificationTokenStored,
+    verificationTokenProvided,
+    'Verification token is incorrect.'
+  );
 }
 
 /**
- *  Gets the package name from the action name that lives in it.
+ * Validates the required parameters for running this action.
  *
- *  @actionName  {string} Full name of the action from which
- *               package name is to be extracted.
- *
- *  @return - package name
- *  eg: full action name = '/org_space/pkg/action' then,
- *      package name = 'pkg'
+ * @param  {JSON} params - the parameters passed into the action
  */
-function extractCurrentPackageName(actionName) {
-  return actionName.split('/')[2];
+function validateParameters(params) {
+  const token = params.token ||
+    (params.payload &&
+      JSON.parse(params.payload) &&
+      JSON.parse(params.payload).token);
+  assert(token, 'Verification token is absent.');
 }
 
 module.exports = {
-  main,
   name: 'slack/receive',
-  validateParameters,
+  main,
+  isUrlVerification,
+  isBotMessage,
+  isDuplicateMessage,
+  isDirectMessage,
+  getBotIdFromAuthedUsers,
+  modifyIncomingMessage,
+  extractSlackParameters,
+  getCloudantCreds,
   loadAuth,
   createCloudantObj,
-  checkCloudantCredentials,
-  getCloudantCreds,
-  retrieveDoc
+  retrieveDoc,
+  verifyUserIdentity,
+  validateParameters
 };

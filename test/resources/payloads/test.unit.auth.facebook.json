@@ -1,0 +1,33 @@
+{
+  "cloudant": {
+      "dbname": "authdb",
+      "url": "https://pinkunicorns.cloudant.com"
+  },
+  "facebook/deploy": {
+    "saveFacebookAuth": {
+      "key": "facebook_1481847138543615",
+      "tests":{
+        "newDeploymentAllOk": {
+          "request": {
+            "pageId": "1481847138543615",
+            "params": {
+              "facebook_app_secret": "6b4603517ca566396a92a168xxxxxxxx",
+              "facebook_verification_token": "test_token",
+              "facebook_page_access_token": "XXXXXXXXCwmgBAOZAgRmIlSQwNvZCXVrrTwa34dQtHmkHfxj1Z4gW87mzov9Eqvvt9CvJxU38wHCC0IN85rZAjYQkxxxxxxxx",
+              "conversation_workspace_id": "e808d814-9143-4dce-aec7-68af0xxxxxxx",
+              "conversation_username": "8d71b8fd-xxxx-1111-xxxx-2256216d19fc",
+              "conversation_password": "xx1AFqNxxxxx"
+            }
+          },
+          "response": [
+            {},
+            {
+              "ok":true,
+              "id": "facebook_U56DFBX7H","rev":"17-1501225f77b403b7f334f1b82db352ef"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

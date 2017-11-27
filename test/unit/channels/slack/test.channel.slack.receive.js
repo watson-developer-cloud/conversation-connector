@@ -34,6 +34,7 @@ const errorBadVerificationToken = 'Verification token is incorrect.';
 describe('Slack Receive Unit Tests', () => {
   let challengeParams;
   let challengeResult;
+  let payload;
   let messageParams;
   let messageResult;
   let payloadParams;
@@ -43,6 +44,11 @@ describe('Slack Receive Unit Tests', () => {
 
   let func = slackReceive.main;
 
+  const botId = 'UXXXXXXXX';
+  const channel = 'DXXXXXXXX';
+  const groupChannel = 'GXXXXXXXX';
+  const directedMessage = `<@${botId}> Message coming from slack/receive unit test.`;
+
   const cloudantUrl = 'https://some-cloudant-url.com';
   const cloudantAuthDbName = 'abc';
   const cloudantAuthKey = '123';
@@ -51,7 +57,6 @@ describe('Slack Receive Unit Tests', () => {
   const namespace = process.env.__OW_NAMESPACE;
   let packageName;
 
-  let owMock;
   const owHost = `https://${apiHost}`;
   let cloudantMock;
 
@@ -59,8 +64,13 @@ describe('Slack Receive Unit Tests', () => {
     slack: {
       client_id: envParams.__TEST_SLACK_CLIENT_ID,
       client_secret: envParams.__TEST_SLACK_CLIENT_SECRET,
-      verification_token: envParams.__TEST_SLACK_VERIFICATION_TOKEN
+      verification_token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
+      bot_users: {}
     }
+  };
+  auth.slack.bot_users[botId] = {
+    access_token: 'sample_access_token',
+    bot_access_token: 'sample_bot_access_token'
   };
 
   before(() => {
@@ -70,13 +80,15 @@ describe('Slack Receive Unit Tests', () => {
 
   beforeEach(() => {
     messageParams = {
+      __ow_verb: 'GET',
       token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
       event: {
         text: 'Message coming from slack/receive unit test.',
         type: 'message',
-        channel: envParams.__TEST_SLACK_CHANNEL
+        channel
       },
-      type: 'event_callback'
+      type: 'event_callback',
+      authed_users: [botId]
     };
 
     messageResult = {
@@ -86,10 +98,12 @@ describe('Slack Receive Unit Tests', () => {
         event: {
           text: 'Message coming from slack/receive unit test.',
           type: 'message',
-          channel: envParams.__TEST_SLACK_CHANNEL
-        }
+          channel
+        },
+        authed_users: [botId]
       },
       provider: 'slack',
+      bot_id: botId,
       auth
     };
 
@@ -104,7 +118,10 @@ describe('Slack Receive Unit Tests', () => {
       challenge: 'challenge_token'
     };
 
-    const payload = {
+    payload = {
+      channel: {
+        id: channel
+      },
       actions: [
         {
           name: 'shirt_size_small',
@@ -113,7 +130,10 @@ describe('Slack Receive Unit Tests', () => {
         }
       ],
       callback_id: 'test_callback_id',
-      token: envParams.__TEST_SLACK_VERIFICATION_TOKEN
+      token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
+      original_message: {
+        user: botId
+      }
     };
 
     payloadParams = {
@@ -125,11 +145,12 @@ describe('Slack Receive Unit Tests', () => {
         payload: JSON.stringify(payload)
       },
       provider: 'slack',
+      bot_id: botId,
       auth
     };
 
     nock.cleanAll();
-    owMock = createCloudFunctionsMock();
+    createCloudFunctionsMock();
     cloudantMock = createCloudantMock();
   });
 
@@ -139,10 +160,34 @@ describe('Slack Receive Unit Tests', () => {
         if (!cloudantMock.isDone()) {
           assert(false, 'Mock Cloudant Get server did not get called.');
         }
-        if (!owMock.isDone()) {
-          assert(false, 'Mock OW Get server did not get called.');
-        }
         assert.deepEqual(result, messageResult);
+      },
+      error => {
+        assert(false, error.message);
+      }
+    );
+  }).retries(4);
+
+  it('validate slack/receives receives a directed message in group channel', () => {
+    messageParams.event.channel = groupChannel;
+    messageParams.event.text = directedMessage;
+    messageResult.slack.event.channel = groupChannel;
+    messageResult.slack.event.text = directedMessage.slice(12);
+
+    return slackReceive
+      .main(messageParams)
+      .then(result => {
+        assert.deepEqual(result, messageResult);
+      })
+      .catch(error => {
+        assert(false, error.message);
+      });
+  });
+
+  it('validate slack/receive receives human interactive response', () => {
+    return func(payloadParams).then(
+      result => {
+        assert.deepEqual(result, payload.original_message);
       },
       error => {
         assert(false, error.message);
@@ -150,10 +195,14 @@ describe('Slack Receive Unit Tests', () => {
     );
   });
 
-  it('validate slack/receive receives human interactive response', () => {
+  it('validate slack/receive receives a DM interactive response', () => {
+    payload.channel.id = groupChannel;
+    payloadParams.payload = JSON.stringify(payload);
+    payloadResult.slack.payload = JSON.stringify(payload);
+
     return func(payloadParams).then(
       result => {
-        assert.deepEqual(result, payloadResult);
+        assert.deepEqual(result, payload.original_message);
       },
       error => {
         assert(false, error.message);
@@ -241,8 +290,8 @@ describe('Slack Receive Unit Tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
       error => {
-        assert.equal(error.err.name, 'AssertionError');
-        assert.equal(error.err.message, errorBadVerificationToken);
+        assert.equal(error.error.name, 'AssertionError');
+        assert.equal(error.error.message, errorBadVerificationToken);
       }
     );
   }).retries(4);
@@ -260,7 +309,7 @@ describe('Slack Receive Unit Tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
       error => {
-        assert.deepEqual(error, messageResult);
+        assert.deepEqual(error, messageParams);
       }
     );
   });
@@ -290,7 +339,42 @@ describe('Slack Receive Unit Tests', () => {
         assert(false, 'Aciton succeeded unexpectedly.');
       })
       .catch(error => {
-        assert.equal(error.err.description, mockError);
+        assert.equal(error.error.description, mockError);
+      });
+  }).retries(4);
+
+  it('validate error when a message is not directed at bot', () => {
+    const wrongBotText = '<@Ubotidtwo> Message coming from slack/receive unit test.';
+    messageParams.event.channel = groupChannel;
+    messageParams.event.text = wrongBotText;
+    messageResult.slack.event.channel = groupChannel;
+    messageResult.slack.event.text = wrongBotText;
+
+    return slackReceive
+      .main(messageParams)
+      .then(() => {
+        assert(false, 'Action succeeded unexpectedly.');
+      })
+      .catch(error => {
+        assert.deepEqual(error, messageResult);
+      });
+  });
+
+  it('validate error when no valid bot id from authed users', () => {
+    const result = slackReceive.getBotIdFromAuthedUsers(['bad-bot-id'], auth);
+    assert.equal(result, null);
+  });
+
+  it('validate error when server did not pass in verification token', () => {
+    delete messageParams.token;
+
+    return slackReceive
+      .main(messageParams)
+      .then(() => {
+        assert(false, 'Action succeeded unexpectedly.');
+      })
+      .catch(error => {
+        assert.deepEqual(error.message, 'Verification token is absent.');
       });
   });
 
@@ -314,7 +398,12 @@ describe('Slack Receive Unit Tests', () => {
 
     return nock(owHost)
       .get(`/api/v1/namespaces/${namespace}/packages/${packageName}`)
-      .reply(200, expectedOW);
+      .reply(200, expectedOW)
+      .post(uri => {
+        return uri.indexOf(`/api/v1/namespaces/${namespace}/actions`) === 0;
+      })
+      .query(true)
+      .reply(200, {});
   }
 
   function createCloudantMock() {

@@ -80,9 +80,9 @@ You can use either of two methods to deploy your workspace to a Slack app:
 
     **Note:** If you are not already signed in to your Slack workspace, you will be redirected to the sign-in page so you can enter your Slack workspace credentials. If this happens, you must run the `setup.sh` script again after you sign in.
 
-1.  After the script completes, copy the generated Slack redirect URL from the terminal window (look for a message that begins `Your Slack Redirect URL is:`.
+1.  When the script pauses, copy the generated Slack redirect URL from the terminal window (look for a message that begins `Your Slack Redirect URL is:`. Leave the script paused for now.
 
-1.  In the Slack app settings, click **OAuth & Permissions**.
+1.  In the Slack app settings in your browser, click **OAuth & Permissions**.
 
 1.  Under **Redirect URLs**, click **Add a new Redirect URL**, and paste in the redirect URL you copied from the terminal window. Click **Save URLs**.
 
@@ -101,5 +101,9 @@ You can use either of two methods to deploy your workspace to a Slack app:
 1.  Under **Enable Events**, paste in the request URL you copied from the terminal window. Toggle the switch at the top to **On**. After Slack has verified the URL, click **Save Changes**.
 
 1.  **Optional:** If you want to enable interactive components, click **Interactive Components**, and then click **Enable Interactive Components**. In the **Request URL** field, paste the same request URL you specified in the previous step, and then click **Enable Interactive Components**.
+
+1.  Go back to the terminal window and press Enter to resume the script.
+
+1.  When prompted in your browser, sign in to your Slack workspace and authorize the app.
 
 That's it. You're all set. You can now go to your Slack team and talk to your bot!

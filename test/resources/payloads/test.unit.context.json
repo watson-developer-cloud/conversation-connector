@@ -1,0 +1,562 @@
+{
+  "loadContextJson": {
+    "deleteCloudantFields": {
+      "withCloudantDocId": {
+        "params": {
+          "_id": "slack_1637923046218309_08e17ca1-5b33-487a-83c9-77a0f79b8c11_268440730303620",
+          "conversation_id": "123abc",
+          "system": {
+            "branch_exited": true,
+            "branch_exited_reason": "completed",
+            "dialog_request_counter": 1,
+            "dialog_stack": [
+              {
+                "dialog_node": "root"
+              }
+            ],
+            "dialog_turn_counter": 1
+          }
+        }
+      },
+      "withCloudantRev": {
+        "params": {
+          "_rev": "192-d9545b4f32cd9f9ffb4b7c8d466a5697",
+          "conversation_id": "123abc",
+          "system": {
+            "branch_exited": true,
+            "branch_exited_reason": "completed",
+            "dialog_request_counter": 1,
+            "dialog_stack": [
+              {
+                "dialog_node": "root"
+              }
+            ],
+            "dialog_turn_counter": 1
+          }
+        }
+      },
+      "withCloudantRevsInfo": {
+        "params": {
+          "_revs_info": [
+            {
+              "rev": "2-d9545b4f32cd9f9ffb4b7c8d466a5697",
+              "status": "available"
+            },
+            {
+              "rev": "1-4a703c16994e3e35ac2854a6fe58a92d",
+              "status": "deleted"
+            }
+          ],
+          "conversation_id": "123abc",
+          "system": {
+            "branch_exited": true,
+            "branch_exited_reason": "completed",
+            "dialog_request_counter": 1,
+            "dialog_stack": [
+              {
+                "dialog_node": "root"
+              }
+            ],
+            "dialog_turn_counter": 1
+          }
+        }
+      }
+    },
+    "getContext": {
+      "allOk": {
+        "request": {
+          "config": {
+            "cloudant_url": "https://pinkunicorns.cloudant.com",
+            "db": "conversation-context"
+          },
+          "key": "some-key"
+        },
+        "response": {
+          "conversation_id": "123abc",
+          "system": {
+            "branch_exited": true,
+            "branch_exited_reason": "completed",
+            "dialog_request_counter": 1,
+            "dialog_stack": [
+              {
+                "dialog_node": "root"
+              }
+            ],
+            "dialog_turn_counter": 1
+          }
+        }
+      },
+      "missingContext": {
+        "request": {
+          "config": {
+            "cloudant_url": "https://pinkunicorns.cloudant.com",
+            "db": "conversation-context"
+          },
+          "key": "some-new-key"
+        },
+        "response": {}
+      }
+    },
+    "main": {
+      "request": {
+        "conversation": {
+          "input": {
+            "text": "Turn on lights"
+          }
+        },
+        "raw_input_data": {
+          "cloudant_context_key": "slack_T5GDNP8TT_1aff54e4-caf5-4dff-93ec-502126146c87_U5H2D0KQC_D5RNZFSU9",
+          "provider": "slack",
+          "slack": {
+            "access_token": "xoxp-186464790945-187081019828-196275302867-9dxxxxxxxxxxxx",
+            "api_app_id": "A5SCQP3GX",
+            "authed_users": [
+              "U5T4J7PFG"
+            ],
+            "bot_access_token": "xoxb-197154261526-xxxxxxxxx",
+            "bot_user_id": "U5T4J7PFG",
+            "event": {
+              "channel": "D5RNZFSU9",
+              "event_ts": "1497301239.449298",
+              "text": "abcd",
+              "ts": "1497301239.449298",
+              "type": "message",
+              "user": "U5H2D0KQC"
+            },
+            "event_id": "Ev5RT8P21E",
+            "event_time": 1497301239,
+            "team_id": "T5GDNP8TT",
+            "token": "BIgkhBpaTkVc6Oul9lB3PvOJ",
+            "type": "event_callback"
+          }
+        }
+      },
+      "response": {
+        "conversation": {
+          "context": {},
+          "input": {
+            "text": "Turn on lights"
+          }
+        },
+        "raw_input_data": {
+          "cloudant_context_key": "slack_T5GDNP8TT_1aff54e4-caf5-4dff-93ec-502126146c87_U5H2D0KQC_D5RNZFSU9",
+          "provider": "slack",
+          "slack": {
+            "access_token": "xoxp-186464790945-187081019828-196275302867-9dxxxxxxxxxxxx",
+            "api_app_id": "A5SCQP3GX",
+            "authed_users": [
+              "U5T4J7PFG"
+            ],
+            "bot_access_token": "xoxb-197154261526-xxxxxxxxx",
+            "bot_user_id": "U5T4J7PFG",
+            "event": {
+              "channel": "D5RNZFSU9",
+              "event_ts": "1497301239.449298",
+              "text": "abcd",
+              "ts": "1497301239.449298",
+              "type": "message",
+              "user": "U5H2D0KQC"
+            },
+            "event_id": "Ev5RT8P21E",
+            "event_time": 1497301239,
+            "team_id": "T5GDNP8TT",
+            "token": "BIgkhBpaTkVc6Oul9lB3PvOJ",
+            "type": "event_callback"
+          }
+        }
+      }
+    }
+  },
+  "saveContextJson": {
+    "main": {
+      "request": {
+        "raw_input_data": {
+          "cloudant_context_key": "slack_T5GDNP8TT_1aff54e4-caf5-4dff-93ec-502126146c87_U5H2D0KQC_D5RNZFSU9",
+          "provider": "slack",
+          "slack": {
+            "access_token": "xoxp-186464790945-187081019828-196275302867-9dxxxxxxxxxxxx",
+            "api_app_id": "A5SCQP3GX",
+            "authed_users": [
+              "U5T4J7PFG"
+            ],
+            "bot_access_token": "xoxb-197154261526-xxxxxxxxx",
+            "bot_user_id": "U5T4J7PFG",
+            "event": {
+              "channel": "D5RNZFSU9",
+              "event_ts": "1497367081.514032",
+              "text": "hi",
+              "ts": "1497367081.514032",
+              "type": "message",
+              "user": "U5H2D0KQC"
+            },
+            "event_id": "Ev5T2JHU20",
+            "event_time": 1497367081,
+            "team_id": "T5GDNP8TT",
+            "token": "BIgkhBpaTkVc6Oul9lB3PvOJ",
+            "type": "event_callback"
+          }
+        },
+        "conversation": {
+          "context": {
+            "conversation_id": "123abc",
+            "system": {
+              "_node_output_map": {
+                "Anything else": [
+                  0
+                ]
+              },
+              "branch_exited": true,
+              "branch_exited_reason": "completed",
+              "dialog_request_counter": 1,
+              "dialog_stack": [
+                {
+                  "dialog_node": "root"
+                }
+              ],
+              "dialog_turn_counter": 1
+            }
+          },
+          "entities": [],
+          "input": {
+            "text": "hi"
+          },
+          "intents": [],
+          "output": {
+            "log_messages": [],
+            "nodes_visited": [
+              "Anything else"
+            ],
+            "text": [
+              "I didn't understand. You can try rephrasing."
+            ]
+          }
+        }
+      },
+      "responses": [
+        {},
+        {
+          "raw_input_data": {
+            "cloudant_context_key": "slack_T5GDNP8TT_1aff54e4-caf5-4dff-93ec-502126146c87_U5H2D0KQC_D5RNZFSU9",
+            "provider": "slack",
+            "slack": {
+              "access_token": "xoxp-186464790945-187081019828-196275302867-9dxxxxxxxxxxxx",
+              "api_app_id": "A5SCQP3GX",
+              "authed_users": [
+                "U5T4J7PFG"
+              ],
+              "bot_access_token": "xoxb-197154261526-xxxxxxxxx",
+              "bot_user_id": "U5T4J7PFG",
+              "event": {
+                "channel": "D5RNZFSU9",
+                "event_ts": "1497367081.514032",
+                "text": "hi",
+                "ts": "1497367081.514032",
+                "type": "message",
+                "user": "U5H2D0KQC"
+              },
+              "event_id": "Ev5T2JHU20",
+              "event_time": 1497367081,
+              "team_id": "T5GDNP8TT",
+              "token": "BIgkhBpaTkVc6Oul9lB3PvOJ",
+              "type": "event_callback"
+            }
+          },
+          "conversation": {
+            "context": {
+              "conversation_id": "123abc",
+              "system": {
+                "_node_output_map": {
+                  "Anything else": [
+                    0
+                  ]
+                },
+                "branch_exited": true,
+                "branch_exited_reason": "completed",
+                "dialog_request_counter": 1,
+                "dialog_stack": [
+                  {
+                    "dialog_node": "root"
+                  }
+                ],
+                "dialog_turn_counter": 1
+              }
+            },
+            "entities": [],
+            "input": {
+              "text": "hi"
+            },
+            "intents": [],
+            "output": {
+              "log_messages": [],
+              "nodes_visited": [
+                "Anything else"
+              ],
+              "text": [
+                "I didn't understand. You can try rephrasing."
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "setContext": {
+      "allOk": {
+        "request": {
+          "config": {
+            "cloudant_url": "https://pinkunicorns.cloudant.com",
+            "db": "conversation-context"
+          },
+          "doc": {
+            "conversation_id": "123abc",
+            "my_var": "ashima",
+            "system": {
+              "_node_output_map": {
+                "Anything else": [
+                  0
+                ]
+              },
+              "branch_exited": true,
+              "dialog_request_counter": 2,
+              "dialog_stack": [
+                {
+                  "dialog_node": "root"
+                },
+                {
+                  "dialog_node": "node1"
+                }
+              ],
+              "dialog_turn_counter": 2
+            }
+          },
+          "key": "some-key"
+        },
+        "responses": [
+          {
+            "conversation_id": "123abc",
+            "system": {
+              "_node_output_map": {
+                "Anything else": [
+                  0
+                ]
+              },
+              "branch_exited": true,
+              "branch_exited_reason": "completed",
+              "dialog_request_counter": 1,
+              "dialog_stack": [
+                {
+                  "dialog_node": "root"
+                }
+              ],
+              "dialog_turn_counter": 1
+            }
+          },
+          {
+            "conversation_id": "123abc",
+            "my_var": "ashima",
+            "system": {
+              "_node_output_map": {
+                "Anything else": [
+                  0
+                ]
+              },
+              "branch_exited": true,
+              "dialog_request_counter": 2,
+              "dialog_stack": [
+                {
+                  "dialog_node": "root"
+                },
+                {
+                  "dialog_node": "node1"
+                }
+              ],
+              "dialog_turn_counter": 2
+            }
+          }
+        ]
+      },
+      "insertNullContext": {
+        "request": {
+          "config": {
+            "cloudant_url": "https://pinkunicorns.cloudant.com",
+            "db": "conversation-context"
+          },
+          "doc": null,
+          "key": "some-key"
+        },
+        "responses": [
+          {},
+          {
+            "error": "bad_request",
+            "reason": "Document must be a JSON object"
+          }
+        ]
+      },
+      "missingContext": {
+        "request": {
+          "config": {
+            "cloudant_url": "https://pinkunicorns.cloudant.com",
+            "db": "conversation-context"
+          },
+          "doc": {
+            "conversation_id": "123abc",
+            "my_var": "ashima",
+            "system": {
+              "_node_output_map": {
+                "Anything else": [
+                  0
+                ]
+              },
+              "branch_exited": true,
+              "dialog_request_counter": 1,
+              "dialog_stack": [
+                {
+                  "dialog_node": "root"
+                }
+              ],
+              "dialog_turn_counter": 1
+            }
+          },
+          "key": "some-key"
+        },
+        "responses": [
+          {},
+          {
+            "conversation_id": "123abc",
+            "my_var": "ashima",
+            "system": {
+              "_node_output_map": {
+                "Anything else": [
+                  0
+                ]
+              },
+              "branch_exited": true,
+              "dialog_request_counter": 1,
+              "dialog_stack": [
+                {
+                  "dialog_node": "root"
+                }
+              ],
+              "dialog_turn_counter": 1
+            }
+          }
+        ]
+      },
+      "overwriteContextWithJsonArray": {
+        "request": {
+          "config": {
+            "cloudant_url": "https://pinkunicorns.cloudant.com",
+            "db": "conversation-context"
+          },
+          "doc": [],
+          "key": "some-key"
+        },
+        "responses": [
+          {
+            "conversation_id": "123abc",
+            "my_var": "ashima",
+            "system": {
+              "_node_output_map": {
+                "Anything else": [
+                  0
+                ]
+              },
+              "branch_exited": true,
+              "dialog_request_counter": 1,
+              "dialog_stack": [
+                {
+                  "dialog_node": "root"
+                }
+              ],
+              "dialog_turn_counter": 1
+            }
+          },
+          {
+            "error": "bad_request",
+            "reason": "Document must be a JSON object"
+          }
+        ]
+      },
+      "cloudantError": {
+        "request": {
+            "cloudant_url": "https://pinkunicorns.cloudant.com",
+            "cloudant_context_dbname": "conversation-context",
+            "doc": [],
+            "cloudant_context_key": "some-key"
+        },
+        "responses": [
+          {
+            "error": "some-cloudant-error-type",
+            "reason": "Some Cloudant error occured"
+          }
+        ]
+      }
+    },
+    "validateResponseParams": {
+      "withCloudantcloudant_context_dbname": {
+        "params": {
+          "raw_input_data": {
+            "cloudant_context_key": "slack_T5GDNP8TT_1aff54e4-caf5-4dff-93ec-502126146c87_U5H2D0KQC_D5RNZFSU9",
+            "provider": "slack",
+            "slack": {
+              "access_token": "xoxp-186464790945-187081019828-196275302867-9dxxxxxxxxxxxx",
+              "api_app_id": "A5SCQP3GX",
+              "authed_users": [
+                "U5T4J7PFG"
+              ],
+              "bot_access_token": "xoxb-197154261526-xxxxxxxxx",
+              "bot_user_id": "U5T4J7PFG",
+              "event": {
+                "channel": "D5RNZFSU9",
+                "event_ts": "1497367081.514032",
+                "text": "hi",
+                "ts": "1497367081.514032",
+                "type": "message",
+                "user": "U5H2D0KQC"
+              },
+              "event_id": "Ev5T2JHU20",
+              "event_time": 1497367081,
+              "team_id": "T5GDNP8TT",
+              "token": "BIgkhBpaTkVc6Oul9lB3PvOJ",
+              "type": "event_callback"
+            }
+          },
+          "conversation": {
+            "context": {
+              "conversation_id": "123abc",
+              "system": {
+                "_node_output_map": {
+                  "Anything else": [
+                    0
+                  ]
+                },
+                "branch_exited": true,
+                "branch_exited_reason": "completed",
+                "dialog_request_counter": 1,
+                "dialog_stack": [
+                  {
+                    "dialog_node": "root"
+                  }
+                ],
+                "dialog_turn_counter": 1
+              }
+            },
+            "entities": [],
+            "input": {
+              "text": "hi"
+            },
+            "intents": [],
+            "output": {
+              "log_messages": [],
+              "nodes_visited": [
+                "Anything else"
+              ],
+              "text": [
+                "I didn't understand. You can try rephrasing."
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

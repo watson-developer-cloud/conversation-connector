@@ -67,7 +67,10 @@ function getSlackChannel(params) {
  * @return {string}      - Slack post endpoint URL
  */
 function getSlackPostUrl(params) {
-  return params.raw_input_data.slack.payload ? urlChatUpdate : urlChatPost;
+  return params.raw_input_data.slack.payload
+    ? JSON.parse(params.raw_input_data.slack.payload).response_url ||
+        urlChatUpdate
+    : urlChatPost;
 }
 
 /**

@@ -41,7 +41,9 @@ function main(params) {
         }
       ],
       raw_input_data: {
+        bot_id: params.bot_id,
         provider: 'slack',
+        slack: params.slack,
         auth
       }
     });
@@ -76,6 +78,9 @@ function validateParameters(params) {
 
   // Required: Slack original message
   assert(payload.original_message, 'No Slack original message provided.');
+
+  // Required: Bot ID
+  assert(params.bot_id, 'No bot ID provided.');
 
   // Required: auth
   assert(params.auth, 'No auth provided.');

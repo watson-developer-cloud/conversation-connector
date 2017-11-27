@@ -33,9 +33,6 @@ const actionFacebookReceive = require('./../../../channels/facebook/receive/inde
 
 const actions = [actionSlackDeploy, actionSlackReceive, actionFacebookReceive];
 
-const errorNoCloudantUrl = 'cloudant_url absent in cloudant credentials.';
-const errorNoCloudantAuthDbName = 'cloudant_auth_dbname absent in cloudant credentials.';
-const errorNoCloudantAuthKey = 'cloudant_auth_key absent in cloudant credentials.';
 const errorBadCloudantUrl = 'invalid url';
 
 describe('Auth Db:: Loading Auth Pre-requisites', () => {
@@ -226,52 +223,6 @@ describe('Auth Db:: retrieveDoc()', () => {
         .catch(e => {
           assert(false, e);
         });
-    });
-  });
-});
-
-describe('Auth Db:: checkCloudantCredentials()', () => {
-  actions.forEach(action => {
-    it(`${action.name}: throws AssertionError when cloudant_url missing.`, () => {
-      const func = action.checkCloudantCredentials;
-
-      try {
-        func({
-          cloudant_auth_dbname: 'abc',
-          cloudant_auth_key: '123'
-        });
-      } catch (e) {
-        assert.equal('AssertionError', e.name);
-        assert.equal(e.message, errorNoCloudantUrl);
-      }
-    });
-
-    it(`${action.name}: throws AssertionError when cloudant_auth_dbname missing.`, () => {
-      const func = action.checkCloudantCredentials;
-
-      try {
-        func({
-          cloudant_url: 'https://some-cloudant-url.com',
-          cloudant_auth_key: '123'
-        });
-      } catch (e) {
-        assert.equal('AssertionError', e.name);
-        assert.equal(e.message, errorNoCloudantAuthDbName);
-      }
-    });
-
-    it(`${action.name}: throws AssertionError when cloudant_auth_key missing.`, () => {
-      const func = action.checkCloudantCredentials;
-
-      try {
-        func({
-          cloudant_url: 'https://some-cloudant-url.com',
-          cloudant_auth_dbname: 'abc'
-        });
-      } catch (e) {
-        assert.equal('AssertionError', e.name);
-        assert.equal(e.message, errorNoCloudantAuthKey);
-      }
     });
   });
 });

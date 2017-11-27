@@ -1,0 +1,154 @@
+{
+  "get_conversation_creds": {
+      "resources": [
+        {
+          "entity": {
+            "credentials": {
+              "username": "sample_username",
+              "password": "sample_password"
+            }
+          }
+        }
+      ]
+    },
+  "get_organization_id": {
+    "resources": [
+      {
+        "entity": {
+          "name": "sampleorganization"
+        },
+        "metadata": {
+          "guid": "sampleorgguid"
+        }
+      }
+    ]
+  },
+  "get_space_id": {
+    "resources": [
+      {
+        "entity": {
+          "name": "samplespace"
+        },
+        "metadata": {
+          "guid": "samplespaceguid"
+        }
+      }
+    ]
+  },
+  "get_service_id": {
+    "resources": [
+      {
+        "entity": {
+          "unique_id": "cloudant"
+        },
+        "metadata": {
+          "guid": "serviceguid"
+        }
+      }
+    ]
+  },
+  "get_service_plan_id": {
+    "resources": [
+      {
+        "entity": {
+          "unique_id": "cloudant-lite"
+        },
+        "metadata": {
+          "guid": "planguid"
+        }
+      }
+    ]
+  },
+  "get_instance_id": {
+    "resources": [
+      {
+        "entity": {
+          "service_plan_guid": "planguid",
+          "space_guid": "samplespaceguid"
+        },
+        "metadata": {
+          "guid": "instanceguid"
+        }
+      }
+    ]
+  },
+  "get_instance_key_url": {
+    "resources": [
+      {
+        "entity": {
+          "name": "conversation-connector-key",
+          "credentials": {
+            "url": "https://api.ng.bluemix.net/v2/sample_instance_key_url"
+          }
+        }
+      }
+    ]
+  },
+  "get_cloudant_db": {
+    "update_seq": "xxxx",
+    "db_name": "contextdb",
+    "sizes": {
+      "file": 1,
+      "external": 2,
+      "active": 3
+    },
+    "purge_seq": 0,
+    "other": {
+      "data_size": 4
+    },
+    "doc_del_count": 0,
+    "doc_count": 5,
+    "disk_size": 6,
+    "disk_format_version": 7,
+    "data_size": 8,
+    "compact_running": false,
+    "instance_start_time": "9"
+  },
+  "create_cloudant_instance": {
+    "metadata": {
+      "guid": "sampleguid"
+    }
+  },
+  "create_cloudant_instance_key": {
+    "entity": {
+      "credentials": {
+        "url": "https://api.ng.bluemix.net/v2/sample_instance_key_url"
+      }
+    }
+  },
+  "create_context_database": {
+    "update_seq": "xxxx",
+    "db_name": "contextdb",
+    "sizes": {
+      "file": 1,
+      "external": 2,
+      "active": 3
+    },
+    "purge_seq": 0,
+    "other": {
+      "data_size": 4
+    },
+    "doc_del_count": 0,
+    "doc_count": 5,
+    "disk_size": 6,
+    "disk_format_version": 7,
+    "data_size": 8,
+    "compact_running": false,
+    "instance_start_time": "9"
+  },
+  "get_bad_resource": {
+    "resources": [
+      {
+        "entity": {
+          "name": "badresource"
+        },
+        "metadata": {
+          "guid": "sampleorgguid"
+        }
+      }
+    ]
+  },
+  "get_no_resource": {
+    "resources": []
+  }
+}
