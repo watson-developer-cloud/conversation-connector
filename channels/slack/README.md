@@ -23,7 +23,7 @@ You can use either of two methods to deploy your workspace to a Slack app:
 
     `cf login -a https://api.ng.bluemix.net/`
 
-    Select the Bluemix organization and space where you want to deploy.
+    Select the IBM Cloud organization and space where you want to deploy.
 
     **Note:** Currently, only the US South region is supported.
 
