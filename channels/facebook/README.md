@@ -2,7 +2,7 @@
 
 You can use either of two methods to deploy your workspace to a Facebook Messenger app:
 
-- Use [automated deployment](#automated-deployment) if you want to quickly deploy your app by filling out a form with the required information. The deployment process is automated using a Bluemix DevOps toolchain.
+- Use [automated deployment](#automated-deployment) if you want to quickly deploy your app by filling out a form with the required information. The deployment process is automated using a IBM Cloud DevOps toolchain.
 
 - Use [manual deployment](#manual-deployment) if you want to deploy your app by modifying configuration files and running scripts. You might want to use this method if you are customizing the Conversation connector, or if you need to repair or update components of an existing deployment.
 
@@ -10,25 +10,25 @@ You can use either of two methods to deploy your workspace to a Facebook Messeng
 
 ## Automated deployment
 
-1.  If you are not already logged in to IBM Bluemix, [log in](https://console.bluemix.net/login) before continuing.
+1.  If you are not already logged in to IBM Cloud, [log in](https://console.bluemix.net/login) before continuing.
 
 1.  Click this button to launch the deployment. (Open the link in a new tab or window, so you can leave this page open.)
 
-    [![Deploy to Bluemix](https://bluemix.net/deploy/button.png)](https://console.bluemix.net/devops/setup/deploy/?repository=https://github.com/watson-developer-cloud/conversation-connector)
+    [![Deploy to IBM Cloud](https://bluemix.net/deploy/button.png)](https://console.bluemix.net/devops/setup/deploy/?repository=https://github.com/watson-developer-cloud/conversation-connector)
 
-1.  Under **Tool Integrations**, click the GitHub tile, and then click **Authorize** to grant Bluemix access to your GitHub account. Log in with your GitHub credentials and complete the authorization process.
+1.  Under **Tool Integrations**, click the GitHub tile, and then click **Authorize** to grant IBM Cloud access to your GitHub account. Log in with your GitHub credentials and complete the authorization process.
 
-    **Note:** If you do not see an **Authorize** button, IBM Bluemix might already be authorized. In this case, you can skip this step.
+    **Note:** If you do not see an **Authorize** button, IBM Cloud might already be authorized. In this case, you can skip this step.
 
 1.  Verify the values in the GitHub fields. In most cases, you can accept the default values. However, if you already have a GitHub repository called `conversation-connector`, you must edit the value in the **Repository Name** field to specify a different name for the new repository that will be created.
 
 1.  Under **Tool Integrations**, click the Delivery Pipeline tile.
 
-1.  Make sure the Bluemix US South region is selected. Other regions are not currently supported.
+1.  Make sure the IBM Cloud US South region is selected. Other regions are not currently supported.
 
-1.  Select the Bluemix organization and space where you want to deploy. This space will be used to deploy the IBM Cloud Functions artifacts, as well as a Cloudant Lite service instance.
+1.  Select the IBM Cloud organization and space where you want to deploy. This space will be used to deploy the IBM Cloud Functions artifacts, as well as a Cloudant Lite service instance.
 
-    **Note:** Make sure your Bluemix account has an open slot for the new Cloudant Lite service instance (if it does not already exist from a previous deployment).
+    **Note:** Make sure your IBM Cloud account has an open slot for the new Cloudant Lite service instance (if it does not already exist from a previous deployment).
 
 1.  In the **Deployment name** field, type a name for your deployment. This name will help you find your Cloud Functions assets later. You can type any string, but only alphanumeric characters (A-Z and 0-9) are kept.
 
@@ -89,7 +89,7 @@ That's it. You're all set. You can now go to Facebook Messenger, search for your
 
     `cf login -a https://api.ng.bluemix.net/`
 
-    Select the Bluemix organization and space where you want to deploy.
+    Select the IBM Cloud organization and space where you want to deploy.
 
     **Note:** Currently, only the US South region is supported.
 
