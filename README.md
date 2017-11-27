@@ -196,7 +196,7 @@ In order to successfully deploy all assets, especially the Cloudant database, yo
 
 - Not enough IBM Cloud service instances available
 
-Deployment requires a Cloudant NoSQL Lite instance named `conversation-connector`. If this service instance does not already exist, and there are not enough free service slots in the user's bluemix account to create it, the deployment fails. If this happens, try a different IBM Cloud account, or remove some unnecessary service instances, so at least one unused slot is available.
+Deployment requires a Cloudant NoSQL Lite instance named `conversation-connector`. If this service instance does not already exist, and there are not enough free service slots in the user's IBM Cloud account to create it, the deployment fails. If this happens, try a different IBM Cloud account, or remove some unnecessary service instances, so at least one unused slot is available.
 
 - Invalid keys or credentials
 
