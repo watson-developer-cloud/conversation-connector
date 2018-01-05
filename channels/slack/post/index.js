@@ -127,9 +127,6 @@ function validateParameters(params) {
   // Required: Slack channel
   assert(params.channel, 'Channel not provided.');
 
-  // Required: Message to send
-  assert(params.text, 'Message text not provided.');
-
   // Required: Bot ID
   assert(
     params.raw_input_data && params.raw_input_data.bot_id,

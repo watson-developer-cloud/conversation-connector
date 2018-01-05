@@ -28,8 +28,8 @@ const recipient = {
 };
 const text = 'hello, world!';
 
-const errorNoConversation = 'No conversation output.';
-const errorNoOutputMessage = 'No conversation output text.';
+const errorNoConversationOutput = 'No conversation output.';
+const errorNoOutputMessage = 'No facebook/generic/text field in conversation.output.';
 const errorNoRawInputData = 'No raw input data found.';
 const errorNoFacebookInputData = 'No Facebook input data found.';
 const errorNoConvInputData = 'No Conversation input data found.';
@@ -80,6 +80,118 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
       }
     }
   };
+
+  const genericFromConversation = [
+    {
+      response_type: 'text',
+      text
+    },
+    {
+      response_type: 'image',
+      source: 'http://my-website.com/path/to/image.jpg',
+      title: 'Image title',
+      description: ' '
+    },
+    {
+      response_type: 'option',
+      title: 'Select a location',
+      options: [
+        {
+          label: 'Location 1',
+          value: 'Location 1'
+        },
+        {
+          label: 'Location 2',
+          value: 'Location 2'
+        },
+        {
+          label: 'Location 3',
+          value: 'Location 3'
+        }
+      ]
+    }
+  ];
+
+  const genericForFacebook = [
+    {
+      attachment: {
+        type: 'template',
+        payload: {
+          template_type: 'generic',
+          elements: [
+            {
+              title: text,
+              subtitle: ' '
+            }
+          ]
+        }
+      }
+    },
+    {
+      attachment: {
+        type: 'template',
+        payload: {
+          template_type: 'generic',
+          elements: [
+            {
+              title: genericFromConversation[1].title,
+              image_url: genericFromConversation[1].source,
+              subtitle: genericFromConversation[1].description
+            }
+          ]
+        }
+      }
+    },
+    {
+      attachment: {
+        type: 'template',
+        payload: {
+          template_type: 'generic',
+          elements: [
+            {
+              title: genericFromConversation[2].title,
+              buttons: genericFromConversation[2].options.map(e => {
+                const el = {};
+                el.type = 'postback';
+                el.title = e.label;
+                el.payload = ' ';
+                return el;
+              })
+            }
+          ]
+        }
+      }
+    },
+    {
+      attachment: {
+        type: 'template',
+        payload: {
+          template_type: 'generic',
+          elements: [
+            {
+              title: text,
+              subtitle: ' '
+            },
+            {
+              title: genericFromConversation[1].title,
+              image_url: genericFromConversation[1].source,
+              subtitle: genericFromConversation[1].description
+            },
+            {
+              title: genericFromConversation[2].title,
+              buttons: genericFromConversation[2].options.map(e => {
+                const el = {};
+                el.type = 'postback';
+                el.title = e.label;
+                el.payload = ' ';
+                return el;
+              })
+            }
+          ]
+        }
+      }
+    }
+  ];
 
   const textRes = {
     raw_input_data: {
@@ -234,10 +346,97 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
     );
   });
 
-  it('validate normalization when neither an interactive message is detected nor a text message is detected', () => {
-    return actionNormForFacebook(interactiveMsgParamsWithMsgObj).then(
+  it('validate normalization works for generic response_type - text', () => {
+    delete textMsgParams.conversation.output.text;
+
+    delete textRes.raw_output_data.conversation.output.text;
+    delete textRes.raw_output_data.conversation.output.facebook;
+
+    // Add a generic text response from Conversation
+    textMsgParams.conversation.output.generic = genericFromConversation[0];
+
+    textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
+    delete textRes.message;
+    textRes.message = genericForFacebook[0];
+
+    return actionNormForFacebook(textMsgParams).then(
       result => {
-        assert.deepEqual(result, interactiveResWithMsgObj);
+        assert.deepEqual(result, textRes);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - image', () => {
+    delete textMsgParams.conversation.output.text;
+    delete textMsgParams.conversation.output.facebook;
+
+    delete textRes.raw_output_data.conversation.output.text;
+    delete textRes.raw_output_data.conversation.output.facebook;
+    delete textRes.text;
+
+    // Add a generic image response from Conversation
+    textMsgParams.conversation.output.generic = genericFromConversation[1];
+
+    textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
+    delete textRes.message;
+    textRes.message = genericForFacebook[1];
+
+    return actionNormForFacebook(textMsgParams).then(
+      result => {
+        assert.deepEqual(result, textRes);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - option', () => {
+    delete textMsgParams.conversation.output.text;
+    delete textMsgParams.conversation.output.facebook;
+
+    delete textRes.raw_output_data.conversation.output.text;
+    delete textRes.raw_output_data.conversation.output.facebook;
+    delete textRes.text;
+
+    // Add a generic option response from Conversation
+    textMsgParams.conversation.output.generic = genericFromConversation[2];
+
+    textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
+    delete textRes.message;
+    textRes.message = genericForFacebook[2];
+
+    return actionNormForFacebook(textMsgParams).then(
+      result => {
+        assert.deepEqual(result, textRes);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - mixed', () => {
+    delete textMsgParams.conversation.output.text;
+    delete textMsgParams.conversation.output.facebook;
+
+    delete textRes.raw_output_data.conversation.output.text;
+    delete textRes.raw_output_data.conversation.output.facebook;
+    delete textRes.text;
+
+    // Add a generic mixed response from Conversation
+    textMsgParams.conversation.output.generic = genericFromConversation;
+
+    textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
+    delete textRes.message;
+    textRes.message = genericForFacebook[3];
+
+    return actionNormForFacebook(textMsgParams).then(
+      result => {
+        assert.deepEqual(result, textRes);
       },
       error => {
         assert(false, error);
@@ -246,20 +445,20 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
   });
 
   it('validate error when no conversation data', () => {
-    delete textMsgParams.conversation;
+    delete textMsgParams.conversation.output;
 
     return actionNormForFacebook(textMsgParams).then(
       () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
       error => {
-        assert.equal(error, errorNoConversation);
+        assert.equal(error, errorNoConversationOutput);
       }
     );
   });
 
   it('validate error when no conversation output', () => {
-    delete textMsgParams.conversation.output;
+    delete textMsgParams.conversation.output.text;
 
     return actionNormForFacebook(textMsgParams).then(
       () => {

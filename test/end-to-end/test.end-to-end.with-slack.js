@@ -28,6 +28,9 @@ const buttonMessageInputText = 'Buy me a shirt please.';
 const buttonMessageResponse = 'What shirt size would you like?';
 const buttonMessageUpdate = 'Sorry, the store is out of medium shirts.';
 
+const msgShowMultimedia = 'Display multimedia response';
+const multiModalTextReply = 'Here is your multi-modal response.';
+
 const envParams = process.env;
 
 const cloudantUrl = process.env.__TEST_CLOUDANT_URL;
@@ -71,6 +74,7 @@ describe('End-to-End tests: with Slack package', () => {
   let expectedResult;
   let expectedPipelineResult;
   let attachmentData;
+  let expectedAttachmentGenericData;
   let attachmentPayload;
 
   const auth = {
@@ -173,6 +177,36 @@ describe('End-to-End tests: with Slack package', () => {
         callback_id: 'shirt_size'
       }
     ];
+    expectedAttachmentGenericData = [
+      {
+        image_url: 'https://a.slack-edge.com/66f9/img/api/attachment_image.png',
+        pretext: 'Image description',
+        title: 'Image title'
+      },
+      {
+        text: 'Choose your location',
+        actions: [
+          {
+            name: 'name',
+            type: 'button',
+            label: 'Location 1',
+            value: 'Location 1'
+          },
+          {
+            name: 'name',
+            type: 'button',
+            label: 'Location 2',
+            value: 'Location 2'
+          },
+          {
+            name: 'name',
+            type: 'button',
+            label: 'Location 3',
+            value: 'Location 3'
+          }
+        ]
+      }
+    ];
 
     attachmentPayload = {
       actions: [
@@ -239,7 +273,7 @@ describe('End-to-End tests: with Slack package', () => {
   });
 
   it('validate when conversation is text input to text output', () => {
-    const deploymentName = 'testflex-endtoend-slack-nocontext';
+    const deploymentName = `${pipelineName}-endtoend-slack-nocontext`;
 
     return clearContextDb(cloudantUrl, 'contextdb')
       .then(() => {
@@ -296,7 +330,7 @@ describe('End-to-End tests: with Slack package', () => {
     .retries(10);
 
   it('validate context pipeline works for a single Conversation turn', () => {
-    const deploymentName = 'testflex-endtoend-slack-withcontext';
+    const deploymentName = `${pipelineName}-endtoend-slack-withcontext`;
 
     return clearContextDb(cloudantUrl, 'contextdb')
       .then(() => {
@@ -353,7 +387,7 @@ describe('End-to-End tests: with Slack package', () => {
     .retries(10);
 
   it('validate context pipeline works for multiple Conversation turns', () => {
-    const deploymentName = 'testflex-endtoend-slack-withcontext';
+    const deploymentName = `${pipelineName}-endtoend-slack-withcontext`;
 
     return (
       clearContextDb(cloudantUrl, 'contextdb')
@@ -460,7 +494,7 @@ describe('End-to-End tests: with Slack package', () => {
     .retries(10);
 
   it('validate when conversation is text to attached message', () => {
-    const deploymentName = 'testflex-endtoend-slack-withcontext';
+    const deploymentName = `${pipelineName}-endtoend-slack-withcontext`;
 
     return (
       clearContextDb(cloudantUrl, 'contextdb')
@@ -581,7 +615,7 @@ describe('End-to-End tests: with Slack package', () => {
     .retries(10);
 
   it('validate when conversation is attached message to message update', () => {
-    const deploymentName = 'testflex-endtoend-slack-withcontext';
+    const deploymentName = `${pipelineName}-endtoend-slack-withcontext`;
 
     return (
       clearContextDb(cloudantUrl, 'contextdb')
@@ -759,6 +793,131 @@ describe('End-to-End tests: with Slack package', () => {
         })
     );
   })
+    .timeout(30000)
+    .retries(10);
+
+  it(
+    'validate when conversation is text input to generic multi-modal output',
+    () => {
+      const deploymentName = `${pipelineName}-endtoend-slack-withcontext`;
+
+      return (
+        clearContextDb(cloudantUrl, 'contextdb')
+          .then(() => {
+            // cloudant clear context calls are synchronous,
+            //  so a wait period is added to allow for the context database to be cleared
+            return sleep(SLEEP_TIME);
+          })
+          // first conversation turn
+          .then(() => {
+            return ow.actions.invoke({
+              name: `${deploymentName}_slack/receive`,
+              blocking: true,
+              result: true,
+              params
+            });
+          })
+          .then(result => {
+            expectedResult.slack.event.text = params.event.text;
+            // assert slack/receive result is correct
+            const filteredResult = result;
+            delete filteredResult.auth._id;
+            delete filteredResult.auth._rev;
+            delete filteredResult.auth._revs_info;
+            assert.deepEqual(filteredResult, expectedResult);
+          })
+          .then(() => {
+            // cloudant clear context calls are synchronous,
+            //  so a wait period is added to allow for the context database to be cleared
+            return sleep(SLEEP_TIME);
+          })
+          .then(() => {
+            // assert pipeline result is correct
+            return ow.activations.list();
+          })
+          .then(activations => {
+            for (let i = 0; i < activations.length; i += 1) {
+              if (activations[i].name === deploymentName) {
+                return activations[i].activationId;
+              }
+            }
+            throw new Error('No activations found.');
+          })
+          .then(activationId => {
+            return ow.activations.get(activationId);
+          })
+          .then(res => {
+            const response = res.response.result;
+            if (response.error) {
+              throw new Error(JSON.stringify(response.error));
+            }
+            return response;
+          })
+          .then(res => {
+            assert.deepEqual(res, expectedPipelineResult);
+          })
+          .catch(error => {
+            assert(false, error);
+          })
+          // second conversation turn
+          .then(() => {
+            params.event.text = msgShowMultimedia;
+
+            expectedResult.slack.event.text = params.event.text;
+
+            return ow.actions.invoke({
+              name: `${deploymentName}_slack/receive`,
+              blocking: true,
+              result: true,
+              params
+            });
+          })
+          .then(result => {
+            // assert slack/receive is correct
+            const filteredResult = result;
+            delete filteredResult.auth._id;
+            delete filteredResult.auth._rev;
+            delete filteredResult.auth._revs_info;
+            assert.deepEqual(filteredResult, expectedResult);
+          })
+          .then(() => {
+            // cloudant clear context calls are synchronous,
+            //  so a wait period is added to allow for the context database to be cleared
+            return sleep(SLEEP_TIME);
+          })
+          .then(() => {
+            // assert pipeline result is correct
+            return ow.activations.list();
+          })
+          .then(activations => {
+            for (let i = 0; i < activations.length; i += 1) {
+              if (activations[i].name === deploymentName) {
+                return activations[i].activationId;
+              }
+            }
+            throw new Error('No activations found.');
+          })
+          .then(activationId => {
+            return ow.activations.get(activationId);
+          })
+          .then(res => {
+            const response = res.response.result;
+            if (response.error) {
+              throw new Error(JSON.stringify(response.error));
+            }
+            return response;
+          })
+          .then(res => {
+            expectedPipelineResult.text = multiModalTextReply;
+            expectedPipelineResult.attachments = expectedAttachmentGenericData;
+            assert.deepEqual(res, expectedPipelineResult);
+          })
+          .catch(error => {
+            assert(false, error);
+          })
+      );
+    }
+  )
     .timeout(30000)
     .retries(10);
 

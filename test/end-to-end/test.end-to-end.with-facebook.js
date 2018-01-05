@@ -21,13 +21,28 @@ const openwhisk = require('openwhisk');
 
 const safeExtractErrorMessage = require('./../utils/helper-methods.js').safeExtractErrorMessage;
 
+const msgHelloWorld = 'hello, world!';
+const msgHi = 'hi';
+const msgTurnOnLights = 'Turn on the lights';
+const msgShowMultimedia = 'Display multimedia response';
+
 const carDashboardReplyWelcome = 'Hi. It looks like a nice drive today. What would you like me to do?  ';
 const carDashboardReplyLights = "I'll turn on the lights for you.";
 const carDashboardReplyHelp = 'Hello! What can I help you with?';
 
+const multimodalReply = 'Here is your multi-modal response.';
+
+const shaMap = {
+  'hello, world!': 'sha1=7022aaa4676f7355e712d2427e204ff3f7be0e91',
+  hi: 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738',
+  'Turn on the lights': 'sha1=dc7583f847527eccd75defd236e8daa302abb448',
+  'Display multimedia response': 'sha=c9f86768a3878fdec6f9c6b0da48ca1b7d47c8a4'
+};
+
 const envParams = process.env;
 
 const pipelineName = envParams.__TEST_PIPELINE_NAME;
+const recipientId = envParams.__TEST_FACEBOOK_RECIPIENT_ID;
 
 /** Function allows tests to sleep for certain amount of time
 */
@@ -99,7 +114,7 @@ describe('End-to-End tests: Facebook as channel package', () => {
       sub_pipeline: actionFacebookPipeline,
       batched_messages: actionFacebookBatchedMessages,
       __ow_headers: {
-        'x-hub-signature': 'sha1=7022aaa4676f7355e712d2427e204ff3f7be0e91'
+        'x-hub-signature': shaMap[msgHelloWorld]
       },
       object: 'page',
       entry: [
@@ -115,7 +130,7 @@ describe('End-to-End tests: Facebook as channel package', () => {
                 id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
               },
               message: {
-                text: 'hello, world!'
+                text: msgHelloWorld
               }
             }
           ]
@@ -167,7 +182,7 @@ describe('End-to-End tests: Facebook as channel package', () => {
       .then(successActivationId => {
         // Sleep for 10 seconds to ensure that the activation id
         // has been created
-        sleep(10000).then(() => {
+        sleep(20000).then(() => {
           // After the wait, get the response of the activation
           return ow.activations
             .get({
@@ -227,7 +242,7 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
   const expectedBatchedResult = {
     failedActionInvocations: [
       {
-        errorMessage: `Recipient id: 185643828639058 , Sender id: undefined -- POST https://openwhisk.ng.bluemix.net:443/api/v1/namespaces/${process.env.__OW_NAMESPACE}/actions/test-pipeline-facebook?blocking=true Returned HTTP 502 (Bad Gateway) --> "No Facebook sender_id found in raw data."`,
+        errorMessage: `Recipient id: ${recipientId} , Sender id: undefined -- POST https://openwhisk.ng.bluemix.net:443/api/v1/namespaces/${process.env.__OW_NAMESPACE}/actions/test-pipeline-facebook?blocking=true Returned HTTP 502 (Bad Gateway) --> "No Facebook sender_id found in raw data."`,
         activationId: ''
       }
     ],
@@ -266,7 +281,7 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
       sub_pipeline: actionFacebookPipeline,
       batched_messages: actionFacebookBatchedMessages,
       __ow_headers: {
-        'x-hub-signature': 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738'
+        'x-hub-signature': shaMap[msgHi]
       },
       object: 'page',
       entry: [
@@ -281,7 +296,7 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
               },
               timestamp: 1458692752467,
               message: {
-                text: 'hi'
+                text: msgHi
               }
             },
             {
@@ -293,7 +308,7 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
               },
               timestamp: 1458692752468,
               message: {
-                text: 'hi'
+                text: msgHi
               }
             }
           ]
@@ -311,7 +326,7 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
               },
               timestamp: 1458692752488,
               message: {
-                text: 'hi'
+                text: msgHi
               }
             }
           ]
@@ -362,7 +377,7 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
       .then(successActivationId => {
         // Sleep for 10 seconds to ensure that the activation id
         // has been created
-        sleep(10000).then(() => {
+        sleep(15000).then(() => {
           // After the wait, get the response of the activation
           ow.activations
             .get({
@@ -454,7 +469,7 @@ describe('End-to-End tests: Facebook context package works', () => {
     params = {
       sub_pipeline: contextPipeline,
       __ow_headers: {
-        'x-hub-signature': 'sha1=7022aaa4676f7355e712d2427e204ff3f7be0e91'
+        'x-hub-signature': shaMap[msgHelloWorld]
       },
       object: 'page',
       entry: [
@@ -470,7 +485,7 @@ describe('End-to-End tests: Facebook context package works', () => {
                 id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
               },
               message: {
-                text: 'hello, world!'
+                text: msgHelloWorld
               }
             }
           ]
@@ -589,11 +604,9 @@ describe('End-to-End tests: Facebook context package works', () => {
       )
       .then(() => {
         // Change the input text for the second turn.
-        params.entry[0].messaging[0].message.text = 'Turn on the lights';
+        params.entry[0].messaging[0].message.text = msgTurnOnLights;
         // Change the signature header value for the second turn.
-        params.__ow_headers[
-          'x-hub-signature'
-        ] = 'sha1=dc7583f847527eccd75defd236e8daa302abb448';
+        params.__ow_headers['x-hub-signature'] = shaMap[msgTurnOnLights];
         // Invoke the context pipeline sequence again.
         // The context package should read the updated context from the previous turn.
         return ow.actions.invoke({
@@ -646,4 +659,153 @@ describe('End-to-End tests: Facebook context package works', () => {
         return e;
       });
   }).timeout(60000);
+});
+
+describe('End-to-End tests: Multimodal messages work', () => {
+  const ow = openwhisk();
+
+  const facebookWebhook = `${pipelineName}_facebook/receive`;
+  const contextPipeline = 'test-pipeline-context-facebook';
+  let params = {};
+
+  const expAfterTurn1 = {
+    params: {
+      message: {
+        attachment: {
+          type: 'template',
+          payload: {
+            elements: [
+              {
+                title: multimodalReply,
+                subtitle: ' '
+              },
+              {
+                title: 'Image title',
+                subtitle: 'Image description',
+                image_url: 'https://a.slack-edge.com/66f9/img/api/attachment_image.png'
+              },
+              {
+                title: 'Choose your location',
+                buttons: [
+                  {
+                    type: 'postback',
+                    title: 'Location 1',
+                    payload: ' '
+                  },
+                  {
+                    type: 'postback',
+                    title: 'Location 2',
+                    payload: ' '
+                  },
+                  {
+                    type: 'postback',
+                    title: 'Location 3',
+                    payload: ' '
+                  }
+                ]
+              }
+            ],
+            template_type: 'generic'
+          }
+        }
+      },
+      recipient: {
+        id: envParams.__TEST_FACEBOOK_SENDER_ID
+      }
+    },
+    text: 200,
+    url: 'https://graph.facebook.com/v2.6/me/messages'
+  };
+
+  beforeEach(() => {
+    params = {
+      sub_pipeline: contextPipeline,
+      __ow_headers: {
+        'x-hub-signature': shaMap[msgShowMultimedia]
+      },
+      object: 'page',
+      entry: [
+        {
+          id: envParams.__TEST_FACEBOOK_SENDER_ID,
+          time: 1458692752478,
+          messaging: [
+            {
+              sender: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
+              message: {
+                text: msgShowMultimedia
+              }
+            }
+          ]
+        }
+      ]
+    };
+  });
+
+  /* Under validated circumstances, starter-code package should correctly handle
+  generic multi-media replies from Conversation by translating them
+  to Facebook-understandable messages.
+  */
+  it(
+    'validate that generic Conversation responses are properly translated to Facebook format',
+    () => {
+      let actId1 = 'xxxxx';
+      return ow.actions
+        .invoke({
+          name: facebookWebhook,
+          result: true,
+          blocking: true,
+          params
+        })
+        .then(
+          success => {
+            try {
+              // Get activation of the subpipeline invocation
+              actId1 = success.activationId;
+              return sleep(10000);
+            } catch (e) {
+              return assert(false, safeExtractErrorMessage(e));
+            }
+          },
+          error => {
+            return assert(false, safeExtractErrorMessage(error));
+          }
+        )
+        .then(() => {
+          // After the wait, get the response of the activation
+          return ow.activations.get({
+            activationId: actId1,
+            blocking: true
+          });
+        })
+        .then(
+          actResult => {
+            try {
+              if (actResult.response.result) {
+                return assert.deepEqual(
+                  actResult.response.result,
+                  expAfterTurn1
+                );
+              }
+              return assert(
+                false,
+                'Cloud Functions Action did not return a reponse'
+              );
+            } catch (e) {
+              return assert(false, safeExtractErrorMessage(e));
+            }
+          },
+          error => {
+            return assert(false, safeExtractErrorMessage(error));
+          }
+        )
+        .catch(e => {
+          return e;
+        });
+    }
+  ).timeout(60000);
 });
