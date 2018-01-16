@@ -48,7 +48,7 @@ function postMultipleMessages(params) {
 
   // TODO perhaps we can have a uniform place to check for this
   if (params.raw_input_data.provider === 'facebook') {
-    size = Array.isArray(params.message)? (params.message.length) : (Array.isArray(params.message.text) ? params.message.text.length : 1);
+    size = Array.isArray(params.message) ? params.message.length : 1;
   }
 
   const responses = [];
@@ -75,7 +75,10 @@ function postMessage(actionName, params, responses, size, index) {
   // (a parsed message.text) to each invocation
   if (index < size) {
     const paramsForInvocation = Object.assign({}, params);
-    paramsForInvocation.message = params.message[index];
+    
+    if (Array.isArray(params.message)) {
+      paramsForInvocation.message = params.message[index];
+    }
     return invokeAction(actionName, paramsForInvocation)
       .then(result => {
         responses.push(result);
@@ -100,7 +103,6 @@ function invokeAction(actionName, params) {
 
   return new Promise((resolve, reject) => {
     // Invoke the post action
-    console.log(`Invoking ${actionName} with params:${JSON.stringify(params)}`);
     return ow.actions
       .invoke({
         name: actionName,
