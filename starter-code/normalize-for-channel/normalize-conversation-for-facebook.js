@@ -87,29 +87,26 @@ function getMessage(params) {
  * @return {JSON} - Facebook message
  */
 function generateFacebookPayload(params) {
-  const facebookMessage = {
-    attachment: {
-      type: 'template',
-      payload: {
-        template_type: 'generic',
-        elements: []
-      }
-    }
-  };
+  const facebookMessageList = [];
+
   const generic = params.conversation.output.generic instanceof Array
     ? params.conversation.output.generic
     : [Object.assign({}, params.conversation.output.generic)];
 
   // Determine what all needs to be sent with the reply-text/image/buttons/combination
+  let facebookMessage;
   let buttonsData;
   generic.forEach(element => {
     switch (element.response_type) {
       case 'image':
-        facebookMessage.attachment.payload.elements.push({
-          title: element.title,
-          subtitle: element.description,
-          image_url: element.source
-        });
+        facebookMessage = {
+          attachment: {
+            type: 'image',
+            payload: {
+              url: element.source
+            }
+          }
+        };
         break;
       case 'option':
         buttonsData = element.options.map(optionObj => {
@@ -119,20 +116,26 @@ function generateFacebookPayload(params) {
           updatedOptionObj.payload = ' ';
           return updatedOptionObj;
         });
-        facebookMessage.attachment.payload.elements.push({
-          title: element.title,
-          buttons: buttonsData
-        });
+        facebookMessage = {
+          attachment: {
+            type: 'template',
+            payload: {
+              template_type: 'button',
+              text: element.title,
+              buttons: buttonsData
+            }
+          }
+        };
         break;
       default:
-        facebookMessage.attachment.payload.elements.push({
-          title: element.text,
-          subtitle: ' '
-        });
+        facebookMessage = {
+          text: element.text
+        };
     }
+    facebookMessageList.push(facebookMessage);
     return element;
   });
-  return facebookMessage;
+  return facebookMessageList;
 }
 
 /**

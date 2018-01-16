@@ -124,6 +124,7 @@ function insertConversationOutput(params, output) {
             const updatedOptionObj = Object.assign({}, optionObj);
             updatedOptionObj.name = 'name';
             updatedOptionObj.type = 'button';
+            updatedOptionObj.text = updatedOptionObj.label;
             return updatedOptionObj;
           });
           slackOutput.attachments.push({
