@@ -75,7 +75,7 @@ function postMessage(actionName, params, responses, size, index) {
   // (a parsed message.text) to each invocation
   if (index < size) {
     const paramsForInvocation = Object.assign({}, params);
-
+    
     if (Array.isArray(params.message)) {
       paramsForInvocation.message = params.message[index];
     }
