@@ -18,6 +18,8 @@
 
 const assert = require('assert');
 
+const MAX_QUICK_REPLIES_OPTIONS = 11;
+
 /**
  * Converts Conversation module output JSON data to JSON data of the Facebook API input format
  *
@@ -69,8 +71,7 @@ function getMessage(params) {
     return interactiveMessage;
   }
 
-  // 2. If the output is generic type, then generate the Facebook
-  // payload as per the generic template.
+  // 2. If the output is generic type, then generate the Facebook payload.
   if (params.conversation.output.generic) {
     return generateFacebookPayload(params);
   }
@@ -81,8 +82,8 @@ function getMessage(params) {
 }
 
 /**
- * Function generates an interactive message payload using the Facebook generic template
- * format from the params that it receives from Conversation.
+ * Function generates an interactive message payload as per Facebook guidelines
+ * from the params that it receives from Conversation.
  * @param {JSON} params - Parameters coming into the action
  * @return {JSON} - Facebook message
  */
@@ -95,7 +96,6 @@ function generateFacebookPayload(params) {
 
   // Determine what all needs to be sent with the reply-text/image/buttons/combination
   let facebookMessage;
-  let buttonsData;
   generic.forEach(element => {
     switch (element.response_type) {
       case 'image':
@@ -103,39 +103,91 @@ function generateFacebookPayload(params) {
           attachment: {
             type: 'image',
             payload: {
-              url: element.source
+              url: element.source // Required
             }
           }
         };
         break;
       case 'option':
-        buttonsData = element.options.map(optionObj => {
-          const updatedOptionObj = {};
-          updatedOptionObj.type = 'postback';
-          updatedOptionObj.title = optionObj.label;
-          updatedOptionObj.payload = ' ';
-          return updatedOptionObj;
-        });
-        facebookMessage = {
-          attachment: {
-            type: 'template',
-            payload: {
-              template_type: 'button',
-              text: element.title,
-              buttons: buttonsData
-            }
-          }
-        };
+        if (element.options.length < MAX_QUICK_REPLIES_OPTIONS) {
+          facebookMessage = generateQuickReplyMessage(element);
+        } else {
+          facebookMessage = generateTemplateMessage(element);
+        }
         break;
       default:
         facebookMessage = {
-          text: element.text
+          text: element.text // Required
         };
     }
     facebookMessageList.push(facebookMessage);
     return element;
   });
   return facebookMessageList;
+}
+
+/**
+ * Function generates a quick reply message containing text buttons
+ * as per Facebook guidelines from the options array returned
+ * from Conversation.
+ * @param {JSON} element - JSON object containing option data
+ * @return {JSON} - Facebook quick reply message
+ */
+function generateQuickReplyMessage(element) {
+  const buttonsData = element.options.map(optionObj => {
+    const updatedOptionObj = {};
+    updatedOptionObj.content_type = 'text';
+    updatedOptionObj.title = optionObj.label; // Required
+    updatedOptionObj.payload = optionObj.value; // Required
+    return updatedOptionObj;
+  });
+  return {
+    text: element.title, // Required
+    quick_replies: buttonsData
+  };
+}
+
+/**
+ * Function generates a template message containing buttons
+ * as per Facebook guidelines from the options array returned
+ * from Conversation.
+ * @param {JSON} element - JSON object containing option data
+ * @return {JSON} - Facebook template message
+ */
+function generateTemplateMessage(element) {
+  // Build button object for each option object in array.
+  const elementsList = [];
+  const buttonsData = element.options.map(optionObj => {
+    const updatedOptionObj = {};
+    updatedOptionObj.type = 'postback';
+    updatedOptionObj.title = optionObj.label; // Required
+    updatedOptionObj.payload = optionObj.value; // Required
+    return updatedOptionObj;
+  });
+  // Use generic template and split options into groups of three
+  // so that Facebook can display it.
+  let i = 0;
+  while (buttonsData.length - i > 3) {
+    elementsList.push({
+      title: element.title,
+      buttons: buttonsData.slice(i, i + 3)
+    });
+    i += 3;
+  }
+  elementsList.push({
+    title: element.title,
+    buttons: buttonsData.slice(i, buttonsData.length)
+  });
+
+  return {
+    attachment: {
+      type: 'template',
+      payload: {
+        template_type: 'generic',
+        elements: elementsList
+      }
+    }
+  };
 }
 
 /**
