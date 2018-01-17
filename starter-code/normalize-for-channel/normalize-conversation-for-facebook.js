@@ -31,12 +31,13 @@ function main(params) {
     } catch (e) {
       reject(e.message);
     }
+
     const normalizedJson = {
       recipient: {
         id: params.raw_input_data.facebook.sender.id
       },
       // Get payload for regular text message or interactive message
-      message: getMessageType(params),
+      message: getMessage(params),
       raw_input_data: params.raw_input_data,
       raw_output_data: {
         conversation: params.conversation
@@ -52,10 +53,9 @@ function main(params) {
  * @param {JSON} params - Parameters coming into this action
  * @return {JSON} - Either an attachment or a text message payload
  */
-function getMessageType(params) {
+function getMessage(params) {
   const interactiveMessage = params.conversation.output.facebook;
-  const textMessage = params.conversation.output.text.join(' ');
-  // If dialog node sends back output.facebook (used for interactive messages such as
+  // 1. If dialog node sends back output.facebook (used for interactive messages such as
   // buttons and templates)
   if (interactiveMessage) {
     // An acceptable interactive JSON could either be of form -> output.facebook or
@@ -68,8 +68,74 @@ function getMessageType(params) {
     }
     return interactiveMessage;
   }
-  // if regular text message is received
+
+  // 2. If the output is generic type, then generate the Facebook
+  // payload as per the generic template.
+  if (params.conversation.output.generic) {
+    return generateFacebookPayload(params);
+  }
+
+  // 3. if regular text message is received
+  const textMessage = params.conversation.output.text.join(' ');
   return { text: textMessage };
+}
+
+/**
+ * Function generates an interactive message payload using the Facebook generic template
+ * format from the params that it receives from Conversation.
+ * @param {JSON} params - Parameters coming into the action
+ * @return {JSON} - Facebook message
+ */
+function generateFacebookPayload(params) {
+  const facebookMessageList = [];
+
+  const generic = params.conversation.output.generic instanceof Array
+    ? params.conversation.output.generic
+    : [Object.assign({}, params.conversation.output.generic)];
+
+  // Determine what all needs to be sent with the reply-text/image/buttons/combination
+  let facebookMessage;
+  let buttonsData;
+  generic.forEach(element => {
+    switch (element.response_type) {
+      case 'image':
+        facebookMessage = {
+          attachment: {
+            type: 'image',
+            payload: {
+              url: element.source
+            }
+          }
+        };
+        break;
+      case 'option':
+        buttonsData = element.options.map(optionObj => {
+          const updatedOptionObj = {};
+          updatedOptionObj.type = 'postback';
+          updatedOptionObj.title = optionObj.label;
+          updatedOptionObj.payload = ' ';
+          return updatedOptionObj;
+        });
+        facebookMessage = {
+          attachment: {
+            type: 'template',
+            payload: {
+              template_type: 'button',
+              text: element.title,
+              buttons: buttonsData
+            }
+          }
+        };
+        break;
+      default:
+        facebookMessage = {
+          text: element.text
+        };
+    }
+    facebookMessageList.push(facebookMessage);
+    return element;
+  });
+  return facebookMessageList;
 }
 
 /**
@@ -79,11 +145,17 @@ function getMessageType(params) {
  */
 function validateParameters(params) {
   // Required: Conversation JSON data
-  assert(params.conversation, 'No conversation output.');
-  // Required: Conversation output text
   assert(
-    params.conversation.output && params.conversation.output.text,
-    'No conversation output text.'
+    params.conversation && params.conversation.output,
+    'No conversation output.'
+  );
+
+  // Required: Conversation output
+  assert(
+    params.conversation.output.facebook ||
+      params.conversation.output.generic ||
+      params.conversation.output.text,
+    'No facebook/generic/text field in conversation.output.'
   );
   // Required: raw input data
   assert(params.raw_input_data, 'No raw input data found.');
