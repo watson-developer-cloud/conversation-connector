@@ -49,7 +49,7 @@ describe('Multi-post Unit Tests', () => {
       })
     );
 
-    mockMultiplePost = proxyquire('../../../starter-code/multiple-post.js', {
+    mockMultiplePost = proxyquire('../../../../channels/facebook/multiple_post/index.js', {
       openwhisk: cloudFunctionsStub
     });
 
