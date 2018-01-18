@@ -37,25 +37,20 @@ function main(params) {
  * @return {JSON}        - result of the call(s) to the Post action
  */
 function postMultipleMessages(params) {
-  // Determine the name of the channel's post action
+  // Determine the full path of the channel's postsequence sequence
   const packageName = extractCurrentPackageName(process.env.__OW_ACTION_NAME);
   const deployName = packageName.split('_')[0];
-  const actionName = `${deployName}_${params.raw_input_data.provider}/post`;
+  const sequenceName = `${deployName}_postsequence`;
 
   // At minimum we will send one message to the channel,
   // but if Conversation contains an array, send more
-  let size = 1;
-
-  // TODO perhaps we can have a uniform place to check for this
-  if (params.raw_input_data.provider === 'facebook') {
-    size = Array.isArray(params.message) ? params.message.length : 1;
-  }
+  const size = Array.isArray(params.message) ? params.message.length : 1;
 
   const responses = [];
 
   // Post the message(s) and ultimately return JSON
   // with one response for each channel post that occurred.
-  return postMessage(actionName, params, responses, size, 0).then(() => {
+  return postMessage(sequenceName, params, responses, size, 0).then(() => {
     return { postResponses: responses };
   });
 }
@@ -63,30 +58,28 @@ function postMultipleMessages(params) {
 /**
  * Recursively calls postMessage until all Conversation messages have been sent to the channel.
  *
- * @param actionName name of channel's post action
+ * @param sequenceName name of channel's postsequence sequence
  * @param params the channel specific params to call the channel's api
  * @param responses an array to store the response in case we have to build it over multiple posts
  * @param size the number of messages to send to the channel
  * @param index the array index of the message that needs to be sent
  * @returns {*}
  */
-function postMessage(actionName, params, responses, size, index) {
-  // TODO need to update to send slightly different params
-  // (a parsed message.text) to each invocation
+function postMessage(sequenceName, params, responses, size, index) {
   if (index < size) {
     const paramsForInvocation = Object.assign({}, params);
-    
+
     if (Array.isArray(params.message)) {
       paramsForInvocation.message = params.message[index];
     }
-    return invokeAction(actionName, paramsForInvocation)
+    return invokeAction(sequenceName, paramsForInvocation)
       .then(result => {
         responses.push(result);
-        return postMessage(actionName, params, responses, size, index + 1);
+        return postMessage(sequenceName, params, responses, size, index + 1);
       })
       .catch(e => {
         responses.push(e);
-        return postMessage(actionName, params, responses, size, index + 1);
+        return postMessage(sequenceName, params, responses, size, index + 1);
       });
   }
   return responses;

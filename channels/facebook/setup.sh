@@ -17,3 +17,4 @@ ${WSK} package update $PACKAGE_NAME \
 ${WSK} action update $PACKAGE_NAME/receive ./receive/index.js -a web-export true &> /dev/null
 ${WSK} action update $PACKAGE_NAME/post ./post/index.js &> /dev/null
 ${WSK} action update $PACKAGE_NAME/batched_messages ./batched_messages/index.js &> /dev/null
+${WSK} action update $PACKAGE_NAME/multiple_post ./multiple_post/index.js &> /dev/null

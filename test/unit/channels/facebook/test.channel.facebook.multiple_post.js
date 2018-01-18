@@ -33,12 +33,12 @@ describe('Multi-post Unit Tests', () => {
   let mockMultiplePost;
 
   const cloudFunctionsUrl = `https://${apiHost}/api/v1/namespaces`;
-  process.env.__OW_ACTION_NAME = '/org_space/deployname_facebook/post';
+  process.env.__OW_ACTION_NAME = '/org_space/deployname_postsequence';
 
   beforeEach(() => {
     mockCloudFunctionsEndpoints = {
       url: cloudFunctionsUrl,
-      actionsEndpoint: `/${namespace}/actions/deployname_facebook/post?blocking=true`
+      actionsEndpoint: `/${namespace}/actions/deployname_postsequence?blocking=true`
     };
 
     cloudFunctionsStub = sinon.stub().returns(
@@ -49,9 +49,12 @@ describe('Multi-post Unit Tests', () => {
       })
     );
 
-    mockMultiplePost = proxyquire('../../../starter-code/multiple-post.js', {
-      openwhisk: cloudFunctionsStub
-    });
+    mockMultiplePost = proxyquire(
+      '../../../../channels/facebook/multiple_post/index.js',
+      {
+        openwhisk: cloudFunctionsStub
+      }
+    );
 
     multiPostParams = {
       recipient: {
