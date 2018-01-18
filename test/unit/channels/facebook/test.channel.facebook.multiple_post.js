@@ -49,9 +49,12 @@ describe('Multi-post Unit Tests', () => {
       })
     );
 
-    mockMultiplePost = proxyquire('../../../../channels/facebook/multiple_post/index.js', {
-      openwhisk: cloudFunctionsStub
-    });
+    mockMultiplePost = proxyquire(
+      '../../../../channels/facebook/multiple_post/index.js',
+      {
+        openwhisk: cloudFunctionsStub
+      }
+    );
 
     multiPostParams = {
       recipient: {
