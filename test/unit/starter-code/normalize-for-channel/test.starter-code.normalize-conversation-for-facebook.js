@@ -109,38 +109,84 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
           value: 'Location 3'
         }
       ]
+    },
+    {
+      response_type: 'option',
+      title: 'Select a location',
+      options: [
+        {
+          label: 'Location 1',
+          value: 'Location 1'
+        },
+        {
+          label: 'Location 2',
+          value: 'Location 2'
+        },
+        {
+          label: 'Location 3',
+          value: 'Location 3'
+        },
+        {
+          label: 'Location 4',
+          value: 'Location 4'
+        },
+        {
+          label: 'Location 5',
+          value: 'Location 5'
+        },
+        {
+          label: 'Location 6',
+          value: 'Location 6'
+        },
+        {
+          label: 'Location 7',
+          value: 'Location 7'
+        },
+        {
+          label: 'Location 8',
+          value: 'Location 8'
+        },
+        {
+          label: 'Location 9',
+          value: 'Location 9'
+        },
+        {
+          label: 'Location 10',
+          value: 'Location 10'
+        },
+        {
+          label: 'Location 11',
+          value: 'Location 11'
+        },
+        {
+          label: 'Location 12',
+          value: 'Location 12'
+        }
+      ]
     }
   ];
 
   const genericForFacebook = [
     {
+      text
+    },
+    {
       attachment: {
-        type: 'template',
+        type: 'image',
         payload: {
-          template_type: 'generic',
-          elements: [
-            {
-              title: text,
-              subtitle: ' '
-            }
-          ]
+          url: genericFromConversation[1].source
         }
       }
     },
     {
-      attachment: {
-        type: 'template',
-        payload: {
-          template_type: 'generic',
-          elements: [
-            {
-              title: genericFromConversation[1].title,
-              image_url: genericFromConversation[1].source,
-              subtitle: genericFromConversation[1].description
-            }
-          ]
-        }
-      }
+      text: genericFromConversation[2].title,
+      quick_replies: genericFromConversation[2].options.map(e => {
+        const el = {};
+        el.content_type = 'text';
+        el.title = e.label;
+        el.payload = e.value;
+        return el;
+      })
     },
     {
       attachment: {
@@ -150,42 +196,83 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
           elements: [
             {
               title: genericFromConversation[2].title,
-              buttons: genericFromConversation[2].options.map(e => {
-                const el = {};
-                el.type = 'postback';
-                el.title = e.label;
-                el.payload = ' ';
-                return el;
-              })
-            }
-          ]
-        }
-      }
-    },
-    {
-      attachment: {
-        type: 'template',
-        payload: {
-          template_type: 'generic',
-          elements: [
-            {
-              title: text,
-              subtitle: ' '
-            },
-            {
-              title: genericFromConversation[1].title,
-              image_url: genericFromConversation[1].source,
-              subtitle: genericFromConversation[1].description
+              buttons: [
+                {
+                  title: 'Location 1',
+                  payload: 'Location 1',
+                  type: 'postback'
+                },
+                {
+                  title: 'Location 2',
+                  payload: 'Location 2',
+                  type: 'postback'
+                },
+                {
+                  title: 'Location 3',
+                  payload: 'Location 3',
+                  type: 'postback'
+                }
+              ]
             },
             {
               title: genericFromConversation[2].title,
-              buttons: genericFromConversation[2].options.map(e => {
-                const el = {};
-                el.type = 'postback';
-                el.title = e.label;
-                el.payload = ' ';
-                return el;
-              })
+              buttons: [
+                {
+                  title: 'Location 4',
+                  payload: 'Location 4',
+                  type: 'postback'
+                },
+                {
+                  title: 'Location 5',
+                  payload: 'Location 5',
+                  type: 'postback'
+                },
+                {
+                  title: 'Location 6',
+                  payload: 'Location 6',
+                  type: 'postback'
+                }
+              ]
+            },
+            {
+              title: genericFromConversation[2].title,
+              buttons: [
+                {
+                  title: 'Location 7',
+                  payload: 'Location 7',
+                  type: 'postback'
+                },
+                {
+                  title: 'Location 8',
+                  payload: 'Location 8',
+                  type: 'postback'
+                },
+                {
+                  title: 'Location 9',
+                  payload: 'Location 9',
+                  type: 'postback'
+                }
+              ]
+            },
+            {
+              title: genericFromConversation[2].title,
+              buttons: [
+                {
+                  title: 'Location 10',
+                  payload: 'Location 10',
+                  type: 'postback'
+                },
+                {
+                  title: 'Location 11',
+                  payload: 'Location 11',
+                  type: 'postback'
+                },
+                {
+                  title: 'Location 12',
+                  payload: 'Location 12',
+                  type: 'postback'
+                }
+              ]
             }
           ]
         }
@@ -357,7 +444,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
 
     textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
     delete textRes.message;
-    textRes.message = genericForFacebook[0];
+    textRes.message = [genericForFacebook[0]];
 
     return actionNormForFacebook(textMsgParams).then(
       result => {
@@ -382,7 +469,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
 
     textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
     delete textRes.message;
-    textRes.message = genericForFacebook[1];
+    textRes.message = [genericForFacebook[1]];
 
     return actionNormForFacebook(textMsgParams).then(
       result => {
@@ -394,7 +481,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
     );
   });
 
-  it('validate normalization works for generic response_type - option', () => {
+  it('validate normalization works for generic response_type - option (under 11 options)', () => {
     delete textMsgParams.conversation.output.text;
     delete textMsgParams.conversation.output.facebook;
 
@@ -407,7 +494,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
 
     textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
     delete textRes.message;
-    textRes.message = genericForFacebook[2];
+    textRes.message = [genericForFacebook[2]];
 
     return actionNormForFacebook(textMsgParams).then(
       result => {
@@ -419,7 +506,7 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
     );
   });
 
-  it('validate normalization works for generic response_type - mixed', () => {
+  it('validate normalization works for generic response_type - option (over 11 options)', () => {
     delete textMsgParams.conversation.output.text;
     delete textMsgParams.conversation.output.facebook;
 
@@ -427,12 +514,71 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
     delete textRes.raw_output_data.conversation.output.facebook;
     delete textRes.text;
 
-    // Add a generic mixed response from Conversation
-    textMsgParams.conversation.output.generic = genericFromConversation;
+    // Add a generic option response from Conversation
+    textMsgParams.conversation.output.generic = genericFromConversation[3];
 
     textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
     delete textRes.message;
-    textRes.message = genericForFacebook[3];
+    textRes.message = [genericForFacebook[3]];
+
+    return actionNormForFacebook(textMsgParams).then(
+      result => {
+        assert.deepEqual(result, textRes);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic multi-modal response (under 11 options)', () => {
+    delete textMsgParams.conversation.output.text;
+    delete textMsgParams.conversation.output.facebook;
+
+    delete textRes.raw_output_data.conversation.output.text;
+    delete textRes.raw_output_data.conversation.output.facebook;
+    delete textRes.text;
+
+    // Add a generic mixed response from Conversation with 3 options.
+    textMsgParams.conversation.output.generic = genericFromConversation.slice(
+      0,
+      3
+    );
+
+    textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
+    delete textRes.message;
+    textRes.message = genericForFacebook.slice(0, 3);
+
+    return actionNormForFacebook(textMsgParams).then(
+      result => {
+        assert.deepEqual(result, textRes);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic multi-modal response (over 11 options)', () => {
+    delete textMsgParams.conversation.output.text;
+    delete textMsgParams.conversation.output.facebook;
+
+    delete textRes.raw_output_data.conversation.output.text;
+    delete textRes.raw_output_data.conversation.output.facebook;
+    delete textRes.text;
+
+    // Add a generic mixed response from Conversation with 12 options.
+    textMsgParams.conversation.output.generic = genericFromConversation.slice(
+      0,
+      2
+    );
+    textMsgParams.conversation.output.generic.push(genericFromConversation[3]);
+
+    textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
+    delete textRes.message;
+
+    textRes.message = genericForFacebook.slice(0, 2);
+    textRes.message.push(genericForFacebook[3]);
 
     return actionNormForFacebook(textMsgParams).then(
       result => {
