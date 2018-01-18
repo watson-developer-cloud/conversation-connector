@@ -149,35 +149,29 @@ describe('starter-code integration tests for facebook', () => {
       }
     ];
 
-    facebookMultiModalData = {
-      attachment: {
-        type: 'template',
-        payload: {
-          template_type: 'generic',
-          elements: [
-            {
-              title: outputText,
-              subtitle: ' '
-            },
-            {
-              title: genericData[1].title,
-              image_url: genericData[1].source,
-              subtitle: genericData[1].description
-            },
-            {
-              title: genericData[2].title,
-              buttons: genericData[2].options.map(e => {
-                const el = {};
-                el.type = 'postback';
-                el.title = e.label;
-                el.payload = ' ';
-                return el;
-              })
-            }
-          ]
+    facebookMultiModalData = [
+      {
+        text: outputText
+      },
+      {
+        attachment: {
+          type: 'image',
+          payload: {
+            url: genericData[1].source
+          }
         }
+      },
+      {
+        text: genericData[2].title,
+        quick_replies: genericData[2].options.map(e => {
+          const el = {};
+          el.content_type = 'text';
+          el.title = e.label;
+          el.payload = e.value;
+          return el;
+        })
       }
-    };
+    ];
   });
 
   it('validate starter-code-facebook actions work', () => {

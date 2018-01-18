@@ -176,9 +176,11 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
           {
             text: genericFromConversation[2].title,
             actions: genericFromConversation[2].options.map(e => {
-              const el = Object.assign({}, e);
-              el.name = 'name';
+              const el = {};
+              el.name = e.label;
               el.type = 'button';
+              el.text = e.label;
+              el.value = e.value;
               return el;
             })
           }
@@ -195,9 +197,11 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
           {
             text: genericFromConversation[2].title,
             actions: genericFromConversation[2].options.map(e => {
-              const el = Object.assign({}, e);
-              el.name = 'name';
+              const el = {};
+              el.name = e.label;
               el.type = 'button';
+              el.text = e.label;
+              el.value = e.value;
               return el;
             })
           }

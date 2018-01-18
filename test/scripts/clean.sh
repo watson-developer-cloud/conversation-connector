@@ -27,6 +27,8 @@ ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/normalize-facebo
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/normalize-conversation-for-slack" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/normalize-conversation-for-facebook" > /dev/null
 
+${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/multiple-post" > /dev/null
+
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_context/load-context" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_context/save-context" > /dev/null
 

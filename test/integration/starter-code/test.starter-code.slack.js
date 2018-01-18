@@ -190,9 +190,11 @@ describe('starter-code integration tests for slack', () => {
         {
           text: genericData[2].title,
           actions: genericData[2].options.map(e => {
-            const el = Object.assign({}, e);
-            el.name = 'name';
+            const el = {};
+            el.name = e.label;
             el.type = 'button';
+            el.text = e.label;
+            el.value = e.value;
             return el;
           })
         }

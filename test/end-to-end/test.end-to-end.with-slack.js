@@ -179,7 +179,7 @@ describe('End-to-End tests: with Slack package', () => {
     ];
     expectedAttachmentGenericData = [
       {
-        image_url: 'https://a.slack-edge.com/66f9/img/api/attachment_image.png',
+        image_url: 'https://s.w-x.co/240x180_twc_default.png',
         pretext: 'Image description',
         title: 'Image title'
       },
@@ -187,21 +187,21 @@ describe('End-to-End tests: with Slack package', () => {
         text: 'Choose your location',
         actions: [
           {
-            name: 'name',
+            name: 'Location 1',
             type: 'button',
-            label: 'Location 1',
+            text: 'Location 1',
             value: 'Location 1'
           },
           {
-            name: 'name',
+            name: 'Location 2',
             type: 'button',
-            label: 'Location 2',
+            text: 'Location 2',
             value: 'Location 2'
           },
           {
-            name: 'name',
+            name: 'Location 3',
             type: 'button',
-            label: 'Location 3',
+            text: 'Location 3',
             value: 'Location 3'
           }
         ]

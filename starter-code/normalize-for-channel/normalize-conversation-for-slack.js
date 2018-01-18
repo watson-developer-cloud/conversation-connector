@@ -121,10 +121,11 @@ function insertConversationOutput(params, output) {
           break;
         case 'option':
           buttonsData = element.options.map(optionObj => {
-            const updatedOptionObj = Object.assign({}, optionObj);
-            updatedOptionObj.name = 'name';
+            const updatedOptionObj = {};
+            updatedOptionObj.name = optionObj.label;
             updatedOptionObj.type = 'button';
-            updatedOptionObj.text = updatedOptionObj.label;
+            updatedOptionObj.text = optionObj.label;
+            updatedOptionObj.value = optionObj.value;
             return updatedOptionObj;
           });
           slackOutput.attachments.push({

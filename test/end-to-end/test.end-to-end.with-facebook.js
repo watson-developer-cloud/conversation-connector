@@ -682,7 +682,7 @@ describe('End-to-End tests: Multimodal messages work', () => {
               {
                 title: 'Image title',
                 subtitle: 'Image description',
-                image_url: 'https://a.slack-edge.com/66f9/img/api/attachment_image.png'
+                image_url: 'https://s.w-x.co/240x180_twc_default.png'
               },
               {
                 title: 'Choose your location',
