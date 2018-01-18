@@ -248,30 +248,24 @@ describe('Multi-post Unit Tests', () => {
           }
         },
         {
-          attachment: {
-            type: 'template',
-            payload: {
-              template_type: 'button',
-              text: 'Choose your location',
-              buttons: [
-                {
-                  type: 'postback',
-                  title: 'Location 1',
-                  payload: ' '
-                },
-                {
-                  type: 'postback',
-                  title: 'Location 2',
-                  payload: ' '
-                },
-                {
-                  type: 'postback',
-                  title: 'Location 3',
-                  payload: ' '
-                }
-              ]
+          text: 'Choose your location',
+          quick_replies: [
+            {
+              content_type: 'text',
+              title: 'Location 1',
+              payload: 'Location 1'
+            },
+            {
+              content_type: 'text',
+              title: 'Location 2',
+              payload: 'Location 2'
+            },
+            {
+              content_type: 'text',
+              title: 'Location 3',
+              payload: 'Location 3'
             }
-          }
+          ]
         }
       ],
       raw_input_data: {
