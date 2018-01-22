@@ -185,6 +185,7 @@ describe('End-to-End tests: with Slack package', () => {
       },
       {
         text: 'Choose your location',
+        callback_id: 'Choose your location',
         actions: [
           {
             name: 'Location 1',

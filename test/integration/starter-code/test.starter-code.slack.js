@@ -189,6 +189,7 @@ describe('starter-code integration tests for slack', () => {
         },
         {
           text: genericData[2].title,
+          callback_id: genericData[2].title,
           actions: genericData[2].options.map(e => {
             const el = {};
             el.name = e.label;

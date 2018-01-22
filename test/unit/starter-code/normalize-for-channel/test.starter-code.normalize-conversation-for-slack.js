@@ -175,6 +175,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
         attachments: [
           {
             text: genericFromConversation[2].title,
+            callback_id: genericFromConversation[2].title,
             actions: genericFromConversation[2].options.map(e => {
               const el = {};
               el.name = e.label;
@@ -196,6 +197,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
           },
           {
             text: genericFromConversation[2].title,
+            callback_id: genericFromConversation[2].title,
             actions: genericFromConversation[2].options.map(e => {
               const el = {};
               el.name = e.label;

@@ -130,6 +130,7 @@ function insertConversationOutput(params, output) {
           });
           slackOutput.attachments.push({
             text: element.title,
+            callback_id: element.title,
             actions: buttonsData
           });
           break;
