@@ -794,7 +794,7 @@ describe('Multi-post Unit Tests', () => {
         {
           failedInvocation: {
             name: 'OpenWhiskError',
-            message: 'POST https://xxx/api/v1/namespaces/xxx/actions/deployname_postsequence?blocking=true Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"',
+            message: 'POST https://xxx/api/v1/namespaces/xxx/actions/deployname_postsequence Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"',
             error: {
               duration: 648,
               name: 'psequence_postsequence',

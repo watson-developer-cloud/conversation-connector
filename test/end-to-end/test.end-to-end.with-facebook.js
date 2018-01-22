@@ -62,6 +62,8 @@ describe('End-to-End tests: Facebook prerequisites', () => {
     `${pipelineName}_facebook/post`,
     `${pipelineName}_facebook/receive`,
     `${pipelineName}_facebook/batched_messages`,
+    `${pipelineName}_facebook/multiple_post`,
+    `${pipelineName}_postsequence`,
     `${pipelineName}_starter-code/normalize-conversation-for-facebook`,
     `${pipelineName}_starter-code/normalize-facebook-for-conversation`
   ];
@@ -96,17 +98,26 @@ describe('End-to-End tests: Facebook as channel package', () => {
     actionName: actionFacebookPipeline,
     message: `Response code 200 above only tells you that receive action was invoked successfully. However, it does not really say if ${actionFacebookPipeline} was invoked successfully. Please use ${activationId} to get more details about this invocation.`
   };
-  const expectedPostResult = {
-    params: {
-      message: {
-        text: carDashboardReplyWelcome
-      },
-      recipient: {
-        id: envParams.__TEST_FACEBOOK_SENDER_ID
+  const expectedMultiPostResult = {
+    postResponses: [
+      {
+        successfulInvocation: {
+          activationId: 'xxxxx',
+          successResponse: {
+            params: {
+              message: {
+                text: carDashboardReplyWelcome
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              }
+            },
+            text: 200,
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          }
+        }
       }
-    },
-    text: 200,
-    url: 'https://graph.facebook.com/v2.6/me/messages'
+    ]
   };
 
   beforeEach(done => {
@@ -192,10 +203,13 @@ describe('End-to-End tests: Facebook as channel package', () => {
               result => {
                 try {
                   if (result.response.result) {
-                    assert.deepEqual(
-                      result.response.result,
-                      expectedPostResult
-                    );
+                    const res = result.response.result;
+                    res.postResponses[
+                      0
+                    ].successfulInvocation.activationId = expectedMultiPostResult.postResponses[
+                      0
+                    ].successfulInvocation.activationId;
+                    assert.deepEqual(res, expectedMultiPostResult);
                     return done();
                   }
                   assert(
@@ -249,27 +263,49 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
     successfulActionInvocations: [
       {
         successResponse: {
-          text: 200,
-          params: {
-            recipient: {
-              id: envParams.__TEST_FACEBOOK_SENDER_ID
-            },
-            message: { text: carDashboardReplyWelcome }
-          },
-          url: 'https://graph.facebook.com/v2.6/me/messages'
+          postResponses: [
+            {
+              successfulInvocation: {
+                successResponse: {
+                  text: 200,
+                  params: {
+                    recipient: {
+                      id: envParams.__TEST_FACEBOOK_SENDER_ID
+                    },
+                    message: {
+                      text: carDashboardReplyWelcome
+                    }
+                  },
+                  url: 'https://graph.facebook.com/v2.6/me/messages'
+                },
+                activationId: ''
+              }
+            }
+          ]
         },
         activationId: ''
       },
       {
         successResponse: {
-          text: 200,
-          params: {
-            recipient: {
-              id: envParams.__TEST_FACEBOOK_SENDER_ID
-            },
-            message: { text: carDashboardReplyWelcome }
-          },
-          url: 'https://graph.facebook.com/v2.6/me/messages'
+          postResponses: [
+            {
+              successfulInvocation: {
+                successResponse: {
+                  text: 200,
+                  params: {
+                    recipient: {
+                      id: envParams.__TEST_FACEBOOK_SENDER_ID
+                    },
+                    message: {
+                      text: carDashboardReplyWelcome
+                    }
+                  },
+                  url: 'https://graph.facebook.com/v2.6/me/messages'
+                },
+                activationId: ''
+              }
+            }
+          ]
         },
         activationId: ''
       }
@@ -396,6 +432,27 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
                     ].activationId = res.successfulActionInvocations[
                       0
                     ].activationId;
+
+                    expectedBatchedResult.successfulActionInvocations[
+                      0
+                    ].successResponse.postResponses[
+                      0
+                    ].successfulInvocation.activationId = res.successfulActionInvocations[
+                      0
+                    ].successResponse.postResponses[
+                      0
+                    ].successfulInvocation.activationId;
+
+                    expectedBatchedResult.successfulActionInvocations[
+                      1
+                    ].successResponse.postResponses[
+                      0
+                    ].successfulInvocation.activationId = res.successfulActionInvocations[
+                      1
+                    ].successResponse.postResponses[
+                      0
+                    ].successfulInvocation.activationId;
+
                     expectedBatchedResult.successfulActionInvocations[
                       1
                     ].activationId = res.successfulActionInvocations[
@@ -440,29 +497,47 @@ describe('End-to-End tests: Facebook context package works', () => {
   let params = {};
 
   const expAfterTurn1 = {
-    params: {
-      message: {
-        text: carDashboardReplyWelcome
-      },
-      recipient: {
-        id: envParams.__TEST_FACEBOOK_SENDER_ID
+    postResponses: [
+      {
+        successfulInvocation: {
+          activationId: 'xxxxx',
+          successResponse: {
+            params: {
+              message: {
+                text: carDashboardReplyWelcome
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              }
+            },
+            text: 200,
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          }
+        }
       }
-    },
-    text: 200,
-    url: 'https://graph.facebook.com/v2.6/me/messages'
+    ]
   };
 
   const expAfterTurn2 = {
-    params: {
-      message: {
-        text: carDashboardReplyLights
-      },
-      recipient: {
-        id: envParams.__TEST_FACEBOOK_SENDER_ID
+    postResponses: [
+      {
+        successfulInvocation: {
+          activationId: 'xxxxx',
+          successResponse: {
+            params: {
+              message: {
+                text: carDashboardReplyLights
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              }
+            },
+            text: 200,
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          }
+        }
       }
-    },
-    text: 200,
-    url: 'https://graph.facebook.com/v2.6/me/messages'
+    ]
   };
 
   beforeEach(() => {
@@ -554,7 +629,9 @@ describe('End-to-End tests: Facebook context package works', () => {
   it('context pipeline works for multiple Conversation turns', () => {
     let actId1 = 'xxxxx';
     let actId2 = 'yyyyy';
-    expAfterTurn1.params.message.text = carDashboardReplyHelp;
+    expAfterTurn1.postResponses[
+      0
+    ].successfulInvocation.successResponse.params.message.text = carDashboardReplyHelp;
 
     return ow.actions
       .invoke({
@@ -670,45 +747,39 @@ describe('End-to-End tests: Multimodal messages work', () => {
 
   const expAfterTurn1 = {
     params: {
-      message: {
-        attachment: {
-          type: 'template',
-          payload: {
-            elements: [
-              {
-                title: multimodalReply,
-                subtitle: ' '
-              },
-              {
-                title: 'Image title',
-                subtitle: 'Image description',
-                image_url: 'https://s.w-x.co/240x180_twc_default.png'
-              },
-              {
-                title: 'Choose your location',
-                buttons: [
-                  {
-                    type: 'postback',
-                    title: 'Location 1',
-                    payload: ' '
-                  },
-                  {
-                    type: 'postback',
-                    title: 'Location 2',
-                    payload: ' '
-                  },
-                  {
-                    type: 'postback',
-                    title: 'Location 3',
-                    payload: ' '
-                  }
-                ]
-              }
-            ],
-            template_type: 'generic'
+      message: [
+        {
+          text: multimodalReply
+        },
+        {
+          attachment: {
+            payload: {
+              url: 'https://s.w-x.co/240x180_twc_default.png'
+            },
+            type: 'image'
           }
+        },
+        {
+          quick_replies: [
+            {
+              content_type: 'text',
+              payload: 'Location 1',
+              title: 'Location 1'
+            },
+            {
+              content_type: 'text',
+              payload: 'Location 2',
+              title: 'Location 2'
+            },
+            {
+              content_type: 'text',
+              payload: 'Location 3',
+              title: 'Location 3'
+            }
+          ],
+          text: 'Choose your location'
         }
-      },
+      ],
       recipient: {
         id: envParams.__TEST_FACEBOOK_SENDER_ID
       }
@@ -786,10 +857,12 @@ describe('End-to-End tests: Multimodal messages work', () => {
           actResult => {
             try {
               if (actResult.response.result) {
-                return assert.deepEqual(
-                  actResult.response.result,
-                  expAfterTurn1
-                );
+                const res = actResult.response.result;
+                assert(res.raw_input_data && res.raw_output_data); // Must be present.
+                // We don't care about the actual values so ignore them for now.
+                delete res.raw_input_data;
+                delete res.raw_output_data;
+                return assert.deepEqual(res, expAfterTurn1);
               }
               return assert(
                 false,
