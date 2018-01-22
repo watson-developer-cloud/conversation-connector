@@ -173,7 +173,7 @@ describe('Facebook Batched Messages Unit Tests', () => {
       failedActionInvocations: [
         {
           activationId: '46a8fcba2c274db296f3e5602c6xxxxx',
-          errorMessage: `Recipient id: ${recipientId} , Sender id: ${senderId} -- POST https://${apiHost}/api/v1/namespaces/${namespace}/actions/facebook-connector-pipeline Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"`
+          errorMessage: `Recipient id: ${recipientId} , Sender id: ${senderId} -- POST https://${apiHost}/api/v1/namespaces/${namespace}/actions/facebook-connector-pipeline?blocking=true Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"`
         }
       ],
       successfulActionInvocations: [
