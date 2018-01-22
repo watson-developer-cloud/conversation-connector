@@ -17,6 +17,7 @@ ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_slack/post" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_facebook/receive" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_facebook/post" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_facebook/batched_messages" > /dev/null
+${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_facebook/multiple_post" > /dev/null
 
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/pre-conversation" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/post-conversation" > /dev/null
@@ -26,8 +27,6 @@ ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/normalize-slack-
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/normalize-facebook-for-conversation" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/normalize-conversation-for-slack" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/normalize-conversation-for-facebook" > /dev/null
-
-${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/multiple-post" > /dev/null
 
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_context/load-context" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_context/save-context" > /dev/null
