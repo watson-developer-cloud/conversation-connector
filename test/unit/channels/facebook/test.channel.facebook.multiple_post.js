@@ -20,6 +20,8 @@ const nock = require('nock');
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
 
+const previousTestName = process.env.__OW_ACTION_NAME;
+
 describe('Multi-post Unit Tests', () => {
   const apiHost = 'xxx';
   const apiKey = 'xxx';
@@ -33,6 +35,8 @@ describe('Multi-post Unit Tests', () => {
   process.env.__OW_ACTION_NAME = '/org_space/deployname_postsequence';
 
   beforeEach(() => {
+    process.env.__OW_ACTION_NAME = '/org_space/deployname_postsequence';
+
     mockCloudFunctionsEndpoints = {
       url: cloudFunctionsUrl,
       actionsEndpoint: `/${namespace}/actions/deployname_postsequence?blocking=true`
@@ -52,6 +56,10 @@ describe('Multi-post Unit Tests', () => {
         openwhisk: cloudFunctionsStub
       }
     );
+  });
+
+  after(() => {
+    process.env.__OW_ACTION_NAME = previousTestName;
   });
 
   it('validate multipost with single message', () => {
