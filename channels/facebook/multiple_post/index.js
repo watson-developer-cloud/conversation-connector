@@ -114,7 +114,12 @@ function invokeAction(actionName, params) {
       .catch(e => {
         reject({
           // Build a response for failed invocation
-          failedInvocation: e
+          failedInvocation: {
+            errorMessage: `Recipient id: ${params.recipient.id} , Sender id: ${
+              params.sender.id
+            } -- ${e.message}`,
+            activationId: e.error.activationId
+          }
         });
       });
   });
