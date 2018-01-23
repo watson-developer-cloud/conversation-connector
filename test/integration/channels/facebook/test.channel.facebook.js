@@ -349,6 +349,9 @@ describe('Facebook channel integration tests', () => {
               result => {
                 try {
                   if (result.response.result) {
+                    // Update the activation id in the expected result as it is dynamically generated
+                    expectedPostResult.successfulInvocation.activationId = result.response.result.successfulInvocation.activationId;
+
                     assert.deepEqual(
                       result.response.result,
                       expectedPostResult
@@ -435,6 +438,9 @@ describe('Facebook channel integration tests', () => {
               result => {
                 try {
                   if (result.response.result) {
+                    // Update the activation id in the expected result as it is dynamically generated
+                    expectedPostAttachmentResult.successfulInvocation.activationId = result.response.result.successfulInvocation.activationId;
+
                     assert.deepEqual(
                       result.response.result,
                       expectedPostAttachmentResult
