@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-'use strict';
+"use strict";
 
 /**
  *  Facebook channel integration tests
  */
-const assert = require('assert');
-const openwhisk = require('openwhisk');
+const assert = require("assert");
+const openwhisk = require("openwhisk");
 
 const envParams = process.env;
 
@@ -29,13 +29,13 @@ const pipelineName = envParams.__TEST_PIPELINE_NAME;
 const facebookWebhook = `${pipelineName}_facebook/receive`;
 const facebookSubPipeline = `${pipelineName}_facebook/integration-pipeline`;
 const facebookBatchedMessageAction = `${pipelineName}_facebook/batched_messages`;
-const activationId = 'xxxxxx';
-const actionName = 'yyyyyy';
+const activationId = "xxxxxx";
+const actionName = "yyyyyy";
 
 const shaMap = {
-  'hello, world!': 'sha1=e7d42cb171ec3ca26c2d6de14635bd3ea04bf01d',
-  hi: 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738',
-  hogwarts: 'sha1=eb4412b17e32da9656bb3e3551094d531438b6da'
+  "hello, world!": "sha1=e7d42cb171ec3ca26c2d6de14635bd3ea04bf01d",
+  hi: "sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738",
+  hogwarts: "sha1=eb4412b17e32da9656bb3e3551094d531438b6da"
 };
 
 /** Function allows tests to sleep for certain amount of time
@@ -46,7 +46,7 @@ function sleep(time) {
   });
 }
 
-describe('Facebook channel integration tests', () => {
+describe("Facebook channel integration tests", () => {
   const ow = openwhisk();
   let facebookTextParams = {};
   let facebookAttachmentParams = {};
@@ -60,54 +60,56 @@ describe('Facebook channel integration tests', () => {
   };
 
   const expectedPostResult = {
-    postResponses: [
-      {
-        successfulInvocation: {
+    postResponses: {
+      failedPosts: [],
+      successfulPosts: [
+        {
           successResponse: {
             params: {
               message: {
-                text: 'hello, world!'
+                text: "hello, world!"
               },
               recipient: {
                 id: envParams.__TEST_FACEBOOK_SENDER_ID
               }
             },
             text: 200,
-            url: 'https://graph.facebook.com/v2.6/me/messages'
+            url: "https://graph.facebook.com/v2.6/me/messages"
           }
         }
-      }
-    ]
+      ]
+    }
   };
 
   const expectedPostAttachmentResult = {
-    postResponses: [
-      {
-        successfulInvocation: {
+    postResponses: {
+      failedPosts: [],
+      successfulPosts: [
+        {
           successResponse: {
             text: 200,
-            url: 'https://graph.facebook.com/v2.6/me/messages',
+            url: "https://graph.facebook.com/v2.6/me/messages",
             params: {
               message: {
                 attachment: {
-                  type: 'template',
+                  type: "template",
                   payload: {
                     elements: [
                       {
-                        title: 'Welcome to Hogwarts T-Shirt Store',
+                        title: "Welcome to Hogwarts T-Shirt Store",
                         buttons: [
                           {
-                            type: 'postback',
-                            title: 'Enter T-Shirt Store',
-                            payload: 'List all t-shirts'
+                            type: "postback",
+                            title: "Enter T-Shirt Store",
+                            payload: "List all t-shirts"
                           }
                         ],
-                        subtitle: 'I can help you find a t-shirt',
-                        image_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDQKvGUWTu5hStYHbjH8J3fZi6JgYqw6WY3CrfjB680uLjy2FF9A'
+                        subtitle: "I can help you find a t-shirt",
+                        image_url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDQKvGUWTu5hStYHbjH8J3fZi6JgYqw6WY3CrfjB680uLjy2FF9A"
                       }
                     ],
-                    template_type: 'generic',
-                    image_aspect_ratio: 'square'
+                    template_type: "generic",
+                    image_aspect_ratio: "square"
                   }
                 }
               },
@@ -117,15 +119,15 @@ describe('Facebook channel integration tests', () => {
             }
           }
         }
-      }
-    ]
+      ]
+    }
   };
 
   const expectedBatchedResult = {
     failedActionInvocations: [
       {
         errorMessage: `Recipient id: ${process.env.__TEST_FACEBOOK_RECIPIENT_ID} , Sender id: undefined -- POST https://openwhisk.ng.bluemix.net:443/api/v1/namespaces/${process.env.__OW_NAMESPACE}/actions/${pipelineName}_facebook/integration-pipeline?blocking=true Returned HTTP 502 (Bad Gateway) --> "Recepient id not provided."`,
-        activationId: ''
+        activationId: ""
       }
     ],
     successfulActionInvocations: [
@@ -136,11 +138,11 @@ describe('Facebook channel integration tests', () => {
             recipient: {
               id: envParams.__TEST_FACEBOOK_SENDER_ID
             },
-            message: { text: 'hi' }
+            message: { text: "hi" }
           },
-          url: 'https://graph.facebook.com/v2.6/me/messages'
+          url: "https://graph.facebook.com/v2.6/me/messages"
         },
-        activationId: ''
+        activationId: ""
       },
       {
         successResponse: {
@@ -149,11 +151,11 @@ describe('Facebook channel integration tests', () => {
             recipient: {
               id: envParams.__TEST_FACEBOOK_SENDER_ID
             },
-            message: { text: 'hi' }
+            message: { text: "hi" }
           },
-          url: 'https://graph.facebook.com/v2.6/me/messages'
+          url: "https://graph.facebook.com/v2.6/me/messages"
         },
-        activationId: ''
+        activationId: ""
       }
     ]
   };
@@ -163,9 +165,9 @@ describe('Facebook channel integration tests', () => {
       sub_pipeline: facebookSubPipeline,
       batched_messages: facebookBatchedMessageAction,
       __ow_headers: {
-        'x-hub-signature': shaMap['hello, world!']
+        "x-hub-signature": shaMap["hello, world!"]
       },
-      object: 'page',
+      object: "page",
       entry: [
         {
           id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
@@ -179,7 +181,7 @@ describe('Facebook channel integration tests', () => {
                 id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
               },
               message: {
-                text: 'hello, world!'
+                text: "hello, world!"
               }
             }
           ]
@@ -191,9 +193,9 @@ describe('Facebook channel integration tests', () => {
       sub_pipeline: facebookSubPipeline,
       batched_messages: facebookBatchedMessageAction,
       __ow_headers: {
-        'x-hub-signature': shaMap.hogwarts
+        "x-hub-signature": shaMap.hogwarts
       },
-      object: 'page',
+      object: "page",
       entry: [
         {
           id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
@@ -208,24 +210,24 @@ describe('Facebook channel integration tests', () => {
               },
               message: {
                 attachment: {
-                  type: 'template',
+                  type: "template",
                   payload: {
                     elements: [
                       {
-                        title: 'Welcome to Hogwarts T-Shirt Store',
+                        title: "Welcome to Hogwarts T-Shirt Store",
                         buttons: [
                           {
-                            type: 'postback',
-                            title: 'Enter T-Shirt Store',
-                            payload: 'List all t-shirts'
+                            type: "postback",
+                            title: "Enter T-Shirt Store",
+                            payload: "List all t-shirts"
                           }
                         ],
-                        subtitle: 'I can help you find a t-shirt',
-                        image_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDQKvGUWTu5hStYHbjH8J3fZi6JgYqw6WY3CrfjB680uLjy2FF9A'
+                        subtitle: "I can help you find a t-shirt",
+                        image_url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDQKvGUWTu5hStYHbjH8J3fZi6JgYqw6WY3CrfjB680uLjy2FF9A"
                       }
                     ],
-                    template_type: 'generic',
-                    image_aspect_ratio: 'square'
+                    template_type: "generic",
+                    image_aspect_ratio: "square"
                   }
                 }
               }
@@ -239,22 +241,22 @@ describe('Facebook channel integration tests', () => {
       sub_pipeline: facebookSubPipeline,
       batched_messages: facebookBatchedMessageAction,
       __ow_headers: {
-        'x-hub-signature': shaMap.hi
+        "x-hub-signature": shaMap.hi
       },
-      object: 'page',
+      object: "page",
       entry: [
         {
           id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
           time: 1458692752478,
           messaging: [
             {
-              sender: '12345',
+              sender: "12345",
               recipient: {
                 id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
               },
               timestamp: 1458692752467,
               message: {
-                text: 'hi'
+                text: "hi"
               }
             },
             {
@@ -266,7 +268,7 @@ describe('Facebook channel integration tests', () => {
               },
               timestamp: 1458692752468,
               message: {
-                text: 'hi'
+                text: "hi"
               }
             }
           ]
@@ -284,7 +286,7 @@ describe('Facebook channel integration tests', () => {
               },
               timestamp: 1458692752488,
               message: {
-                text: 'hi'
+                text: "hi"
               }
             }
           ]
@@ -295,7 +297,7 @@ describe('Facebook channel integration tests', () => {
     return done();
   });
 
-  it('validate facebook channel package works for text messages', done => {
+  it("validate facebook channel package works for text messages", done => {
     ow.actions
       .invoke({
         name: facebookWebhook,
@@ -350,7 +352,11 @@ describe('Facebook channel integration tests', () => {
                 try {
                   if (result.response.result) {
                     // Update the activation id in the expected result as it is dynamically generated
-                    expectedPostResult.postResponses[0].successfulInvocation.activationId = result.response.result.postResponses[0].successfulInvocation.activationId;
+                    expectedPostResult.postResponses[
+                      0
+                    ].successfulInvocation.activationId = result.response.result.postResponses[
+                      0
+                    ].successfulInvocation.activationId;
 
                     assert.deepEqual(
                       result.response.result,
@@ -360,7 +366,7 @@ describe('Facebook channel integration tests', () => {
                   }
                   assert(
                     false,
-                    'Cloud Functions Action did not return a reponse'
+                    "Cloud Functions Action did not return a reponse"
                   );
                   return done();
                 } catch (e) {
@@ -383,7 +389,7 @@ describe('Facebook channel integration tests', () => {
     .timeout(40000)
     .retries(1);
 
-  it('validate facebook channel package works for attachments', done => {
+  it("validate facebook channel package works for attachments", done => {
     ow.actions
       .invoke({
         name: facebookWebhook,
@@ -439,7 +445,11 @@ describe('Facebook channel integration tests', () => {
                 try {
                   if (result.response.result) {
                     // Update the activation id in the expected result as it is dynamically generated
-                    expectedPostAttachmentResult.postResponses[0].successfulInvocation.activationId = result.response.result.postResponses[0].successfulInvocation.activationId;
+                    expectedPostAttachmentResult.postResponses[
+                      0
+                    ].successfulInvocation.activationId = result.response.result.postResponses[
+                      0
+                    ].successfulInvocation.activationId;
 
                     assert.deepEqual(
                       result.response.result,
@@ -449,7 +459,7 @@ describe('Facebook channel integration tests', () => {
                   }
                   assert(
                     false,
-                    'Cloud Functions Action did not return a reponse'
+                    "Cloud Functions Action did not return a reponse"
                   );
                   return done();
                 } catch (e) {
@@ -469,7 +479,7 @@ describe('Facebook channel integration tests', () => {
     .timeout(40000)
     .retries(1);
 
-  it('validate facebook channel package works for batched Messages', done => {
+  it("validate facebook channel package works for batched Messages", done => {
     ow.actions
       .invoke({
         name: facebookWebhook,
@@ -544,7 +554,7 @@ describe('Facebook channel integration tests', () => {
                   }
                   assert(
                     false,
-                    'Cloud Functions Action did not return a reponse'
+                    "Cloud Functions Action did not return a reponse"
                   );
                   return done();
                 } catch (e) {
