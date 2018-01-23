@@ -287,8 +287,6 @@ function verifyFacebookSignatureHeader(params, auth) {
     .update(buffer, 'utf-8')
     .digest('hex');
 
-  console.log(`Calculated: ${calculatedHash}`);
-  console.log(`Expected: ${expectedHash}`);
   assert.equal(
     calculatedHash,
     expectedHash,

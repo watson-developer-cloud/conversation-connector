@@ -99,31 +99,40 @@ function generateFacebookPayload(params) {
   generic.forEach(element => {
     switch (element.response_type) {
       case 'image':
-        facebookMessage = {
-          attachment: {
-            type: 'image',
-            payload: {
-              url: element.source // Required
-            }
-          }
-        };
+        facebookMessage = generateFbImageMessage(element);
         break;
       case 'option':
         if (element.options.length < MAX_QUICK_REPLIES_OPTIONS) {
-          facebookMessage = generateQuickReplyMessage(element);
+          facebookMessage = generateFbQuickReplyMessage(element);
         } else {
-          facebookMessage = generateTemplateMessage(element);
+          facebookMessage = generateFbTemplateMessage(element);
         }
         break;
       default:
-        facebookMessage = {
-          text: element.text // Required
-        };
+        facebookMessage = generateFbTextMessage(element);
     }
     facebookMessageList.push(facebookMessage);
     return element;
   });
   return facebookMessageList;
+}
+
+/**
+ * Function generates a message containing image as attachment
+ * as per Facebook guidelines from the generic element returned
+ * from Conversation.
+ * @param {JSON} element - JSON object containing image data
+ * @return {JSON} - Facebook message containing image data
+ */
+function generateFbImageMessage(element) {
+  return {
+    attachment: {
+      type: 'image',
+      payload: {
+        url: element.source // Required
+      }
+    }
+  };
 }
 
 /**
@@ -133,7 +142,7 @@ function generateFacebookPayload(params) {
  * @param {JSON} element - JSON object containing option data
  * @return {JSON} - Facebook quick reply message
  */
-function generateQuickReplyMessage(element) {
+function generateFbQuickReplyMessage(element) {
   const buttonsData = element.options.map(optionObj => {
     const updatedOptionObj = {};
     updatedOptionObj.content_type = 'text';
@@ -154,7 +163,7 @@ function generateQuickReplyMessage(element) {
  * @param {JSON} element - JSON object containing option data
  * @return {JSON} - Facebook template message
  */
-function generateTemplateMessage(element) {
+function generateFbTemplateMessage(element) {
   // Build button object for each option object in array.
   const elementsList = [];
   const buttonsData = element.options.map(optionObj => {
@@ -187,6 +196,18 @@ function generateTemplateMessage(element) {
         elements: elementsList
       }
     }
+  };
+}
+
+/**
+ * Function generates a text message as per Facebook guidelines
+ * from the generic element returned from Conversation.
+ * @param {JSON} element - JSON object containing text
+ * @return {JSON} - Facebook message containing text
+ */
+function generateFbTextMessage(element) {
+  return {
+    text: element.text // Required
   };
 }
 
