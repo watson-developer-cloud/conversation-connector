@@ -2,7 +2,7 @@
 
 WSK=${WSK-wsk}
 
-PIPELINE_NAME=$1
+PIPELINE_NAME="$1_"
 PACKAGE_NAME="$1_facebook"
 
 ${WSK} action update ${PACKAGE_NAME}/middle ./test/integration/channels/facebook/middle.js | grep -v 'ok'
