@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-const openwhisk = require('openwhisk');
+const openwhisk = require("openwhisk");
 
 /**
  * Examines the reply from Conversation and posts one or more replies to the channel as needed.
@@ -23,8 +23,14 @@ const openwhisk = require('openwhisk');
  * @return {JSON}        - result of the call(s) to the Post action
  */
 function main(params) {
-  return new Promise(resolve => {
-    resolve(postMultipleMessages(params));
+  return new Promise((resolve, reject) => {
+    postMultipleMessages(params).then(result => {
+      if (result.postResponses.failedPosts.length > 0) {
+        reject(result);
+      } else {
+        resolve(result);
+      }
+    });
   });
 }
 
@@ -39,18 +45,19 @@ function main(params) {
 function postMultipleMessages(params) {
   // Determine the full path of the channel's postsequence sequence
   const packageName = extractCurrentPackageName(process.env.__OW_ACTION_NAME);
-  const deployName = packageName.split('_')[0];
+  const deployName = packageName.split("_")[0];
   const sequenceName = `${deployName}_postsequence`;
 
   // At minimum we will send one message to the channel,
   // but if Conversation contains an array, send more
   const size = Array.isArray(params.message) ? params.message.length : 1;
 
-  const responses = [];
+  const responses = { successfulPosts: [], failedPosts: [] };
+  const ow = openwhisk();
 
   // Post the message(s) and ultimately return JSON
   // with one response for each channel post that occurred.
-  return postMessage(sequenceName, params, responses, size, 0).then(() => {
+  return postMessage(sequenceName, params, responses, size, 0, ow).then(() => {
     return { postResponses: responses };
   });
 }
@@ -65,21 +72,28 @@ function postMultipleMessages(params) {
  * @param index the array index of the message that needs to be sent
  * @returns {*}
  */
-function postMessage(sequenceName, params, responses, size, index) {
+function postMessage(sequenceName, params, responses, size, index, ow) {
   if (index < size) {
     const paramsForInvocation = Object.assign({}, params);
 
     if (Array.isArray(params.message)) {
       paramsForInvocation.message = params.message[index];
     }
-    return invokeAction(sequenceName, paramsForInvocation)
+    return invokeAction(sequenceName, paramsForInvocation, ow)
       .then(result => {
-        responses.push(result);
-        return postMessage(sequenceName, params, responses, size, index + 1);
+        responses.successfulPosts.push(result);
+        return postMessage(
+          sequenceName,
+          params,
+          responses,
+          size,
+          index + 1,
+          ow
+        );
       })
       .catch(e => {
-        responses.push(e);
-        return postMessage(sequenceName, params, responses, size, index + 1);
+        // Capture the response, don't send any further messages
+        responses.failedPosts.push(e);
       });
   }
   return responses;
@@ -91,11 +105,10 @@ function postMessage(sequenceName, params, responses, size, index) {
  * @param params
  * @returns {boolean}
  */
-function invokeAction(actionName, params) {
-  const ow = openwhisk();
-
+function invokeAction(actionName, params, ow) {
   return new Promise((resolve, reject) => {
     // Invoke the post action
+    // TODO retry
     return ow.actions
       .invoke({
         name: actionName,
@@ -103,18 +116,18 @@ function invokeAction(actionName, params) {
         params
       })
       .then(res => {
-        resolve({
+        resolve(
           // Build a response for successful invocation
-          successfulInvocation: {
+          {
             successResponse: res && res.response && res.response.result,
             activationId: res.activationId
           }
-        });
+        );
       })
       .catch(e => {
         reject({
           // Build a response for failed invocation
-          failedInvocation: e
+          failureResponse: e
         });
       });
   });
@@ -131,7 +144,7 @@ function invokeAction(actionName, params) {
  *      package name = 'pkg'
  */
 function extractCurrentPackageName(actionName) {
-  return actionName.split('/')[2];
+  return actionName.split("/")[2];
 }
 
 module.exports = {
