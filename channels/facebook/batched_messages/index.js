@@ -337,16 +337,6 @@ function invokePipeline(params, subPipelineName, auth) {
         blocking: true
       })
       .then(res => {
-        const postResponses = res.postResponses;
-        // The call to multiple_post didn't fail but one or more of the calls it made to post might have, parse the response
-        if (postResponses.length > 1) {
-          let multipleResponse = [];
-
-          postResponses.forEach(response => {
-
-            });
-          resolve();
-    } else {
         resolve({
           // Build a response for successful invocation
           successfulInvocation: {
@@ -354,7 +344,6 @@ function invokePipeline(params, subPipelineName, auth) {
             activationId: res.activationId
           }
         });
-      }
       })
       .catch(e => {
         reject({
