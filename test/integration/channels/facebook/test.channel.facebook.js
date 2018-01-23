@@ -60,49 +60,65 @@ describe('Facebook channel integration tests', () => {
   };
 
   const expectedPostResult = {
-    params: {
-      message: {
-        text: 'hello, world!'
-      },
-      recipient: {
-        id: envParams.__TEST_FACEBOOK_SENDER_ID
+    postResponses: [
+      {
+        successfulInvocation: {
+          successResponse: {
+            params: {
+              message: {
+                text: 'hello, world!'
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              }
+            },
+            text: 200,
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          }
+        }
       }
-    },
-    text: 200,
-    url: 'https://graph.facebook.com/v2.6/me/messages'
+    ]
   };
 
   const expectedPostAttachmentResult = {
-    text: 200,
-    url: 'https://graph.facebook.com/v2.6/me/messages',
-    params: {
-      message: {
-        attachment: {
-          type: 'template',
-          payload: {
-            elements: [
-              {
-                title: 'Welcome to Hogwarts T-Shirt Store',
-                buttons: [
-                  {
-                    type: 'postback',
-                    title: 'Enter T-Shirt Store',
-                    payload: 'List all t-shirts'
+    postResponses: [
+      {
+        successfulInvocation: {
+          successResponse: {
+            text: 200,
+            url: 'https://graph.facebook.com/v2.6/me/messages',
+            params: {
+              message: {
+                attachment: {
+                  type: 'template',
+                  payload: {
+                    elements: [
+                      {
+                        title: 'Welcome to Hogwarts T-Shirt Store',
+                        buttons: [
+                          {
+                            type: 'postback',
+                            title: 'Enter T-Shirt Store',
+                            payload: 'List all t-shirts'
+                          }
+                        ],
+                        subtitle: 'I can help you find a t-shirt',
+                        image_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDQKvGUWTu5hStYHbjH8J3fZi6JgYqw6WY3CrfjB680uLjy2FF9A'
+                      }
+                    ],
+                    template_type: 'generic',
+                    image_aspect_ratio: 'square'
                   }
-                ],
-                subtitle: 'I can help you find a t-shirt',
-                image_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDQKvGUWTu5hStYHbjH8J3fZi6JgYqw6WY3CrfjB680uLjy2FF9A'
+                }
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
               }
-            ],
-            template_type: 'generic',
-            image_aspect_ratio: 'square'
+            }
           }
         }
-      },
-      recipient: {
-        id: envParams.__TEST_FACEBOOK_SENDER_ID
       }
-    }
+    ]
   };
 
   const expectedBatchedResult = {
