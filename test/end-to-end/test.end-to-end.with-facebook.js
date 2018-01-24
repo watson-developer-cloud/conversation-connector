@@ -98,26 +98,28 @@ describe('End-to-End tests: Facebook as channel package', () => {
     actionName: actionFacebookPipeline,
     message: `Response code 200 above only tells you that receive action was invoked successfully. However, it does not really say if ${actionFacebookPipeline} was invoked successfully. Please use ${activationId} to get more details about this invocation.`
   };
-  const expectedMultiPostResult = {
-    postResponses: [
-      {
-        successfulInvocation: {
-          activationId: 'xxxxx',
+  const expectedSimpleMultiPostResult = {
+    postResponses: {
+      successfulPosts: [
+        {
           successResponse: {
-            params: {
-              message: {
-                text: carDashboardReplyWelcome
+            successResponse: {
+              params: {
+                message: {
+                  text: carDashboardReplyWelcome
+                },
+                recipient: {
+                  id: envParams.__TEST_FACEBOOK_SENDER_ID
+                }
               },
-              recipient: {
-                id: envParams.__TEST_FACEBOOK_SENDER_ID
-              }
+              text: 200,
+              url: 'https://graph.facebook.com/v2.6/me/messages'
             },
-            text: 200,
-            url: 'https://graph.facebook.com/v2.6/me/messages'
+            activationId: 'xxxxx'
           }
         }
-      }
-    ]
+      ]
+    }
   };
 
   beforeEach(done => {
@@ -204,12 +206,12 @@ describe('End-to-End tests: Facebook as channel package', () => {
                 try {
                   if (result.response.result) {
                     const res = result.response.result;
-                    res.postResponses[
+                    res.postResponses.successfulPosts[
                       0
-                    ].successfulInvocation.activationId = expectedMultiPostResult.postResponses[
+                    ].activationId = expectedSimpleMultiPostResult.postResponses.successfulPosts[
                       0
-                    ].successfulInvocation.activationId;
-                    assert.deepEqual(res, expectedMultiPostResult);
+                    ].activationId;
+                    assert.deepEqual(res, expectedSimpleMultiPostResult);
                     return done();
                   }
                   assert(
