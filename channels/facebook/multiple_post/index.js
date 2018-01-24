@@ -79,6 +79,7 @@ function postMessage(sequenceName, params, responses, size, index, ow) {
     if (Array.isArray(params.message)) {
       paramsForInvocation.message = params.message[index];
     }
+    
     return invokeAction(sequenceName, paramsForInvocation, ow)
       .then(result => {
         responses.successfulPosts.push(result);
@@ -108,7 +109,6 @@ function postMessage(sequenceName, params, responses, size, index, ow) {
 function invokeAction(actionName, params, ow) {
   return new Promise((resolve, reject) => {
     // Invoke the post action
-    // TODO retry
     return ow.actions
       .invoke({
         name: actionName,
