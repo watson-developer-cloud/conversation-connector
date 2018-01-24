@@ -347,9 +347,10 @@ function invokePipeline(params, subPipelineName, auth) {
       })
       .catch(e => {
         reject({
-          // Build a response for failed invocation
+          // Build a response for failed invocation.  Multiple_post is currently set to fail on the first bad post so
+          // a failure in a single batched message pipeline invocation should always have only 1 element in the failedPosts array
           failedInvocation: {
-            errorMessage: `Recipient id: ${params.recipient.id} , Sender id: ${params.sender.id} -- ${e.message}`,
+            errorMessage: `Recipient id: ${params.recipient.id} , Sender id: ${params.sender.id} -- ${e.error.postResponses.failedPosts[0].failureResponse.message}`,
             activationId: e.error.activationId
           }
         });
