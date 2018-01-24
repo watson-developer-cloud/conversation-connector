@@ -264,49 +264,47 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
     successfulActionInvocations: [
       {
         successResponse: {
-          postResponses: [
-            {
-              successfulInvocation: {
+          postResponses: {
+            successfulPosts: [
+              {
                 successResponse: {
                   text: 200,
                   params: {
                     recipient: {
                       id: envParams.__TEST_FACEBOOK_SENDER_ID
                     },
-                    message: {
-                      text: carDashboardReplyWelcome
-                    }
+                    message: { text: carDashboardReplyWelcome }
                   },
                   url: 'https://graph.facebook.com/v2.6/me/messages'
                 },
                 activationId: ''
               }
-            }
-          ]
+            ],
+            failedPosts: []
+          }
         },
         activationId: ''
       },
       {
         successResponse: {
-          postResponses: [
-            {
-              successfulInvocation: {
+          postResponses: {
+            successfulPosts: [
+              {
                 successResponse: {
                   text: 200,
                   params: {
                     recipient: {
                       id: envParams.__TEST_FACEBOOK_SENDER_ID
                     },
-                    message: {
-                      text: carDashboardReplyWelcome
-                    }
+                    message: { text: carDashboardReplyWelcome }
                   },
                   url: 'https://graph.facebook.com/v2.6/me/messages'
                 },
                 activationId: ''
               }
-            }
-          ]
+            ],
+            failedPosts: []
+          }
         },
         activationId: ''
       }
