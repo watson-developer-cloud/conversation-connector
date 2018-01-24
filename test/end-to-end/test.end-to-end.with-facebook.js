@@ -103,22 +103,21 @@ describe('End-to-End tests: Facebook as channel package', () => {
       successfulPosts: [
         {
           successResponse: {
-            successResponse: {
-              params: {
-                message: {
-                  text: carDashboardReplyWelcome
-                },
-                recipient: {
-                  id: envParams.__TEST_FACEBOOK_SENDER_ID
-                }
+            params: {
+              message: {
+                text: carDashboardReplyWelcome
               },
-              text: 200,
-              url: 'https://graph.facebook.com/v2.6/me/messages'
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              }
             },
-            activationId: 'xxxxx'
-          }
+            text: 200,
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          },
+          activationId: 'xxxxx'
         }
-      ]
+      ],
+      failedPosts: []
     }
   };
 
