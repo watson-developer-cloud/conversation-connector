@@ -182,6 +182,71 @@ describe('Facebook channel integration tests', () => {
     ]
   };
 
+  const expectedMultiPostResult = {
+    postResponses: {
+      successfulPosts: [
+        {
+          successResponse: {
+            text: 200,
+            params: {
+              recipient: { id: envParams.__TEST_FACEBOOK_SENDER_ID },
+              message: { text: 'Here is your multi-modal response.' }
+            },
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          },
+          activationId: ''
+        },
+        {
+          successResponse: {
+            text: 200,
+            params: {
+              recipient: { id: envParams.__TEST_FACEBOOK_SENDER_ID },
+              message: {
+                attachment: {
+                  type: 'image',
+                  payload: { url: 'https://s.w-x.co/240x180_twc_default.png' }
+                }
+              }
+            },
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          },
+          activationId: ''
+        },
+        {
+          successResponse: {
+            text: 200,
+            params: {
+              recipient: { id: envParams.__TEST_FACEBOOK_SENDER_ID },
+              message: {
+                text: 'Choose your location',
+                quick_replies: [
+                  {
+                    content_type: 'text',
+                    title: 'Location 1',
+                    payload: 'Location 1'
+                  },
+                  {
+                    content_type: 'text',
+                    title: 'Location 2',
+                    payload: 'Location 2'
+                  },
+                  {
+                    content_type: 'text',
+                    title: 'Location 3',
+                    payload: 'Location 3'
+                  }
+                ]
+              }
+            },
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          },
+          activationId: ''
+        }
+      ],
+      failedPosts: []
+    }
+  };
+
   beforeEach(done => {
     facebookTextParams = {
       sub_pipeline: facebookSubPipeline,
@@ -729,21 +794,33 @@ describe('Facebook channel integration tests', () => {
               result => {
                 try {
                   if (result.response.result) {
-                    console.log(
-                      'result: ' + JSON.stringify(result.response.result)
+                    // Update the activation id in the expected result as it is dynamically generated
+                    assert.equal(
+                      expectedMultiPostResult.postResponses.successfulPosts.length,
+                      3
                     );
-                    // // Update the activation id in the expected result as it is dynamically generated
-                    // expectedPostResult.postResponses.successfulPosts[
-                    //   0
-                    // ].activationId = result.response.result.postResponses.successfulPosts[
-                    //   0
-                    // ].activationId;
-                    //
-                    // assert.deepEqual(
-                    //   result.response.result,
-                    //   expectedPostResult
-                    // );
-                    // return done();
+
+                    expectedMultiPostResult.postResponses.successfulPosts[
+                      0
+                    ].activationId = result.response.result.postResponses.successfulPosts[
+                      0
+                    ].activationId;
+                    expectedMultiPostResult.postResponses.successfulPosts[
+                      1
+                    ].activationId = result.response.result.postResponses.successfulPosts[
+                      1
+                    ].activationId;
+                    expectedMultiPostResult.postResponses.successfulPosts[
+                      2
+                    ].activationId = result.response.result.postResponses.successfulPosts[
+                      2
+                    ].activationId;
+
+                    assert.deepEqual(
+                      result.response.result,
+                      expectedMultiPostResult
+                    );
+                    return done();
                   }
                   assert(
                     false,
