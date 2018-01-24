@@ -995,7 +995,7 @@ describe('End-to-End tests: Facebook as channel package - for multipost messages
   // Under validated circumstances, the channel (mocked parameters here) will send parameters
   // to facebook/receive. The architecture will flow the response to facebook/post, and
   // facebook/post will send its response to this ow.action invocation.
-  it('validate facebook channel package works for batched Messages', done => {
+  it('validate facebook channel package works for multipost messages', done => {
     ow.actions
       .invoke({
         name: facebookWebhook,
