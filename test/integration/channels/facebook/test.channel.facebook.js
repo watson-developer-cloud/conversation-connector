@@ -32,6 +32,12 @@ const facebookBatchedMessageAction = `${pipelineName}_facebook/batched_messages`
 const activationId = 'xxxxxx';
 const actionName = 'yyyyyy';
 
+const shaMap = {
+  'hello, world!': 'sha1=e7d42cb171ec3ca26c2d6de14635bd3ea04bf01d',
+  hi: 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738',
+  hogwarts: 'sha1=eb4412b17e32da9656bb3e3551094d531438b6da'
+};
+
 /** Function allows tests to sleep for certain amount of time
 */
 function sleep(time) {
@@ -102,7 +108,7 @@ describe('Facebook channel integration tests', () => {
   const expectedBatchedResult = {
     failedActionInvocations: [
       {
-        errorMessage: `Recipient id: 185643828639058 , Sender id: undefined -- POST https://openwhisk.ng.bluemix.net:443/api/v1/namespaces/${process.env.__OW_NAMESPACE}/actions/testflex_facebook/integration-pipeline?blocking=true Returned HTTP 502 (Bad Gateway) --> "Recepient id not provided."`,
+        errorMessage: `Recipient id: ${process.env.__TEST_FACEBOOK_RECIPIENT_ID} , Sender id: undefined -- POST https://openwhisk.ng.bluemix.net:443/api/v1/namespaces/${process.env.__OW_NAMESPACE}/actions/${pipelineName}_facebook/integration-pipeline?blocking=true Returned HTTP 502 (Bad Gateway) --> "Recepient id not provided."`,
         activationId: ''
       }
     ],
@@ -141,7 +147,7 @@ describe('Facebook channel integration tests', () => {
       sub_pipeline: facebookSubPipeline,
       batched_messages: facebookBatchedMessageAction,
       __ow_headers: {
-        'x-hub-signature': envParams.__TEST_FACEBOOK_X_HUB_SIGNATURE
+        'x-hub-signature': shaMap['hello, world!']
       },
       object: 'page',
       entry: [
@@ -169,7 +175,7 @@ describe('Facebook channel integration tests', () => {
       sub_pipeline: facebookSubPipeline,
       batched_messages: facebookBatchedMessageAction,
       __ow_headers: {
-        'x-hub-signature': 'sha1=eb4412b17e32da9656bb3e3551094d531438b6da'
+        'x-hub-signature': shaMap.hogwarts
       },
       object: 'page',
       entry: [
@@ -217,7 +223,7 @@ describe('Facebook channel integration tests', () => {
       sub_pipeline: facebookSubPipeline,
       batched_messages: facebookBatchedMessageAction,
       __ow_headers: {
-        'x-hub-signature': 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738'
+        'x-hub-signature': shaMap.hi
       },
       object: 'page',
       entry: [

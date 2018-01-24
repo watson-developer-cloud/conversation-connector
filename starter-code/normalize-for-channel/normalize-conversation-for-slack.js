@@ -82,9 +82,9 @@ function getSlackPostUrl(params) {
  * @return {JSON}        - complete Slack output to be sent to Slack post endpoint
  */
 function insertConversationOutput(params, output) {
-  const slackOutput = output;
+  const slackOutput = Object.assign({}, output);
 
-  // if the dialog-node contained slack-specific data, use that entirely
+  // 1. if the dialog-node contained slack-specific data, use that entirely
   if (params.conversation.output.slack) {
     Object.keys(params.conversation.output.slack).forEach(key => {
       slackOutput[key] = params.conversation.output.slack[key];
@@ -92,6 +92,39 @@ function insertConversationOutput(params, output) {
     return slackOutput;
   }
 
+  const ts = getOriginalMessageTimestamp(params);
+  if (ts) {
+    slackOutput.ts = ts;
+  }
+
+  // 2. generic response_types support
+  if (params.conversation.output.generic) {
+    const generic = params.conversation.output.generic instanceof Array
+      ? params.conversation.output.generic
+      : [Object.assign({}, params.conversation.output.generic)];
+
+    // Add the attachment array.
+    slackOutput.attachments = slackOutput.attachments
+      ? slackOutput.attachments
+      : [];
+
+    generic.forEach(element => {
+      switch (element.response_type) {
+        case 'image':
+          slackOutput.attachments.push(generateSlackImageData(element));
+          break;
+        case 'option':
+          slackOutput.attachments.push(generateSlackOptionsData(element));
+          break;
+        default:
+          slackOutput.text = element.text;
+      }
+      return element;
+    });
+    return slackOutput;
+  }
+
+  // 3. if Conversation output is text only
   const text = getOutputText(params);
   if (text) {
     slackOutput.text = text;
@@ -102,12 +135,46 @@ function insertConversationOutput(params, output) {
     slackOutput.attachments = attachments;
   }
 
-  const ts = getOriginalMessageTimestamp(params);
-  if (ts) {
-    slackOutput.ts = ts;
-  }
-
   return slackOutput;
+}
+
+/**
+ * Generates the image attachment data as per Slack specs.
+ *
+ * @param  {JSON} params - The generic element object
+ *                         containing image data
+ * @return {JSON}      - Slack attachment image data
+ */
+function generateSlackImageData(element) {
+  return {
+    title: element.title,
+    pretext: element.description,
+    image_url: element.source
+  };
+}
+
+/**
+ * Generates the buttons attachment data as per Slack specs.
+ *
+ * @param  {JSON} params - The generic element object
+ *                         containing options data
+ * @return {JSON}      - Slack attachment options data
+ */
+function generateSlackOptionsData(element) {
+  const buttonsData = element.options.map(optionObj => {
+    const updatedOptionObj = {};
+    updatedOptionObj.name = optionObj.label;
+    updatedOptionObj.type = 'button';
+    updatedOptionObj.text = optionObj.label;
+    updatedOptionObj.value = optionObj.value;
+    return updatedOptionObj;
+  });
+
+  return {
+    text: element.title,
+    callback_id: element.title,
+    actions: buttonsData
+  };
 }
 
 /**
@@ -171,7 +238,12 @@ function validateParameters(params) {
 
   // Required Conversation output text
   assert(params.conversation.output, 'No conversation output message.');
-  assert(params.conversation.output.text, 'No conversation output message.');
+  assert(
+    params.conversation.output.slack ||
+      params.conversation.output.generic ||
+      params.conversation.output.text,
+    'No facebook/generic/text field in conversation.output.'
+  );
 
   // Required: raw input data
   assert(params.raw_input_data, 'No raw input data found.');
