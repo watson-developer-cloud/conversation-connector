@@ -884,7 +884,7 @@ describe('End-to-End tests: Multimodal messages work', () => {
 
 describe('End-to-End tests: Facebook as channel package - for multipost messages', () => {
   const ow = openwhisk();
-  const actionFacebookPipeline = 'test-pipeline-facebook';
+  const actionFacebookPipeline = 'test-pipeline-context-facebook';
   const actionFacebookBatchedMessages = `${pipelineName}_facebook/batched_messages`;
   const facebookWebhook = `${pipelineName}_facebook/receive`;
   const activationId = 'xxxxxxx';
@@ -1070,7 +1070,7 @@ describe('End-to-End tests: Facebook as channel package - for multipost messages
                       2
                     ].activationId;
 
-                    assert.deepEqual(res, expectedBatchedResult);
+                    assert.deepEqual(res, expectedMultiPostResult);
                     return done();
                   }
                   assert(

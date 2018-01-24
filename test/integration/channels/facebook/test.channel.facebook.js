@@ -796,7 +796,7 @@ describe('Facebook channel integration tests', () => {
                   if (result.response.result) {
                     // Update the activation id in the expected result as it is dynamically generated
                     assert.equal(
-                      expectedMultiPostResult.postResponses.successfulPosts.length,
+                        result.response.result.postResponses.successfulPosts,
                       3
                     );
 
