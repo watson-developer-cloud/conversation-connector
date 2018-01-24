@@ -51,6 +51,7 @@ describe('Facebook channel integration tests', () => {
   let facebookTextParams = {};
   let facebookAttachmentParams = {};
   let facebookBatchedMessageParams = {};
+  let facebookMultiPostParams = {};
 
   const expectedReceiveResult = {
     text: 200,
@@ -312,6 +313,34 @@ describe('Facebook channel integration tests', () => {
           ]
         }
       ]
+    };
+
+    facebookMultiPostParams = {
+        sub_pipeline: facebookSubPipeline,
+        batched_messages: facebookBatchedMessageAction,
+        __ow_headers: {
+            'x-hub-signature': shaMap.multi
+        },
+        object: 'page',
+        entry: [
+            {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
+                time: 1458692752478,
+                messaging: [
+                    {
+                        sender: {
+                            id: envParams.__TEST_FACEBOOK_SENDER_ID
+                        },
+                        recipient: {
+                            id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+                        },
+                        message: {
+                            text: 'show me a multimedia reply'
+                        }
+                    }
+                ]
+            }
+        ]
     };
 
     return done();
@@ -606,6 +635,99 @@ describe('Facebook channel integration tests', () => {
                 return done(error);
               }
             );
+        });
+      })
+      .catch(e => {
+        return e;
+      });
+  })
+    .timeout(40000)
+    .retries(1);
+
+  it('validate facebook channel package works for multipost messages', done => {
+    ow.actions
+      .invoke({
+        name: facebookWebhook,
+        params: facebookMultiPostParams,
+        blocking: true,
+        result: true
+      })
+      .then(
+        success => {
+          try {
+            const modifiedExpectedResult = Object.assign(
+              {},
+              expectedReceiveResult
+            );
+            // Modify the expected response to incorporate the action name as it's
+            // picked up dynamically depending upon type of incoming params
+            modifiedExpectedResult.actionName = facebookSubPipeline;
+            modifiedExpectedResult.message = modifiedExpectedResult.message.replace(
+              actionName,
+              facebookSubPipeline
+            );
+            // Modify the expected response to incorporate the dynamically generated
+            // activation ids
+            modifiedExpectedResult.activationId = success.activationId;
+            modifiedExpectedResult.message = modifiedExpectedResult.message.replace(
+              activationId,
+              success.activationId
+            );
+            assert.deepEqual(success, modifiedExpectedResult);
+
+            // Return the activation id of the subpipeline invocation
+            const successActivationId = success.activationId;
+            return successActivationId;
+          } catch (e) {
+            return done(e);
+          }
+        },
+        error => {
+          return done(error);
+        }
+      )
+      .then(successActivationId => {
+        // Sleep for 10s to ensure the activation has been created
+        sleep(10000).then(() => {
+          // Invoke the subpipeline activation
+          ow.activations
+            .get({
+              activationId: successActivationId
+            })
+            .then(
+              result => {
+                try {
+                  if (result.response.result) {
+                    console.log("result: " + JSON.stringify(result.response.result));
+                    // // Update the activation id in the expected result as it is dynamically generated
+                    // expectedPostResult.postResponses.successfulPosts[
+                    //   0
+                    // ].activationId = result.response.result.postResponses.successfulPosts[
+                    //   0
+                    // ].activationId;
+                    //
+                    // assert.deepEqual(
+                    //   result.response.result,
+                    //   expectedPostResult
+                    // );
+                    // return done();
+                  }
+                  assert(
+                    false,
+                    'Cloud Functions Action did not return a reponse'
+                  );
+                  return done();
+                } catch (e) {
+                  return done(e);
+                }
+              },
+              error => {
+                return done(error);
+              }
+            )
+            .catch(e => {
+              return done(e);
+            });
         });
       })
       .catch(e => {
