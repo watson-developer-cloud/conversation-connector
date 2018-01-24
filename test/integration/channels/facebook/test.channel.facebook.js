@@ -171,7 +171,8 @@ describe('Facebook channel integration tests', () => {
                 },
                 activationId: ''
               }
-            ]
+            ],
+            failedPosts: []
           }
         },
         activationId: ''
@@ -552,6 +553,27 @@ describe('Facebook channel integration tests', () => {
               result => {
                 try {
                   const res = result.response.result;
+
+                  // Set the expected to the actual activation ids as these are generated dynamically and we can't really compare them
+                  expectedBatchedResult.successfulActionInvocations[
+                    0
+                  ].successResponse.postResponses.successfulPosts[
+                    0
+                  ].activationId = res.successfulActionInvocations[
+                    0
+                  ].successResponse.postResponses.successfulPosts[
+                    0
+                  ].activationId;
+                  expectedBatchedResult.successfulActionInvocations[
+                    1
+                  ].successResponse.postResponses.successfulPosts[
+                    0
+                  ].activationId = res.successfulActionInvocations[
+                    1
+                  ].successResponse.postResponses.successfulPosts[
+                    0
+                  ].activationId;
+
                   if (res) {
                     expectedBatchedResult.successfulActionInvocations[
                       0
