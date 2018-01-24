@@ -35,7 +35,8 @@ const actionName = 'yyyyyy';
 const shaMap = {
   'hello, world!': 'sha1=e7d42cb171ec3ca26c2d6de14635bd3ea04bf01d',
   hi: 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738',
-  hogwarts: 'sha1=eb4412b17e32da9656bb3e3551094d531438b6da'
+  hogwarts: 'sha1=eb4412b17e32da9656bb3e3551094d531438b6da',
+  multi: 'sha1=3a625f8ff4be5999f9c016d665916aaf945ed67c'
 };
 
 /** Function allows tests to sleep for certain amount of time
@@ -316,31 +317,31 @@ describe('Facebook channel integration tests', () => {
     };
 
     facebookMultiPostParams = {
-        sub_pipeline: facebookSubPipeline,
-        batched_messages: facebookBatchedMessageAction,
-        __ow_headers: {
-            'x-hub-signature': shaMap.multi
-        },
-        object: 'page',
-        entry: [
+      sub_pipeline: facebookSubPipeline,
+      batched_messages: facebookBatchedMessageAction,
+      __ow_headers: {
+        'x-hub-signature': shaMap.multi
+      },
+      object: 'page',
+      entry: [
+        {
+          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
+          time: 1458692752478,
+          messaging: [
             {
-                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
-                time: 1458692752478,
-                messaging: [
-                    {
-                        sender: {
-                            id: envParams.__TEST_FACEBOOK_SENDER_ID
-                        },
-                        recipient: {
-                            id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
-                        },
-                        message: {
-                            text: 'show me a multimedia reply'
-                        }
-                    }
-                ]
+              sender: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
+              message: {
+                text: 'show me a multimedia reply'
+              }
             }
-        ]
+          ]
+        }
+      ]
     };
 
     return done();
@@ -698,7 +699,9 @@ describe('Facebook channel integration tests', () => {
               result => {
                 try {
                   if (result.response.result) {
-                    console.log("result: " + JSON.stringify(result.response.result));
+                    console.log(
+                      'result: ' + JSON.stringify(result.response.result)
+                    );
                     // // Update the activation id in the expected result as it is dynamically generated
                     // expectedPostResult.postResponses.successfulPosts[
                     //   0
