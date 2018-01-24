@@ -346,8 +346,9 @@ function invokePipeline(params, subPipelineName, auth) {
         });
       })
       .catch(e => {
-        // Build a response for failed invocation.  Multiple_post is currently set to fail on the first bad post so
-        // a failure in a single batched message pipeline invocation should always have only 1 element in the failedPosts array
+        // Build a response for failed invocation.  Multiple_post is currently set to fail on the
+        // first bad post so a failure in a single batched message pipeline invocation should
+        // always have only 1 element in the failedPosts array
         let eMessage = '';
 
         if (

@@ -496,7 +496,8 @@ describe('Facebook channel integration tests', () => {
               result => {
                 try {
                   if (result.response.result) {
-                    // Update the activation id in the expected result as it is dynamically generated
+                    // Update the activation id in the expected result as it is dynamically
+                    // generated
                     expectedPostResult.postResponses.successfulPosts[
                       0
                     ].activationId = result.response.result.postResponses.successfulPosts[
@@ -589,7 +590,8 @@ describe('Facebook channel integration tests', () => {
               result => {
                 try {
                   if (result.response.result) {
-                    // Update the activation id in the expected result as it is dynamically generated
+                    // Update the activation id in the expected result as it is dynamically
+                    // generated
                     expectedPostAttachmentResult.postResponses.successfulPosts[
                       0
                     ].activationId = result.response.result.postResponses.successfulPosts[
@@ -679,7 +681,8 @@ describe('Facebook channel integration tests', () => {
                 try {
                   const res = result.response.result;
 
-                  // Set the expected to the actual activation ids as these are generated dynamically and we can't really compare them
+                  // Set the expected to the actual activation ids as these are generated
+                  // dynamically and we can't really compare them
                   expectedBatchedResult.successfulActionInvocations[
                     0
                   ].successResponse.postResponses.successfulPosts[
@@ -794,9 +797,10 @@ describe('Facebook channel integration tests', () => {
               result => {
                 try {
                   if (result.response.result) {
-                    // Update the activation id in the expected result as it is dynamically generated
+                    // Update the activation id in the expected result as it is dynamically
+                    // generated
                     assert.equal(
-                        result.response.result.postResponses.successfulPosts,
+                      result.response.result.postResponses.successfulPosts.length,
                       3
                     );
 

@@ -1048,25 +1048,23 @@ describe('End-to-End tests: Facebook as channel package - for multipost messages
                   if (res) {
                     // Replace the activation ids with dynamically
                     // generated activation ids present in the response
-                    // Update the activation id in the expected result as it is dynamically generated
-                    assert.equal(
-                      expectedMultiPostResult.postResponses.successfulPosts.length,
-                      3
-                    );
+                    // Update the activation id in the expected result
+                    // as it is dynamically generated
+                    assert.equal(res.postResponses.successfulPosts.length, 3);
 
                     expectedMultiPostResult.postResponses.successfulPosts[
                       0
-                    ].activationId = result.response.result.postResponses.successfulPosts[
+                    ].activationId = res.postResponses.successfulPosts[
                       0
                     ].activationId;
                     expectedMultiPostResult.postResponses.successfulPosts[
                       1
-                    ].activationId = result.response.result.postResponses.successfulPosts[
+                    ].activationId = res.postResponses.successfulPosts[
                       1
                     ].activationId;
                     expectedMultiPostResult.postResponses.successfulPosts[
                       2
-                    ].activationId = result.response.result.postResponses.successfulPosts[
+                    ].activationId = res.postResponses.successfulPosts[
                       2
                     ].activationId;
 

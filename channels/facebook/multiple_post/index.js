@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-const openwhisk = require("openwhisk");
+const openwhisk = require('openwhisk');
 
 /**
  * Examines the reply from Conversation and posts one or more replies to the channel as needed.
@@ -45,7 +45,7 @@ function main(params) {
 function postMultipleMessages(params) {
   // Determine the full path of the channel's postsequence sequence
   const packageName = extractCurrentPackageName(process.env.__OW_ACTION_NAME);
-  const deployName = packageName.split("_")[0];
+  const deployName = packageName.split('_')[0];
   const sequenceName = `${deployName}_postsequence`;
 
   // At minimum we will send one message to the channel,
@@ -144,7 +144,7 @@ function invokeAction(actionName, params, ow) {
  *      package name = 'pkg'
  */
 function extractCurrentPackageName(actionName) {
-  return actionName.split("/")[2];
+  return actionName.split('/')[2];
 }
 
 module.exports = {
