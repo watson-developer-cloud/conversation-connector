@@ -434,23 +434,23 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
 
                     expectedBatchedResult.successfulActionInvocations[
                       0
-                    ].successResponse.postResponses[
+                    ].successResponse.postResponses.successfulPosts[
                       0
-                    ].successfulInvocation.activationId = res.successfulActionInvocations[
+                    ].activationId = res.successfulActionInvocations[
                       0
-                    ].successResponse.postResponses[
+                    ].successResponse.postResponses.successfulPosts[
                       0
-                    ].successfulInvocation.activationId;
+                    ].activationId;
 
                     expectedBatchedResult.successfulActionInvocations[
                       1
-                    ].successResponse.postResponses[
+                    ].successResponse.postResponses.successfulPosts[
                       0
-                    ].successfulInvocation.activationId = res.successfulActionInvocations[
+                    ].activationId = res.successfulActionInvocations[
                       1
-                    ].successResponse.postResponses[
+                    ].successResponse.postResponses.successfulPosts[
                       0
-                    ].successfulInvocation.activationId;
+                    ].activationId;
 
                     expectedBatchedResult.successfulActionInvocations[
                       1
