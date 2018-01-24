@@ -98,7 +98,7 @@ describe('End-to-End tests: Facebook as channel package', () => {
     actionName: actionFacebookPipeline,
     message: `Response code 200 above only tells you that receive action was invoked successfully. However, it does not really say if ${actionFacebookPipeline} was invoked successfully. Please use ${activationId} to get more details about this invocation.`
   };
-  
+
   const expectedSimpleMultiPostResult = {
     postResponses: {
       successfulPosts: [

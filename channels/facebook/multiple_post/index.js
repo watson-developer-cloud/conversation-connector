@@ -79,7 +79,7 @@ function postMessage(sequenceName, params, responses, size, index, ow) {
     if (Array.isArray(params.message)) {
       paramsForInvocation.message = params.message[index];
     }
-    
+
     return invokeAction(sequenceName, paramsForInvocation, ow)
       .then(result => {
         responses.successfulPosts.push(result);
