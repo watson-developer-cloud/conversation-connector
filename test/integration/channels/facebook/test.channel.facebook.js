@@ -335,9 +335,39 @@ describe('Facebook channel integration tests', () => {
               recipient: {
                 id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
               },
-              message: {
-                text: 'show me a multimedia reply'
-              }
+              message: [
+                {
+                  text: 'Here is your multi-modal response.'
+                },
+                {
+                  attachment: {
+                    type: 'image',
+                    payload: {
+                      url: 'https://xxx.com/xxx.png'
+                    }
+                  }
+                },
+                {
+                  text: 'Choose your location',
+                  quick_replies: [
+                    {
+                      content_type: 'text',
+                      title: 'Location 1',
+                      payload: 'Location 1'
+                    },
+                    {
+                      content_type: 'text',
+                      title: 'Location 2',
+                      payload: 'Location 2'
+                    },
+                    {
+                      content_type: 'text',
+                      title: 'Location 3',
+                      payload: 'Location 3'
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }
