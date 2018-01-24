@@ -343,7 +343,7 @@ describe('Facebook channel integration tests', () => {
                   attachment: {
                     type: 'image',
                     payload: {
-                      url: 'https://xxx.com/xxx.png'
+                      url: 'https://s.w-x.co/240x180_twc_default.png'
                     }
                   }
                 },
