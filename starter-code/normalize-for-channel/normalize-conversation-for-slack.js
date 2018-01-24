@@ -98,9 +98,7 @@ function insertConversationOutput(params, output) {
   }
 
   // 2. generic response_types support
-  let buttonsData;
   if (params.conversation.output.generic) {
-    // console.log(JSON.stringify(params.conversation.output.generic));
     const generic = params.conversation.output.generic instanceof Array
       ? params.conversation.output.generic
       : [Object.assign({}, params.conversation.output.generic)];
@@ -113,26 +111,10 @@ function insertConversationOutput(params, output) {
     generic.forEach(element => {
       switch (element.response_type) {
         case 'image':
-          slackOutput.attachments.push({
-            title: element.title,
-            pretext: element.description,
-            image_url: element.source
-          });
+          slackOutput.attachments.push(generateSlackImageData(element));
           break;
         case 'option':
-          buttonsData = element.options.map(optionObj => {
-            const updatedOptionObj = {};
-            updatedOptionObj.name = optionObj.label;
-            updatedOptionObj.type = 'button';
-            updatedOptionObj.text = optionObj.label;
-            updatedOptionObj.value = optionObj.value;
-            return updatedOptionObj;
-          });
-          slackOutput.attachments.push({
-            text: element.title,
-            callback_id: element.title,
-            actions: buttonsData
-          });
+          slackOutput.attachments.push(generateSlackOptionsData(element));
           break;
         default:
           slackOutput.text = element.text;
@@ -154,6 +136,45 @@ function insertConversationOutput(params, output) {
   }
 
   return slackOutput;
+}
+
+/**
+ * Generates the image attachment data as per Slack specs.
+ *
+ * @param  {JSON} params - The generic element object
+ *                         containing image data
+ * @return {JSON}      - Slack attachment image data
+ */
+function generateSlackImageData(element) {
+  return {
+    title: element.title,
+    pretext: element.description,
+    image_url: element.source
+  };
+}
+
+/**
+ * Generates the buttons attachment data as per Slack specs.
+ *
+ * @param  {JSON} params - The generic element object
+ *                         containing options data
+ * @return {JSON}      - Slack attachment options data
+ */
+function generateSlackOptionsData(element) {
+  const buttonsData = element.options.map(optionObj => {
+    const updatedOptionObj = {};
+    updatedOptionObj.name = optionObj.label;
+    updatedOptionObj.type = 'button';
+    updatedOptionObj.text = optionObj.label;
+    updatedOptionObj.value = optionObj.value;
+    return updatedOptionObj;
+  });
+
+  return {
+    text: element.title,
+    callback_id: element.title,
+    actions: buttonsData
+  };
 }
 
 /**
