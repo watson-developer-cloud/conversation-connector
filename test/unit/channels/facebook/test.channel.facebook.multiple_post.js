@@ -199,9 +199,9 @@ describe('Multi-post Unit Tests', () => {
     };
 
     const multiPostResponse = {
-      postResponses: [
-        {
-          successfulInvocation: {
+      postResponses: {
+        successfulPosts: [
+          {
             successResponse: {
               text: 200,
               params: {
@@ -216,8 +216,9 @@ describe('Multi-post Unit Tests', () => {
             },
             activationId: 'xxx'
           }
-        }
-      ]
+        ],
+        failedPosts: []
+      }
     };
 
     const mock = nock(`${mockCloudFunctionsEndpoints.url}`)
@@ -541,9 +542,9 @@ describe('Multi-post Unit Tests', () => {
     };
 
     const multiPostResponse = {
-      postResponses: [
-        {
-          successfulInvocation: {
+      postResponses: {
+        successfulPosts: [
+          {
             successResponse: {
               text: 200,
               params: {
@@ -557,10 +558,8 @@ describe('Multi-post Unit Tests', () => {
               url: 'https://graph.facebook.com/v2.6/me/messages'
             },
             activationId: '4812cc2341964f6992cc234196cf69bf'
-          }
-        },
-        {
-          successfulInvocation: {
+          },
+          {
             successResponse: {
               text: 200,
               params: {
@@ -579,10 +578,8 @@ describe('Multi-post Unit Tests', () => {
               url: 'https://graph.facebook.com/v2.6/me/messages'
             },
             activationId: '7cbf03bbe6464a61bf03bbe646ea61b8'
-          }
-        },
-        {
-          successfulInvocation: {
+          },
+          {
             successResponse: {
               text: 200,
               params: {
@@ -620,8 +617,9 @@ describe('Multi-post Unit Tests', () => {
             },
             activationId: 'e8db2d045464441d9b2d045464341d3b'
           }
-        }
-      ]
+        ],
+        failedPosts: []
+      }
     };
 
     const mock = nock(`${mockCloudFunctionsEndpoints.url}`)
@@ -798,59 +796,62 @@ describe('Multi-post Unit Tests', () => {
     };
 
     const failedMultiPostResponse = {
-      postResponses: [
-        {
-          failedInvocation: {
-            name: 'OpenWhiskError',
-            message: 'POST https://xxx/api/v1/namespaces/xxx/actions/deployname_postsequence?blocking=true Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"',
-            error: {
-              duration: 648,
-              name: 'psequence_postsequence',
-              subject: 'xxx',
-              activationId: 'ee7b6ad0eccd4bbbbb6ad0eccd4bbb96',
-              publish: false,
-              annotations: [
-                {
-                  key: 'topmost',
-                  value: true
-                },
-                {
-                  key: 'path',
-                  value: 'xxx_xxx/psequence_postsequence'
-                },
-                {
-                  key: 'kind',
-                  value: 'sequence'
-                },
-                {
-                  key: 'limits',
-                  value: {
-                    timeout: 60000,
-                    memory: 256,
-                    logs: 10
+      postResponses: {
+        successfulPosts: [],
+        failedPosts: [
+          {
+            failureResponse: {
+              name: 'OpenWhiskError',
+              message: 'POST https://xxx/api/v1/namespaces/xxx/actions/deployname_postsequence?blocking=true Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"',
+              error: {
+                duration: 648,
+                name: 'psequence_postsequence',
+                subject: 'xxx',
+                activationId: 'ee7b6ad0eccd4bbbbb6ad0eccd4bbb96',
+                publish: false,
+                annotations: [
+                  {
+                    key: 'topmost',
+                    value: true
+                  },
+                  {
+                    key: 'path',
+                    value: 'xxx_xxx/psequence_postsequence'
+                  },
+                  {
+                    key: 'kind',
+                    value: 'sequence'
+                  },
+                  {
+                    key: 'limits',
+                    value: {
+                      timeout: 60000,
+                      memory: 256,
+                      logs: 10
+                    }
                   }
-                }
-              ],
-              version: '0.0.1',
-              response: {
-                result: {
-                  error: 'Action returned with status code 400, message: Bad Request'
+                ],
+                version: '0.0.1',
+                response: {
+                  result: {
+                    error: 'Action returned with status code 400, message: Bad Request'
+                  },
+                  success: false,
+                  status: 'application error'
                 },
-                success: false,
-                status: 'application error'
+                end: 1516297990239,
+                logs: [
+                  'fa2b88566e3d4577ab88566e3d6577b5',
+                  'c5218eff74ec472aa18eff74ecb72a57'
+                ],
+                start: 1516297989553,
+                namespace: 'xxx_xxx'
               },
-              end: 1516297990239,
-              logs: [
-                'fa2b88566e3d4577ab88566e3d6577b5',
-                'c5218eff74ec472aa18eff74ecb72a57'
-              ],
-              start: 1516297989553,
-              namespace: 'xxx_xxx'
-            },
-            statusCode: 400
+              statusCode: 400
+            }
           }
-        }
-      ]
+        ]
+      }
     };
 
     const mock = nock(`${mockCloudFunctionsEndpoints.url}`)
@@ -859,14 +860,14 @@ describe('Multi-post Unit Tests', () => {
 
     return mockMultiplePost.main(multiPostParams).then(
       result => {
+        assert(false, result);
+      },
+      error => {
         if (!mock.isDone()) {
           nock.cleanAll();
           assert(false, 'Mock server did not get called.');
         }
-        assert.deepEqual(result, failedMultiPostResponse);
-      },
-      error => {
-        assert(false, error);
+        assert.deepEqual(error, failedMultiPostResponse);
       }
     );
   });

@@ -98,11 +98,11 @@ describe('End-to-End tests: Facebook as channel package', () => {
     actionName: actionFacebookPipeline,
     message: `Response code 200 above only tells you that receive action was invoked successfully. However, it does not really say if ${actionFacebookPipeline} was invoked successfully. Please use ${activationId} to get more details about this invocation.`
   };
-  const expectedMultiPostResult = {
-    postResponses: [
-      {
-        successfulInvocation: {
-          activationId: 'xxxxx',
+
+  const expectedSimpleMultiPostResult = {
+    postResponses: {
+      successfulPosts: [
+        {
           successResponse: {
             params: {
               message: {
@@ -114,10 +114,12 @@ describe('End-to-End tests: Facebook as channel package', () => {
             },
             text: 200,
             url: 'https://graph.facebook.com/v2.6/me/messages'
-          }
+          },
+          activationId: 'xxxxx'
         }
-      }
-    ]
+      ],
+      failedPosts: []
+    }
   };
 
   beforeEach(done => {
@@ -204,12 +206,12 @@ describe('End-to-End tests: Facebook as channel package', () => {
                 try {
                   if (result.response.result) {
                     const res = result.response.result;
-                    res.postResponses[
+                    res.postResponses.successfulPosts[
                       0
-                    ].successfulInvocation.activationId = expectedMultiPostResult.postResponses[
+                    ].activationId = expectedSimpleMultiPostResult.postResponses.successfulPosts[
                       0
-                    ].successfulInvocation.activationId;
-                    assert.deepEqual(res, expectedMultiPostResult);
+                    ].activationId;
+                    assert.deepEqual(res, expectedSimpleMultiPostResult);
                     return done();
                   }
                   assert(
@@ -263,49 +265,47 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
     successfulActionInvocations: [
       {
         successResponse: {
-          postResponses: [
-            {
-              successfulInvocation: {
+          postResponses: {
+            successfulPosts: [
+              {
                 successResponse: {
                   text: 200,
                   params: {
                     recipient: {
                       id: envParams.__TEST_FACEBOOK_SENDER_ID
                     },
-                    message: {
-                      text: carDashboardReplyWelcome
-                    }
+                    message: { text: carDashboardReplyWelcome }
                   },
                   url: 'https://graph.facebook.com/v2.6/me/messages'
                 },
                 activationId: ''
               }
-            }
-          ]
+            ],
+            failedPosts: []
+          }
         },
         activationId: ''
       },
       {
         successResponse: {
-          postResponses: [
-            {
-              successfulInvocation: {
+          postResponses: {
+            successfulPosts: [
+              {
                 successResponse: {
                   text: 200,
                   params: {
                     recipient: {
                       id: envParams.__TEST_FACEBOOK_SENDER_ID
                     },
-                    message: {
-                      text: carDashboardReplyWelcome
-                    }
+                    message: { text: carDashboardReplyWelcome }
                   },
                   url: 'https://graph.facebook.com/v2.6/me/messages'
                 },
                 activationId: ''
               }
-            }
-          ]
+            ],
+            failedPosts: []
+          }
         },
         activationId: ''
       }
@@ -435,23 +435,23 @@ describe('End-to-End tests: Facebook as channel package - for batched messages',
 
                     expectedBatchedResult.successfulActionInvocations[
                       0
-                    ].successResponse.postResponses[
+                    ].successResponse.postResponses.successfulPosts[
                       0
-                    ].successfulInvocation.activationId = res.successfulActionInvocations[
+                    ].activationId = res.successfulActionInvocations[
                       0
-                    ].successResponse.postResponses[
+                    ].successResponse.postResponses.successfulPosts[
                       0
-                    ].successfulInvocation.activationId;
+                    ].activationId;
 
                     expectedBatchedResult.successfulActionInvocations[
                       1
-                    ].successResponse.postResponses[
+                    ].successResponse.postResponses.successfulPosts[
                       0
-                    ].successfulInvocation.activationId = res.successfulActionInvocations[
+                    ].activationId = res.successfulActionInvocations[
                       1
-                    ].successResponse.postResponses[
+                    ].successResponse.postResponses.successfulPosts[
                       0
-                    ].successfulInvocation.activationId;
+                    ].activationId;
 
                     expectedBatchedResult.successfulActionInvocations[
                       1
@@ -881,4 +881,216 @@ describe('End-to-End tests: Multimodal messages work', () => {
         });
     }
   ).timeout(60000);
+});
+
+describe('End-to-End tests: Facebook as channel package - for multipost messages', () => {
+  const ow = openwhisk();
+  const actionFacebookPipeline = 'test-pipeline-context-facebook';
+  const actionFacebookBatchedMessages = `${pipelineName}_facebook/batched_messages`;
+  const facebookWebhook = `${pipelineName}_facebook/receive`;
+  const activationId = 'xxxxxxx';
+  let params = {};
+
+  const expectedReceiveResult = {
+    text: 200,
+    activationId,
+    actionName: actionFacebookPipeline,
+    message: `Response code 200 above only tells you that receive action was invoked successfully. However, it does not really say if ${actionFacebookPipeline} was invoked successfully. Please use ${activationId} to get more details about this invocation.`
+  };
+
+  const expectedMultiPostResult = {
+    postResponses: {
+      successfulPosts: [
+        {
+          successResponse: {
+            text: 200,
+            params: {
+              recipient: { id: envParams.__TEST_FACEBOOK_SENDER_ID },
+              message: { text: 'Here is your multi-modal response.' }
+            },
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          },
+          activationId: ''
+        },
+        {
+          successResponse: {
+            text: 200,
+            params: {
+              recipient: { id: envParams.__TEST_FACEBOOK_SENDER_ID },
+              message: {
+                attachment: {
+                  type: 'image',
+                  payload: { url: 'https://s.w-x.co/240x180_twc_default.png' }
+                }
+              }
+            },
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          },
+          activationId: ''
+        },
+        {
+          successResponse: {
+            text: 200,
+            params: {
+              recipient: { id: envParams.__TEST_FACEBOOK_SENDER_ID },
+              message: {
+                text: 'Choose your location',
+                quick_replies: [
+                  {
+                    content_type: 'text',
+                    title: 'Location 1',
+                    payload: 'Location 1'
+                  },
+                  {
+                    content_type: 'text',
+                    title: 'Location 2',
+                    payload: 'Location 2'
+                  },
+                  {
+                    content_type: 'text',
+                    title: 'Location 3',
+                    payload: 'Location 3'
+                  }
+                ]
+              }
+            },
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          },
+          activationId: ''
+        }
+      ],
+      failedPosts: []
+    }
+  };
+
+  beforeEach(() => {
+    params = {
+      sub_pipeline: actionFacebookPipeline,
+      batched_messages: actionFacebookBatchedMessages,
+      __ow_headers: {
+        'x-hub-signature': shaMap[msgShowMultimedia]
+      },
+      object: 'page',
+      entry: [
+        {
+          id: envParams.__TEST_FACEBOOK_SENDER_ID,
+          time: 1458692752478,
+          messaging: [
+            {
+              sender: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
+              message: {
+                text: msgShowMultimedia
+              }
+            }
+          ]
+        }
+      ]
+    };
+  });
+
+  // Under validated circumstances, the channel (mocked parameters here) will send parameters
+  // to facebook/receive. The architecture will flow the response to facebook/post, and
+  // facebook/post will send its response to this ow.action invocation.
+  it('validate facebook channel package works for multipost messages', done => {
+    ow.actions
+      .invoke({
+        name: facebookWebhook,
+        params,
+        blocking: true,
+        result: true
+      })
+      .then(
+        success => {
+          try {
+            // The expected Result is modified since the activation id is generated
+            // dynamically and in order to pass the test, we need to make sure that
+            // the activation id is the same.
+            const modifiedExpectedResult = Object.assign(
+              {},
+              expectedReceiveResult
+            );
+            modifiedExpectedResult.activationId = success.activationId;
+            modifiedExpectedResult.message = modifiedExpectedResult.message.replace(
+              activationId,
+              success.activationId
+            );
+            assert.deepEqual(success, modifiedExpectedResult);
+
+            // Get activation of the subpipleine invocation
+            const successActivationId = success.activationId;
+            return successActivationId;
+          } catch (e) {
+            return done(e);
+          }
+        },
+        error => {
+          return done(error);
+        }
+      )
+      .then(successActivationId => {
+        // Sleep for 10 seconds to ensure that the activation id
+        // has been created
+        sleep(15000).then(() => {
+          // After the wait, get the response of the activation
+          ow.activations
+            .get({
+              activationId: successActivationId,
+              blocking: true
+            })
+            .then(
+              result => {
+                try {
+                  const res = result.response.result;
+                  if (res) {
+                    // Replace the activation ids with dynamically
+                    // generated activation ids present in the response
+                    // Update the activation id in the expected result
+                    // as it is dynamically generated
+                    assert.equal(res.postResponses.successfulPosts.length, 3);
+
+                    expectedMultiPostResult.postResponses.successfulPosts[
+                      0
+                    ].activationId = res.postResponses.successfulPosts[
+                      0
+                    ].activationId;
+                    expectedMultiPostResult.postResponses.successfulPosts[
+                      1
+                    ].activationId = res.postResponses.successfulPosts[
+                      1
+                    ].activationId;
+                    expectedMultiPostResult.postResponses.successfulPosts[
+                      2
+                    ].activationId = res.postResponses.successfulPosts[
+                      2
+                    ].activationId;
+
+                    assert.deepEqual(res, expectedMultiPostResult);
+                    return done();
+                  }
+                  assert(
+                    false,
+                    'Cloud Functions Action did not return a reponse'
+                  );
+                  return done();
+                } catch (e) {
+                  return done(e);
+                }
+              },
+              error => {
+                return done(error);
+              }
+            );
+        });
+      })
+      .catch(e => {
+        return e;
+      });
+  })
+    .timeout(40000)
+    .retries(4);
 });
