@@ -15,9 +15,9 @@ The Conversation connector consists of a set of Node.js functions deployed as Cl
 
 This diagram illustrates the default configuration of a Conversation connector deployment.
 
-![Default Pipeline Architecture](readme_images/connector_pipeline.png)
+![Default Pipeline Architecture](readme_images/conv-connector-arch-with-multipost.jpg)
 
-The most basic function of the pipeline is to transfer text-based messages from a channel user to the Conversation workspace and then back again. This basic function is implemented by the following core actions:
+The most basic function of the pipeline is to transfer messages from a channel user to the Conversation workspace and then back again. This basic function is implemented by the following core actions:
 
 - **`receive`**: Receives user input from the channel app.
 - **`normalize-<channel>-for-conversation`**: Converts the user input to the Conversation service format.
@@ -42,17 +42,20 @@ The following list provides a detailed description of all of the actions that ma
 - **`call-conversation`** uses the Conversation Node.js SDK to send the message to the Conversation workspace and receive the Conversation response.
 - **`post-conversation`** performs any custom processing of the Conversation response JSON. This is an opportunity to modify the received context before it is saved in the database. By default, this action is empty.
 - **`save-context`** saves the Conversation context in the Cloudant `contextdb` database.
-- **`normalize-conversation-for-<channel>`** converts the JSON response from the Conversation format to the format expected by the channel. This includes extracting the Conversation response text from the `output.text` field of the Conversation JSON, and storing it in the appropriate location in the channel JSON (`message.text` for Facebook Messenger or `text` for Slack).
+- **`normalize-conversation-for-<channel>`** converts the JSON response from the Conversation format to the format expected by the channel. This includes extracting the Conversation response, in text and/or multimedia, and storing it in the appropriate location in the channel JSON. Facebook Messenger and Slack expect different payloads so there's a need to translate the Conversation response to channel-specific format.
+- **`multiple_post`** Examines the reply from `normalize-conversation-for-<channel>` and posts one or more replies to the channel as needed.
 - **`post-normalization`** performs any final processing of the channel JSON before it is posted to the channel.
 - **`post`** posts the output to the channel app.
 
 ## Interactive messages
 
-In addition to basic text responses, both Facebook Messenger and Slack support responses that include interactive controls such as buttons and menus. The connector pipeline provides basic passthrough support for any channel-specific JSON, which you can use to implement interactive responses:
+In addition to basic text responses, both Facebook Messenger and Slack support responses that include interactive controls such as buttons and menus. The connector pipeline provides support for channel-specific JSON, which you can use to implement interactive responses. One can add a channel-specific JSON directly inside a dialog node output from within Conversation, or, respond with a channel-agnostic generic response which is normalized to channel-specific format by the `normalize-conversation-for-<channel>` Cloud Function.
 
-1.  If you are using Slack, make sure you have enabled the interactive message support. For more information, see the Slack deployment [README](channels/slack/README.md#interactive-messages).
+*Note: If you are using Slack, make sure you have enabled the interactive message support. For more information, see the Slack deployment [README](channels/slack/README.md#interactive-messages).*
 
-1.  In the Conversation tool, edit the dialog node that you want to return an interactive response. Insert the channel-specific JSON into the `output.<channel>` field.
+### Via channel-specific JSON
+
+In the Conversation tool, edit the dialog node that you want to return an interactive response. Insert the channel-specific JSON into the `output.<channel>` field.
 
 For example, for Slack, you might use the following JSON to display buttons for selecting a T-shirt size:
 
@@ -130,6 +133,135 @@ For Facebook Messenger, the approach is the same, but the JSON details differ:
 
 For more information, see [Facebook's message template pages](https://developers.facebook.com/docs/messenger-platform/send-messages/templates).
 
+### Via channel-agnostic generic JSON
+
+There is now in-built support for translating generic multi-modal responses from Conversation to a channel-specific format.
+The `normalize-conversation-for-<channel>` action is responsible for the bulk of the translation.
+Here's a sample Conversation output JSON containing an array of generic responses in text, image and options:
+
+```json
+{
+  "output": {
+    "generic":[
+      {
+        "response_type": "text",
+        "text": "Here are your nearest stores."
+      },
+      {
+        "response_type": "image",
+        "source": "http://...",
+        "title": "Image title",
+        "description": "Some description for the image"
+      },
+      {
+        "response_type": "option",
+        "title": "Click on one of the following",
+        "options": [
+          {
+            "label": "Location 1",
+            "value:" "Location 1"
+          },
+          {
+            "label": "Location 2",
+            "value:" "Location 2"
+          },
+          {
+            "label": "Location 3",
+            "value:" "Location 3"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Slack**
+The generic response array is translated to a *single* message in Slack comprising of text alongwith attachment data. For the above example, the equivalent Slack message after translation is as follows:
+
+```json
+{
+  "text": "Here are your nearest stores.",
+  "attachments": [
+    {
+      "image_url": "http://...",
+      "pretext": "Some description for the image",
+      "title": "Image title"
+    },
+    {
+      "actions": [
+        {
+          "name": "Location 1",
+          "text": "Location 1",
+          "type": "button",
+          "value": "Location 1"
+        },
+        {
+          "name": "Location 2",
+          "text": "Location 2",
+          "type": "button",
+          "value": "Location 2"
+        },
+        {
+          "name": "Location 3",
+          "text": "Location 3",
+          "type": "button",
+          "value": "Location 3"
+        }
+      ],
+      "callback_id": "Click on one of the following",
+      "text": "Click on one of the following"
+    }
+  ],
+  "channel": "DXXXXXXXX",
+  "ts": "XXXXXXXXXX.XXXXXX"
+}
+}
+```
+**Facebook**
+The generic response array is translated to a *list of Facebook messages payloads* comprising of text along with attachment data. For the above example, the equivalent message list after translation is as follows:
+
+```json
+[
+  {
+    "text": "Here are your nearest stores."
+  },
+  {
+    "attachment": {
+      "type": "image",
+      "payload": {
+        "url": "http://..."
+      }
+    }
+  },
+  {
+    "text": "Click on one of the following",
+    "quick_replies": [
+      {
+        "content_type": "text",
+        "title": "Location 1",
+        "payload": "Location 1"
+      },
+      {
+        "content_type": "text",
+        "title": "Location 2",
+        "payload": "Location 2"
+      },
+      {
+        "content_type": "text",
+        "title": "Location 3",
+        "payload": "Location 3"
+      }
+    ]
+  }
+]
+```
+In case Facebook is the channel in question, the output of `normalize-conversation-for-<channel>` is sent to `multiple_post` which splits the array into individual Facebook messages and invokes a `sub-pipeline` comprising of `starter-code/post-normalize` and `facebook/post` functions. Each message is separately passed through this subpipeline. Hence, a multi-modal response from Conversation is broken down into individual messages and POSTed to Facebook messenger.
+
+Additionally, Facebook only allows upto 11 elements in a quick reply array. So, if the options list in the Conversation response has over 11 options, it's translated to the [Facebook generic template](https://developers.facebook.com/docs/messenger-platform/send-messages/template/generic) format with buttons in groups of three.
+
+*Note: Since multiple messages(coming from one Conversation response) will be fired off in quick succession, they may appear out of order if there's some delay in delivery or, Facebook servers are slow.*
+
 ## Customizing the pipeline
 
 The entire Conversation connector framework is customizable. The easiest way to add functions to the pipeline is to add your custom code to the stub functions that are provided for this purpose (`pre-normalize`, `pre-conversation`, `post-conversation`, and `post-normalize`). For example,if the Conversation service detects that a user is asking about an account balance (as indicated by a returned intent), you could modify the `post-conversation` action to make a database call to retrieve the balance and then modify the response before it is posted to the channel.
@@ -145,6 +277,7 @@ To browse and edit the deployed actions, use the [Cloud Functions editor](https:
     - `receive`
     - `batched_messages`
     - `post`
+    - `multiple_post`
 - `starter-code` package:
     - `pre-normalize`
     - `normalize-slack-for-conversation` (Slack deployments only)
