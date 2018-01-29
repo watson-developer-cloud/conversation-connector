@@ -32,6 +32,13 @@ const facebookBatchedMessageAction = `${pipelineName}_facebook/batched_messages`
 const activationId = 'xxxxxx';
 const actionName = 'yyyyyy';
 
+const shaMap = {
+  'hello, world!': 'sha1=e7d42cb171ec3ca26c2d6de14635bd3ea04bf01d',
+  hi: 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738',
+  hogwarts: 'sha1=eb4412b17e32da9656bb3e3551094d531438b6da',
+  multi: 'sha1=d13e82a9fe82a228a40e3bb1a025261cc8489c24'
+};
+
 /** Function allows tests to sleep for certain amount of time
 */
 function sleep(time) {
@@ -45,6 +52,7 @@ describe('Facebook channel integration tests', () => {
   let facebookTextParams = {};
   let facebookAttachmentParams = {};
   let facebookBatchedMessageParams = {};
+  let facebookMultiPostParams = {};
 
   const expectedReceiveResult = {
     text: 200,
@@ -54,86 +62,189 @@ describe('Facebook channel integration tests', () => {
   };
 
   const expectedPostResult = {
-    params: {
-      message: {
-        text: 'hello, world!'
-      },
-      recipient: {
-        id: envParams.__TEST_FACEBOOK_SENDER_ID
-      }
-    },
-    text: 200,
-    url: 'https://graph.facebook.com/v2.6/me/messages'
+    postResponses: {
+      failedPosts: [],
+      successfulPosts: [
+        {
+          successResponse: {
+            params: {
+              message: {
+                text: 'hello, world!'
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              }
+            },
+            text: 200,
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          }
+        }
+      ]
+    }
   };
 
   const expectedPostAttachmentResult = {
-    text: 200,
-    url: 'https://graph.facebook.com/v2.6/me/messages',
-    params: {
-      message: {
-        attachment: {
-          type: 'template',
-          payload: {
-            elements: [
-              {
-                title: 'Welcome to Hogwarts T-Shirt Store',
-                buttons: [
-                  {
-                    type: 'postback',
-                    title: 'Enter T-Shirt Store',
-                    payload: 'List all t-shirts'
+    postResponses: {
+      failedPosts: [],
+      successfulPosts: [
+        {
+          successResponse: {
+            text: 200,
+            url: 'https://graph.facebook.com/v2.6/me/messages',
+            params: {
+              message: {
+                attachment: {
+                  type: 'template',
+                  payload: {
+                    elements: [
+                      {
+                        title: 'Welcome to Hogwarts T-Shirt Store',
+                        buttons: [
+                          {
+                            type: 'postback',
+                            title: 'Enter T-Shirt Store',
+                            payload: 'List all t-shirts'
+                          }
+                        ],
+                        subtitle: 'I can help you find a t-shirt',
+                        image_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDQKvGUWTu5hStYHbjH8J3fZi6JgYqw6WY3CrfjB680uLjy2FF9A'
+                      }
+                    ],
+                    template_type: 'generic',
+                    image_aspect_ratio: 'square'
                   }
-                ],
-                subtitle: 'I can help you find a t-shirt',
-                image_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDQKvGUWTu5hStYHbjH8J3fZi6JgYqw6WY3CrfjB680uLjy2FF9A'
+                }
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
               }
-            ],
-            template_type: 'generic',
-            image_aspect_ratio: 'square'
+            }
           }
         }
-      },
-      recipient: {
-        id: envParams.__TEST_FACEBOOK_SENDER_ID
-      }
+      ]
     }
   };
 
   const expectedBatchedResult = {
     failedActionInvocations: [
       {
-        errorMessage: `Recipient id: 185643828639058 , Sender id: undefined -- POST https://openwhisk.ng.bluemix.net:443/api/v1/namespaces/${process.env.__OW_NAMESPACE}/actions/testflex_facebook/integration-pipeline Returned HTTP 502 (Bad Gateway) --> "Recepient id not provided."`,
+        errorMessage: `Recipient id: ${process.env.__TEST_FACEBOOK_RECIPIENT_ID} , Sender id: undefined -- POST https://openwhisk.ng.bluemix.net:443/api/v1/namespaces/${process.env.__OW_NAMESPACE}/actions/${pipelineName}_postsequence?blocking=true Returned HTTP 502 (Bad Gateway) --> "Recepient id not provided."`,
         activationId: ''
       }
     ],
     successfulActionInvocations: [
       {
         successResponse: {
-          text: 200,
-          params: {
-            recipient: {
-              id: envParams.__TEST_FACEBOOK_SENDER_ID
-            },
-            message: { text: 'hi' }
-          },
-          url: 'https://graph.facebook.com/v2.6/me/messages'
+          postResponses: {
+            successfulPosts: [
+              {
+                successResponse: {
+                  text: 200,
+                  params: {
+                    recipient: {
+                      id: envParams.__TEST_FACEBOOK_SENDER_ID
+                    },
+                    message: { text: 'hi' }
+                  },
+                  url: 'https://graph.facebook.com/v2.6/me/messages'
+                },
+                activationId: ''
+              }
+            ],
+            failedPosts: []
+          }
         },
         activationId: ''
       },
       {
         successResponse: {
-          text: 200,
-          params: {
-            recipient: {
-              id: envParams.__TEST_FACEBOOK_SENDER_ID
-            },
-            message: { text: 'hi' }
-          },
-          url: 'https://graph.facebook.com/v2.6/me/messages'
+          postResponses: {
+            successfulPosts: [
+              {
+                successResponse: {
+                  text: 200,
+                  params: {
+                    recipient: {
+                      id: envParams.__TEST_FACEBOOK_SENDER_ID
+                    },
+                    message: { text: 'hi' }
+                  },
+                  url: 'https://graph.facebook.com/v2.6/me/messages'
+                },
+                activationId: ''
+              }
+            ],
+            failedPosts: []
+          }
         },
         activationId: ''
       }
     ]
+  };
+
+  const expectedMultiPostResult = {
+    postResponses: {
+      successfulPosts: [
+        {
+          successResponse: {
+            text: 200,
+            params: {
+              recipient: { id: envParams.__TEST_FACEBOOK_SENDER_ID },
+              message: { text: 'Here is your multi-modal response.' }
+            },
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          },
+          activationId: ''
+        },
+        {
+          successResponse: {
+            text: 200,
+            params: {
+              recipient: { id: envParams.__TEST_FACEBOOK_SENDER_ID },
+              message: {
+                attachment: {
+                  type: 'image',
+                  payload: { url: 'https://s.w-x.co/240x180_twc_default.png' }
+                }
+              }
+            },
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          },
+          activationId: ''
+        },
+        {
+          successResponse: {
+            text: 200,
+            params: {
+              recipient: { id: envParams.__TEST_FACEBOOK_SENDER_ID },
+              message: {
+                text: 'Choose your location',
+                quick_replies: [
+                  {
+                    content_type: 'text',
+                    title: 'Location 1',
+                    payload: 'Location 1'
+                  },
+                  {
+                    content_type: 'text',
+                    title: 'Location 2',
+                    payload: 'Location 2'
+                  },
+                  {
+                    content_type: 'text',
+                    title: 'Location 3',
+                    payload: 'Location 3'
+                  }
+                ]
+              }
+            },
+            url: 'https://graph.facebook.com/v2.6/me/messages'
+          },
+          activationId: ''
+        }
+      ],
+      failedPosts: []
+    }
   };
 
   beforeEach(done => {
@@ -141,7 +252,7 @@ describe('Facebook channel integration tests', () => {
       sub_pipeline: facebookSubPipeline,
       batched_messages: facebookBatchedMessageAction,
       __ow_headers: {
-        'x-hub-signature': envParams.__TEST_FACEBOOK_X_HUB_SIGNATURE
+        'x-hub-signature': shaMap['hello, world!']
       },
       object: 'page',
       entry: [
@@ -169,7 +280,7 @@ describe('Facebook channel integration tests', () => {
       sub_pipeline: facebookSubPipeline,
       batched_messages: facebookBatchedMessageAction,
       __ow_headers: {
-        'x-hub-signature': 'sha1=eb4412b17e32da9656bb3e3551094d531438b6da'
+        'x-hub-signature': shaMap.hogwarts
       },
       object: 'page',
       entry: [
@@ -217,7 +328,7 @@ describe('Facebook channel integration tests', () => {
       sub_pipeline: facebookSubPipeline,
       batched_messages: facebookBatchedMessageAction,
       __ow_headers: {
-        'x-hub-signature': 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738'
+        'x-hub-signature': shaMap.hi
       },
       object: 'page',
       entry: [
@@ -264,6 +375,64 @@ describe('Facebook channel integration tests', () => {
               message: {
                 text: 'hi'
               }
+            }
+          ]
+        }
+      ]
+    };
+
+    facebookMultiPostParams = {
+      sub_pipeline: facebookSubPipeline,
+      batched_messages: facebookBatchedMessageAction,
+      __ow_headers: {
+        'x-hub-signature': shaMap.multi
+      },
+      object: 'page',
+      entry: [
+        {
+          id: envParams.__TEST_FACEBOOK_RECIPIENT_ID,
+          time: 1458692752478,
+          messaging: [
+            {
+              sender: {
+                id: envParams.__TEST_FACEBOOK_SENDER_ID
+              },
+              recipient: {
+                id: envParams.__TEST_FACEBOOK_RECIPIENT_ID
+              },
+              message: [
+                {
+                  text: 'Here is your multi-modal response.'
+                },
+                {
+                  attachment: {
+                    type: 'image',
+                    payload: {
+                      url: 'https://s.w-x.co/240x180_twc_default.png'
+                    }
+                  }
+                },
+                {
+                  text: 'Choose your location',
+                  quick_replies: [
+                    {
+                      content_type: 'text',
+                      title: 'Location 1',
+                      payload: 'Location 1'
+                    },
+                    {
+                      content_type: 'text',
+                      title: 'Location 2',
+                      payload: 'Location 2'
+                    },
+                    {
+                      content_type: 'text',
+                      title: 'Location 3',
+                      payload: 'Location 3'
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }
@@ -327,6 +496,14 @@ describe('Facebook channel integration tests', () => {
               result => {
                 try {
                   if (result.response.result) {
+                    // Update the activation id in the expected result as it is dynamically
+                    // generated
+                    expectedPostResult.postResponses.successfulPosts[
+                      0
+                    ].activationId = result.response.result.postResponses.successfulPosts[
+                      0
+                    ].activationId;
+
                     assert.deepEqual(
                       result.response.result,
                       expectedPostResult
@@ -413,6 +590,14 @@ describe('Facebook channel integration tests', () => {
               result => {
                 try {
                   if (result.response.result) {
+                    // Update the activation id in the expected result as it is dynamically
+                    // generated
+                    expectedPostAttachmentResult.postResponses.successfulPosts[
+                      0
+                    ].activationId = result.response.result.postResponses.successfulPosts[
+                      0
+                    ].activationId;
+
                     assert.deepEqual(
                       result.response.result,
                       expectedPostAttachmentResult
@@ -495,6 +680,28 @@ describe('Facebook channel integration tests', () => {
               result => {
                 try {
                   const res = result.response.result;
+
+                  // Set the expected to the actual activation ids as these are generated
+                  // dynamically and we can't really compare them
+                  expectedBatchedResult.successfulActionInvocations[
+                    0
+                  ].successResponse.postResponses.successfulPosts[
+                    0
+                  ].activationId = res.successfulActionInvocations[
+                    0
+                  ].successResponse.postResponses.successfulPosts[
+                    0
+                  ].activationId;
+                  expectedBatchedResult.successfulActionInvocations[
+                    1
+                  ].successResponse.postResponses.successfulPosts[
+                    0
+                  ].activationId = res.successfulActionInvocations[
+                    1
+                  ].successResponse.postResponses.successfulPosts[
+                    0
+                  ].activationId;
+
                   if (res) {
                     expectedBatchedResult.successfulActionInvocations[
                       0
@@ -527,6 +734,114 @@ describe('Facebook channel integration tests', () => {
                 return done(error);
               }
             );
+        });
+      })
+      .catch(e => {
+        return e;
+      });
+  })
+    .timeout(40000)
+    .retries(1);
+
+  it('validate facebook channel package works for multipost messages', done => {
+    ow.actions
+      .invoke({
+        name: facebookWebhook,
+        params: facebookMultiPostParams,
+        blocking: true,
+        result: true
+      })
+      .then(
+        success => {
+          try {
+            const modifiedExpectedResult = Object.assign(
+              {},
+              expectedReceiveResult
+            );
+            // Modify the expected response to incorporate the action name as it's
+            // picked up dynamically depending upon type of incoming params
+            modifiedExpectedResult.actionName = facebookSubPipeline;
+            modifiedExpectedResult.message = modifiedExpectedResult.message.replace(
+              actionName,
+              facebookSubPipeline
+            );
+            // Modify the expected response to incorporate the dynamically generated
+            // activation ids
+            modifiedExpectedResult.activationId = success.activationId;
+            modifiedExpectedResult.message = modifiedExpectedResult.message.replace(
+              activationId,
+              success.activationId
+            );
+            assert.deepEqual(success, modifiedExpectedResult);
+
+            // Return the activation id of the subpipeline invocation
+            const successActivationId = success.activationId;
+            return successActivationId;
+          } catch (e) {
+            return done(e);
+          }
+        },
+        error => {
+          return done(error);
+        }
+      )
+      .then(successActivationId => {
+        // Sleep for 10s to ensure the activation has been created
+        sleep(10000).then(() => {
+          // Invoke the subpipeline activation
+          ow.activations
+            .get({
+              activationId: successActivationId
+            })
+            .then(
+              result => {
+                try {
+                  if (result.response.result) {
+                    // Update the activation id in the expected result as it is dynamically
+                    // generated
+                    assert.equal(
+                      result.response.result.postResponses.successfulPosts.length,
+                      3
+                    );
+
+                    expectedMultiPostResult.postResponses.successfulPosts[
+                      0
+                    ].activationId = result.response.result.postResponses.successfulPosts[
+                      0
+                    ].activationId;
+                    expectedMultiPostResult.postResponses.successfulPosts[
+                      1
+                    ].activationId = result.response.result.postResponses.successfulPosts[
+                      1
+                    ].activationId;
+                    expectedMultiPostResult.postResponses.successfulPosts[
+                      2
+                    ].activationId = result.response.result.postResponses.successfulPosts[
+                      2
+                    ].activationId;
+
+                    assert.deepEqual(
+                      result.response.result,
+                      expectedMultiPostResult
+                    );
+                    return done();
+                  }
+                  assert(
+                    false,
+                    'Cloud Functions Action did not return a reponse'
+                  );
+                  return done();
+                } catch (e) {
+                  return done(e);
+                }
+              },
+              error => {
+                return done(error);
+              }
+            )
+            .catch(e => {
+              return done(e);
+            });
         });
       })
       .catch(e => {
