@@ -35,9 +35,8 @@ function main(params) {
 }
 
 /**
- * Checks the length of Conversation's message.text array and sends one
- * reply to the channel for each element in the
- * array.
+ * Checks the length of normalized message array and sends one
+ * reply to the channel for each element in the array.
  *
  * @param  {JSON} params - output JSON to be posted back to the channel
  * @return {JSON}        - result of the call(s) to the Post action
