@@ -195,24 +195,32 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
         ]
       },
       {
-        text,
-        attachments: [
+        message: [
+          { text },
           {
-            image_url: genericFromConversation[1].source,
-            pretext: genericFromConversation[1].description,
-            title: genericFromConversation[1].title
+            attachments: [
+              {
+                image_url: genericFromConversation[1].source,
+                pretext: genericFromConversation[1].description,
+                title: genericFromConversation[1].title
+              }
+            ]
           },
           {
-            text: genericFromConversation[2].title,
-            callback_id: genericFromConversation[2].title,
-            actions: genericFromConversation[2].options.map(e => {
-              const el = {};
-              el.name = e.label;
-              el.type = 'button';
-              el.text = e.label;
-              el.value = e.value;
-              return el;
-            })
+            attachments: [
+              {
+                text: genericFromConversation[2].title,
+                callback_id: genericFromConversation[2].title,
+                actions: genericFromConversation[2].options.map(e => {
+                  const el = {};
+                  el.name = e.label;
+                  el.type = 'button';
+                  el.text = e.label;
+                  el.value = e.value;
+                  return el;
+                })
+              }
+            ]
           }
         ]
       }
