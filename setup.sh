@@ -246,6 +246,7 @@ createPipelines() {
       # multiple_post will invoke the postsequence sequence for each part of the overall response.
       postSequence="${PIPELINE_NAME}starter-code/post-normalize,${PIPELINE_NAME}${CHANNEL}/post"
       ${WSK} action update ${PIPELINE_NAME}postsequence --sequence ${postSequence} > /dev/null
+
       ${WSK} action update ${PIPELINE_NAME%_} --sequence ${sequence} > /dev/null
     fi
   done
