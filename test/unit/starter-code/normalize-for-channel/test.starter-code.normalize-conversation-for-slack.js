@@ -159,31 +159,38 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
 
     genericForSlack = [
       {
-        text,
-        attachments: []
+        message: [{ text }]
       },
       {
-        attachments: [
+        message: [
           {
-            image_url: genericFromConversation[1].source,
-            pretext: genericFromConversation[1].description,
-            title: genericFromConversation[1].title
+            attachments: [
+              {
+                image_url: genericFromConversation[1].source,
+                pretext: genericFromConversation[1].description,
+                title: genericFromConversation[1].title
+              }
+            ]
           }
         ]
       },
       {
-        attachments: [
+        message: [
           {
-            text: genericFromConversation[2].title,
-            callback_id: genericFromConversation[2].title,
-            actions: genericFromConversation[2].options.map(e => {
-              const el = {};
-              el.name = e.label;
-              el.type = 'button';
-              el.text = e.label;
-              el.value = e.value;
-              return el;
-            })
+            attachments: [
+              {
+                text: genericFromConversation[2].title,
+                callback_id: genericFromConversation[2].title,
+                actions: genericFromConversation[2].options.map(e => {
+                  const el = {};
+                  el.name = e.label;
+                  el.type = 'button';
+                  el.text = e.label;
+                  el.value = e.value;
+                  return el;
+                })
+              }
+            ]
           }
         ]
       },
@@ -265,6 +272,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
   it('validate normalization works for generic response_type - text', () => {
     delete params.conversation.output.text;
     delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
 
     // Add a generic text response from Conversation
     params.conversation.output.generic = genericFromConversation[0];

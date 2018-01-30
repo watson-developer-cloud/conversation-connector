@@ -23,15 +23,15 @@ const openwhisk = require('openwhisk');
  * @return {JSON}        - result of the call(s) to the Post action
  */
 function main(params) {
-    return new Promise((resolve, reject) => {
-        postMultipleMessages(params).then(result => {
-            if (result.postResponses.failedPosts.length > 0) {
-                reject(result);
-            } else {
-                resolve(result);
-            }
-        });
+  return new Promise((resolve, reject) => {
+    postMultipleMessages(params).then(result => {
+      if (result.postResponses.failedPosts.length > 0) {
+        reject(result);
+      } else {
+        resolve(result);
+      }
     });
+  });
 }
 
 /**
@@ -43,23 +43,23 @@ function main(params) {
  * @return {JSON}        - result of the call(s) to the Post action
  */
 function postMultipleMessages(params) {
-    // Determine the full path of the channel's postsequence sequence
-    const packageName = extractCurrentPackageName(process.env.__OW_ACTION_NAME);
-    const deployName = packageName.split('_')[0];
-    const sequenceName = `${deployName}_postsequence`;
+  // Determine the full path of the channel's postsequence sequence
+  const packageName = extractCurrentPackageName(process.env.__OW_ACTION_NAME);
+  const deployName = packageName.split('_')[0];
+  const sequenceName = `${deployName}_postsequence`;
 
-    // At minimum we will send one message to the channel,
-    // but if the message array exists send one message for each element of the array
-    const size = Array.isArray(params.message) ? params.message.length : 1;
+  // At minimum we will send one message to the channel,
+  // but if the message array exists send one message for each element of the array
+  const size = Array.isArray(params.message) ? params.message.length : 1;
 
-    const responses = { successfulPosts: [], failedPosts: [] };
-    const ow = openwhisk();
+  const responses = { successfulPosts: [], failedPosts: [] };
+  const ow = openwhisk();
 
-    // Post the message(s) and ultimately return JSON
-    // with one response for each channel post that occurred.
-    return postMessage(sequenceName, params, responses, size, 0, ow).then(() => {
-        return { postResponses: responses };
-    });
+  // Post the message(s) and ultimately return JSON
+  // with one response for each channel post that occurred.
+  return postMessage(sequenceName, params, responses, size, 0, ow).then(() => {
+    return { postResponses: responses };
+  });
 }
 
 /**
@@ -73,34 +73,34 @@ function postMultipleMessages(params) {
  * @returns {*}
  */
 function postMessage(sequenceName, params, responses, size, index, ow) {
-    if (index < size) {
-        const paramsForInvocation = Object.assign({}, params);
+  if (index < size) {
+    const paramsForInvocation = Object.assign({}, params);
 
-        // If we have an array of messages, extract the next element we haven't sent and store
-        // it at the root of the JSON
-        if (Array.isArray(params.message)) {
-            Object.assign(paramsForInvocation, params.message[index]);
-            delete paramsForInvocation.message;
-        }
-
-        return invokeAction(sequenceName, paramsForInvocation, ow)
-            .then(result => {
-                responses.successfulPosts.push(result);
-                return postMessage(
-                    sequenceName,
-                    params,
-                    responses,
-                    size,
-                    index + 1,
-                    ow
-                );
-            })
-            .catch(e => {
-                // Capture the response, don't send any further messages
-                responses.failedPosts.push(e);
-            });
+    // If we have an array of messages, extract the next element we haven't sent and store
+    // it at the root of the JSON
+    if (Array.isArray(params.message)) {
+      Object.assign(paramsForInvocation, params.message[index]);
+      delete paramsForInvocation.message;
     }
-    return responses;
+
+    return invokeAction(sequenceName, paramsForInvocation, ow)
+      .then(result => {
+        responses.successfulPosts.push(result);
+        return postMessage(
+          sequenceName,
+          params,
+          responses,
+          size,
+          index + 1,
+          ow
+        );
+      })
+      .catch(e => {
+        // Capture the response, don't send any further messages
+        responses.failedPosts.push(e);
+      });
+  }
+  return responses;
 }
 
 /**
@@ -110,30 +110,30 @@ function postMessage(sequenceName, params, responses, size, index, ow) {
  * @returns {boolean}
  */
 function invokeAction(actionName, params, ow) {
-    return new Promise((resolve, reject) => {
-        // Invoke the post action
-        return ow.actions
-            .invoke({
-                name: actionName,
-                blocking: true,
-                params
-            })
-            .then(res => {
-                resolve(
-                    // Build a response for successful invocation
-                    {
-                        successResponse: res && res.response && res.response.result,
-                        activationId: res.activationId
-                    }
-                );
-            })
-            .catch(e => {
-                reject({
-                    // Build a response for failed invocation
-                    failureResponse: e
-                });
-            });
-    });
+  return new Promise((resolve, reject) => {
+    // Invoke the post action
+    return ow.actions
+      .invoke({
+        name: actionName,
+        blocking: true,
+        params
+      })
+      .then(res => {
+        resolve(
+          // Build a response for successful invocation
+          {
+            successResponse: res && res.response && res.response.result,
+            activationId: res.activationId
+          }
+        );
+      })
+      .catch(e => {
+        reject({
+          // Build a response for failed invocation
+          failureResponse: e
+        });
+      });
+  });
 }
 
 /**
@@ -147,9 +147,9 @@ function invokeAction(actionName, params, ow) {
  *      package name = 'pkg'
  */
 function extractCurrentPackageName(actionName) {
-    return actionName.split('/')[2];
+  return actionName.split('/')[2];
 }
 
 module.exports = {
-    main
+  main
 };

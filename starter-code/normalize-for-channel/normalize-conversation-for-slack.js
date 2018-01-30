@@ -145,11 +145,13 @@ function insertConversationOutput(params, output) {
  */
 function generateSlackImageData(element) {
   return {
-    attachments: [{
-          title: element.title,
-          pretext: element.description,
-          image_url: element.source
-      }]
+    attachments: [
+      {
+        title: element.title,
+        pretext: element.description,
+        image_url: element.source
+      }
+    ]
   };
 }
 
@@ -171,11 +173,13 @@ function generateSlackOptionsData(element) {
   });
 
   return {
-    attachments: [{
+    attachments: [
+      {
         text: element.title,
         callback_id: element.title,
         actions: buttonsData
-    }]
+      }
+    ]
   };
 }
 
