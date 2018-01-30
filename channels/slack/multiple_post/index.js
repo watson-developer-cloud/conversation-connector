@@ -79,7 +79,7 @@ function postMessage(sequenceName, params, responses, size, index, ow) {
         // If we have an array of messages, extract the next element we haven't sent and store
         // it at the root of the JSON
         if (Array.isArray(params.message)) {
-            paramsForInvocation.push(params.message[index]);
+            Object.assign(paramsForInvocation, params.message[index]);
             delete paramsForInvocation.message;
         }
 
