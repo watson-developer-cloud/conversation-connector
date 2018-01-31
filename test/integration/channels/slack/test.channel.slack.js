@@ -322,4 +322,72 @@ describe('Slack channel integration tests', () => {
         assert(false, error);
       });
   }).retries(10);
+
+  it('validate slack channel package works for multipost messages', done => {
+    const testPipeline = `${pipelineName}-integration-slack-send-attached-multipost`;
+
+    const requestMultipost = 'Show me a multimedia response';
+
+    params = {
+      token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
+      team_id: 'TXXXXXXXX',
+      api_app_id: 'AXXXXXXXX',
+      event: {
+        type: 'message',
+        channel: 'DXXXXXXXX',
+        user: 'bot-id',
+        text: requestMultipost,
+        ts: 'XXXXXXXXX.XXXXXX'
+      },
+      type: 'event_callback',
+      authed_users: ['UXXXXXXX1', 'UXXXXXXX2', 'bot-id'],
+      event_id: 'EvXXXXXXXX',
+      event_time: 'XXXXXXXXXX'
+    };
+
+    return ow.actions
+      .invoke({
+        name: `${testPipeline}_slack/receive`,
+        blocking: true,
+        result: true,
+        params
+      })
+      .then(result => {
+        assert.deepEqual(result, expectedResult);
+
+        return ow.activations
+          .list()
+          .then(activations => {
+            for (let i = 0; i < activations.length; i += 1) {
+              if (activations[i].name === testPipeline) {
+                return activations[i].activationId;
+              }
+            }
+            throw new Error('No activations found.');
+          })
+          .then(activationId => {
+            return ow.activations.get({ name: activationId });
+          })
+          .then(res => {
+            const response = res.response.result;
+            if (response.error) {
+              throw new Error(JSON.stringify(response.error));
+            }
+            return response;
+          })
+          .then(res => {
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            expectedPipelineResult.postResponses.successfulPosts[
+              0
+            ].activationId = res.postResponses.successfulPosts[0].activationId;
+            assert.deepEqual(res, expectedPipelineResult);
+          })
+          .catch(error => {
+            assert(false, error);
+          });
+      })
+      .catch(error => {
+        assert(false, error);
+      });
+  }).retries(10);
 });
