@@ -78,6 +78,7 @@ describe('starter-code integration tests for slack', () => {
 
     expectedResult = {
       channel: 'D024BE91L',
+      text: outputText,
       ts: '1355517523.000005',
       url: chatPostUrl,
       raw_input_data: {
@@ -261,6 +262,7 @@ describe('starter-code integration tests for slack', () => {
       expectedResult.raw_output_data.conversation.output.generic = genericData;
       expectedResult = Object.assign(expectedResult, slackMultiModalData);
       delete expectedResult.raw_output_data.conversation.output.text;
+      delete expectedResult.text;
 
       return ow.actions
         .invoke({ name: actionName, blocking: true, result: true, params })
