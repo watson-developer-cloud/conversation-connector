@@ -74,6 +74,7 @@ describe('End-to-End tests: with Slack package', () => {
   let params;
   let expectedResult;
   let expectedPipelineResult;
+  let expectedMultiPostResult;
   let attachmentData;
   let expectedAttachmentGenericData;
   let attachmentPayload;
@@ -142,6 +143,75 @@ describe('End-to-End tests: with Slack package', () => {
       },
       bot_id: envParams.__TEST_SLACK_BOT_USER_ID,
       auth
+    };
+
+    expectedMultiPostResult = {
+      postResponses: {
+        successfulPosts: [
+          {
+            successResponse: {
+              channel: 'DXXXXXXXX',
+              ts: 'XXXXXXXXX.XXXXXX',
+              text: 'Here is your multi-modal response.',
+              token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
+              as_user: 'true'
+            },
+            activationId: ''
+          },
+          {
+            successResponse: {
+              channel: 'DXXXXXXXX',
+              ts: 'XXXXXXXXX.XXXXXX',
+              token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
+              as_user: 'true',
+              attachments: [
+                {
+                  title: 'Image title',
+                  pretext: 'Image description',
+                  image_url: 'https://s.w-x.co/240x180_twc_default.png'
+                }
+              ]
+            },
+            activationId: ''
+          },
+          {
+            successResponse: {
+              channel: 'DXXXXXXXX',
+              ts: 'XXXXXXXXX.XXXXXX',
+              token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
+              as_user: 'true',
+              attachments: [
+                {
+                  text: 'Choose your location',
+                  callback_id: 'Choose your location',
+                  actions: [
+                    {
+                      name: 'Location 1',
+                      type: 'button',
+                      text: 'Location 1',
+                      value: 'Location 1'
+                    },
+                    {
+                      name: 'Location 2',
+                      type: 'button',
+                      text: 'Location 2',
+                      value: 'Location 2'
+                    },
+                    {
+                      name: 'Location 3',
+                      type: 'button',
+                      text: 'Location 3',
+                      value: 'Location 3'
+                    }
+                  ]
+                }
+              ]
+            },
+            activationId: ''
+          }
+        ],
+        failedPosts: []
+      }
     };
 
     expectedPipelineResult = {
@@ -576,10 +646,10 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
-            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
-            expectedPipelineResult.postResponses.successfulPosts[
-                0
-                ].activationId = res.postResponses.successfulPosts[0].activationId;
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -711,10 +781,10 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
-            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
-            expectedPipelineResult.postResponses.successfulPosts[
-                0
-                ].activationId = res.postResponses.successfulPosts[0].activationId;
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -768,19 +838,19 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
-            expectedPipelineResult.postResponses.successfulPosts[
-                0
-                ].successResponse.text = buttonMessageResponse;
-            expectedPipelineResult.postResponses.successfulPosts[
-                0
-                ].successResponse.attachments = attachmentData;
-          delete  expectedPipelineResult.postResponses.successfulPosts[
-              0
-              ].successResponse.ts;
-            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
-            expectedPipelineResult.postResponses.successfulPosts[
-                0
-                ].activationId = res.postResponses.successfulPosts[0].activationId;
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].successResponse.text = buttonMessageResponse;
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].successResponse.attachments = attachmentData;
+          delete expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].successResponse.ts;
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -831,33 +901,32 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
-            expectedPipelineResult =
-            {
-                postResponses: {
-                    successfulPosts: [
-                        {
-                            successResponse: {
-                                channel: envParams.__TEST_SLACK_CHANNEL,
-                                text: buttonMessageResponse,
-                                as_user: 'true',
-                                token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
-                                attachments: [
-                                    {
-                                        text: buttonMessageUpdate
-                                    }
-                                ]
-                            },
-                            activationId: ''
-                        }
-                    ],
-                        failedPosts: []
+          expectedPipelineResult = {
+            postResponses: {
+              successfulPosts: [
+                {
+                  successResponse: {
+                    channel: envParams.__TEST_SLACK_CHANNEL,
+                    text: buttonMessageResponse,
+                    as_user: 'true',
+                    token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
+                    attachments: [
+                      {
+                        text: buttonMessageUpdate
+                      }
+                    ]
+                  },
+                  activationId: ''
                 }
-            };
+              ],
+              failedPosts: []
+            }
+          };
 
-            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
-            expectedPipelineResult.postResponses.successfulPosts[
-                0
-                ].activationId = res.postResponses.successfulPosts[0].activationId;
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
 
           assert.deepEqual(res, expectedPipelineResult);
         })
@@ -870,7 +939,7 @@ describe('End-to-End tests: with Slack package', () => {
     .retries(10);
 
   it(
-    'validate when conversation is text input to generic multi-modal output',
+    'validate when conversation is text input to generic multi-modal output - with multipost',
     () => {
       const deploymentName = `${pipelineName}-endtoend-slack-withcontext`;
 
@@ -927,6 +996,10 @@ describe('End-to-End tests: with Slack package', () => {
             return response;
           })
           .then(res => {
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            expectedPipelineResult.postResponses.successfulPosts[
+              0
+            ].activationId = res.postResponses.successfulPosts[0].activationId;
             assert.deepEqual(res, expectedPipelineResult);
           })
           .catch(error => {
@@ -981,18 +1054,20 @@ describe('End-to-End tests: with Slack package', () => {
             return response;
           })
           .then(res => {
-              // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
-              expectedPipelineResult.postResponses.successfulPosts[
-                  0
-                  ].activationId = res.postResponses.successfulPosts[0].activationId;
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            for (
+              const i = 0;
+              i < expectedMultiPostResult.postResponses.successfulPosts.length;
+              i++
+            ) {
+              expectedMultiPostResult.postResponses.successfulPosts[
+                i
+              ].activationId = res.postResponses.successfulPosts[
+                i
+              ].activationId;
+            }
 
-              expectedPipelineResult.postResponses.successfulPosts[
-                  0
-                  ].successResponse.text = multiModalTextReply;
-              expectedPipelineResult.postResponses.successfulPosts[
-                  0
-                  ].successResponse.attachments = expectedAttachmentGenericData;
-            assert.deepEqual(res, expectedPipelineResult);
+            assert.deepEqual(res, expectedMultiPostResult);
           })
           .catch(error => {
             assert(false, error);
