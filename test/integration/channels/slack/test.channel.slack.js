@@ -355,46 +355,46 @@ describe('Slack channel integration tests', () => {
         params
       })
       .then(result => {
-          // assert slack/receive result is correct
-          const filteredResult = result;
-          delete filteredResult.auth._id;
-          delete filteredResult.auth._rev;
-          delete filteredResult.auth._revs_info;
-          assert.deepEqual(filteredResult, expectedResult);
-      //
-      //   return ow.activations
-      //     .list()
-      //     .then(activations => {
-      //       for (let i = 0; i < activations.length; i += 1) {
-      //         if (activations[i].name === testPipeline) {
-      //           return activations[i].activationId;
-      //         }
-      //       }
-      //       throw new Error('No activations found.');
-      //     })
-      //     .then(activationId => {
-      //       return ow.activations.get({ name: activationId });
-      //     })
-      //     .then(res => {
-      //       const response = res.response.result;
-      //       if (response.error) {
-      //         throw new Error(JSON.stringify(response.error));
-      //       }
-      //       return response;
-      //     })
-      //     .then(res => {
-      //       // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
-      //       expectedPipelineResult.postResponses.successfulPosts[
-      //         0
-      //       ].activationId = res.postResponses.successfulPosts[0].activationId;
-      //       assert.deepEqual(res, expectedPipelineResult);
-      //     })
-      //     .catch(error => {
-      //       assert(false, error);
-      //     });
-      // })
-      // .catch(error => {
-      //   assert(false, error);
+        // assert slack/receive result is correct
+        const filteredResult = result;
+        delete filteredResult.auth._id;
+        delete filteredResult.auth._rev;
+        delete filteredResult.auth._revs_info;
+        assert.deepEqual(filteredResult, expectedResult);
+
+        return ow.activations
+          .list()
+          .then(activations => {
+            for (let i = 0; i < activations.length; i += 1) {
+              if (activations[i].name === testPipeline) {
+                return activations[i].activationId;
+              }
+            }
+            throw new Error('No activations found.');
+          })
+          .then(activationId => {
+            return ow.activations.get({ name: activationId });
+          })
+          .then(res => {
+            const response = res.response.result;
+            if (response.error) {
+              throw new Error(JSON.stringify(response.error));
+            }
+            return response;
+          })
+          .then(res => {
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            expectedPipelineResult.postResponses.successfulPosts[
+              0
+            ].activationId = res.postResponses.successfulPosts[0].activationId;
+            assert.deepEqual(res, expectedPipelineResult);
+          })
+          .catch(error => {
+            assert(false, error);
+          });
+      })
+      .catch(error => {
+        assert(false, error);
       });
   }).retries(10);
 });
