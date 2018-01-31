@@ -981,8 +981,17 @@ describe('End-to-End tests: with Slack package', () => {
             return response;
           })
           .then(res => {
-            expectedPipelineResult.text = multiModalTextReply;
-            expectedPipelineResult.attachments = expectedAttachmentGenericData;
+              // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+              expectedPipelineResult.postResponses.successfulPosts[
+                  0
+                  ].activationId = res.postResponses.successfulPosts[0].activationId;
+
+              expectedPipelineResult.postResponses.successfulPosts[
+                  0
+                  ].successResponse.text = multiModalTextReply;
+              expectedPipelineResult.postResponses.successfulPosts[
+                  0
+                  ].successResponse.attachments = expectedAttachmentGenericData;
             assert.deepEqual(res, expectedPipelineResult);
           })
           .catch(error => {
