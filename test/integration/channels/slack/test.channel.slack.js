@@ -189,6 +189,10 @@ describe('Slack channel integration tests', () => {
             return response;
           })
           .then(res => {
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            expectedPipelineResult.postResponses.successfulPosts[
+              0
+            ].activationId = res.postResponses.successfulPosts[0].activationId;
             assert.deepEqual(res, expectedPipelineResult);
           })
           .catch(error => {
