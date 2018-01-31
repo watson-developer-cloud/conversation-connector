@@ -207,7 +207,9 @@ describe('Slack channel integration tests', () => {
   it('validate slack receives text and posts an attached message', () => {
     const testPipeline = `${pipelineName}-integration-slack-send-attached-message`;
 
-    expectedPipelineResult.attachments = attachmentData;
+    expectedPipelineResult.postResponses.successfulPosts[
+      0
+    ].successResponse.attachments = attachmentData;
 
     return ow.actions
       .invoke({
@@ -246,6 +248,10 @@ describe('Slack channel integration tests', () => {
             return response;
           })
           .then(res => {
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            expectedPipelineResult.postResponses.successfulPosts[
+              0
+            ].activationId = res.postResponses.successfulPosts[0].activationId;
             assert.deepEqual(res, expectedPipelineResult);
           })
           .catch(error => {
