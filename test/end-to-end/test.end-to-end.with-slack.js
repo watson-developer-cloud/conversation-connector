@@ -629,9 +629,19 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
-          expectedPipelineResult.text = buttonMessageResponse;
-          expectedPipelineResult.attachments = attachmentData;
-          delete expectedPipelineResult.ts;
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].successResponse.text = buttonMessageResponse;
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].successResponse.attachments = attachmentData;
+          delete expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].successResponse.ts;
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -803,17 +813,34 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
-          expectedPipelineResult = {
-            channel: envParams.__TEST_SLACK_CHANNEL,
-            text: buttonMessageResponse,
-            as_user: 'true',
-            token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
-            attachments: [
-              {
-                text: buttonMessageUpdate
-              }
-            ]
-          };
+            expectedPipelineResult =
+            {
+                postResponses: {
+                    successfulPosts: [
+                        {
+                            successResponse: {
+                                channel: envParams.__TEST_SLACK_CHANNEL,
+                                text: buttonMessageResponse,
+                                as_user: 'true',
+                                token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
+                                attachments: [
+                                    {
+                                        text: buttonMessageUpdate
+                                    }
+                                ]
+                            },
+                            activationId: ''
+                        }
+                    ],
+                        failedPosts: []
+                }
+            };
+
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            expectedPipelineResult.postResponses.successfulPosts[
+                0
+                ].activationId = res.postResponses.successfulPosts[0].activationId;
+
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
