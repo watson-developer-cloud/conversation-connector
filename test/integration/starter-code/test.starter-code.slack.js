@@ -78,7 +78,6 @@ describe('starter-code integration tests for slack', () => {
 
     expectedResult = {
       channel: 'D024BE91L',
-      text: outputText,
       ts: '1355517523.000005',
       url: chatPostUrl,
       raw_input_data: {
@@ -180,24 +179,32 @@ describe('starter-code integration tests for slack', () => {
     ];
 
     slackMultiModalData = {
-      text: outputText,
-      attachments: [
+      message: [
+        { text: outputText },
         {
-          image_url: genericData[1].source,
-          pretext: genericData[1].description,
-          title: genericData[1].title
+          attachments: [
+            {
+              image_url: genericData[1].source,
+              pretext: genericData[1].description,
+              title: genericData[1].title
+            }
+          ]
         },
         {
-          text: genericData[2].title,
-          callback_id: genericData[2].title,
-          actions: genericData[2].options.map(e => {
-            const el = {};
-            el.name = e.label;
-            el.type = 'button';
-            el.text = e.label;
-            el.value = e.value;
-            return el;
-          })
+          attachments: [
+            {
+              text: genericData[2].title,
+              callback_id: genericData[2].title,
+              actions: genericData[2].options.map(e => {
+                const el = {};
+                el.name = e.label;
+                el.type = 'button';
+                el.text = e.label;
+                el.value = e.value;
+                return el;
+              })
+            }
+          ]
         }
       ]
     };
