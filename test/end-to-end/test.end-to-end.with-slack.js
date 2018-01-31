@@ -46,7 +46,8 @@ describe('End-to-End tests: Slack prerequisites', () => {
 
   const requiredActions = [
     `${pipelineName}_slack/post`,
-    `${pipelineName}_slack/multiple_post``${pipelineName}_slack/receive`,
+    `${pipelineName}_slack/multiple_post`,
+    `${pipelineName}_slack/receive`,
     `${pipelineName}_slack/deploy`,
     `${pipelineName}_starter-code/normalize-conversation-for-slack`,
     `${pipelineName}_starter-code/normalize-slack-for-conversation`
@@ -392,6 +393,10 @@ describe('End-to-End tests: with Slack package', () => {
         return response;
       })
       .then(res => {
+        // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+        expectedPipelineResult.postResponses.successfulPosts[
+          0
+        ].activationId = res.postResponses.successfulPosts[0].activationId;
         assert.deepEqual(res, expectedPipelineResult);
       })
       .catch(error => {
@@ -451,6 +456,10 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -498,6 +507,10 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
