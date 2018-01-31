@@ -576,6 +576,10 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            expectedPipelineResult.postResponses.successfulPosts[
+                0
+                ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -707,6 +711,10 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            expectedPipelineResult.postResponses.successfulPosts[
+                0
+                ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -760,9 +768,19 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
-          expectedPipelineResult.text = buttonMessageResponse;
-          expectedPipelineResult.attachments = attachmentData;
-          delete expectedPipelineResult.ts;
+            expectedPipelineResult.postResponses.successfulPosts[
+                0
+                ].successResponse.text = buttonMessageResponse;
+            expectedPipelineResult.postResponses.successfulPosts[
+                0
+                ].successResponse.attachments = attachmentData;
+          delete  expectedPipelineResult.postResponses.successfulPosts[
+              0
+              ].successResponse.ts;
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            expectedPipelineResult.postResponses.successfulPosts[
+                0
+                ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
