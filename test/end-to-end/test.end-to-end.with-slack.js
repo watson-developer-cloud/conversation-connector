@@ -29,7 +29,6 @@ const buttonMessageResponse = 'What shirt size would you like?';
 const buttonMessageUpdate = 'Sorry, the store is out of medium shirts.';
 
 const msgShowMultimedia = 'Display multimedia response';
-const multiModalTextReply = 'Here is your multi-modal response.';
 
 const envParams = process.env;
 
@@ -76,7 +75,6 @@ describe('End-to-End tests: with Slack package', () => {
   let expectedPipelineResult;
   let expectedMultiPostResult;
   let attachmentData;
-  let expectedAttachmentGenericData;
   let attachmentPayload;
 
   const auth = {
@@ -256,37 +254,6 @@ describe('End-to-End tests: with Slack package', () => {
         ],
         fallback: 'Sorry! We cannot support buttons at the moment. Please type in: small, medium, or large.',
         callback_id: 'shirt_size'
-      }
-    ];
-    expectedAttachmentGenericData = [
-      {
-        image_url: 'https://s.w-x.co/240x180_twc_default.png',
-        pretext: 'Image description',
-        title: 'Image title'
-      },
-      {
-        text: 'Choose your location',
-        callback_id: 'Choose your location',
-        actions: [
-          {
-            name: 'Location 1',
-            type: 'button',
-            text: 'Location 1',
-            value: 'Location 1'
-          },
-          {
-            name: 'Location 2',
-            type: 'button',
-            text: 'Location 2',
-            value: 'Location 2'
-          },
-          {
-            name: 'Location 3',
-            type: 'button',
-            text: 'Location 3',
-            value: 'Location 3'
-          }
-        ]
       }
     ];
 
@@ -1056,9 +1023,9 @@ describe('End-to-End tests: with Slack package', () => {
           .then(res => {
             // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
             for (
-              const i = 0;
+              let i = 0;
               i < expectedMultiPostResult.postResponses.successfulPosts.length;
-              i++
+              i += 1
             ) {
               expectedMultiPostResult.postResponses.successfulPosts[
                 i
