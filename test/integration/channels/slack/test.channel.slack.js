@@ -77,10 +77,20 @@ describe('Slack channel integration tests', () => {
     };
 
     expectedPipelineResult = {
-      as_user: 'true',
-      channel: 'DXXXXXXXX',
-      text: outputText,
-      token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
+      postResponses: {
+        successfulPosts: [
+          {
+            successResponse: {
+              as_user: 'true',
+              channel: 'DXXXXXXXX',
+              text: outputText,
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
+            },
+            activationId: ''
+          }
+        ],
+        failedPosts: []
+      }
     };
 
     attachmentData = [
