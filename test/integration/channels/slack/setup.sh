@@ -128,7 +128,7 @@ ${WSK} action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/post ./channels/s
 ${WSK} action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/multiple_post ./channels/slack/multiple_post/index.js > /dev/null
 
 ${WSK} action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/send-attached-message-multipost ./test/integration/channels/slack/send-attached-message-multipost.js > /dev/null
-${WSK} action update ${PIPELINE_SEND_ATTACHED_MULTIPOST} --sequence ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/send-attached-message-response,${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/multiple_post > /dev/null
+${WSK} action update ${PIPELINE_SEND_ATTACHED_MULTIPOST} --sequence ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/send-attached-message-multipost,${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/multiple_post > /dev/null
 
 PIPELINE_SEND_ATTACHED_MULTIPOST_POST_SEQUENCE="${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/post"
 ${WSK} action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_postsequence --sequence ${PIPELINE_SEND_ATTACHED_MULTIPOST_POST_SEQUENCE} > /dev/null
