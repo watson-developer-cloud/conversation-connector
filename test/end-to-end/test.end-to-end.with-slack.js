@@ -151,7 +151,7 @@ describe('End-to-End tests: with Slack package', () => {
               channel: 'DXXXXXXXX',
               ts: 'XXXXXXXXX.XXXXXX',
               text: 'Here is your multi-modal response.',
-              token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
               as_user: 'true'
             },
             activationId: ''
@@ -160,7 +160,7 @@ describe('End-to-End tests: with Slack package', () => {
             successResponse: {
               channel: 'DXXXXXXXX',
               ts: 'XXXXXXXXX.XXXXXX',
-              token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
               as_user: 'true',
               attachments: [
                 {
@@ -176,7 +176,7 @@ describe('End-to-End tests: with Slack package', () => {
             successResponse: {
               channel: 'DXXXXXXXX',
               ts: 'XXXXXXXXX.XXXXXX',
-              token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
               as_user: 'true',
               attachments: [
                 {
