@@ -137,13 +137,13 @@ function main(params) {
       })
       .then(() => {
         // Create the post sequence that multiple_post will call
-        const postSequence = `${deployName}_postsequence`;
+        const sequenceName = `${deployName}_postsequence`;
 
         return createPipeline(
           userWsk,
           wskNamespace,
           deployName,
-          postSequence,
+            sequenceName,
           postSequenceActions
         );
       })

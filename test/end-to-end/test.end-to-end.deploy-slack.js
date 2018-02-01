@@ -20,6 +20,8 @@ const assert = require('assert');
 const crypto = require('crypto');
 const openwhisk = require('openwhisk');
 
+const apihost = 'openwhisk.ng.bluemix.net';
+
 /**
  * Deploy End-to-End tests with Slack.
  */
@@ -117,7 +119,13 @@ describe('End-to-End tests: Slack Deploy UI', () => {
         assert.deepEqual(result, expectedResult);
       })
       .then(() => {
-        return ow.actions.get(deploymentName + '_postsequence');
+          const supplierWsk = openwhisk({
+              api_key: process.env.__OW_API_KEY,
+              namespace: process.env.__OW_NAMESPACE,
+              apihost
+          });
+
+        return supplierWsk.actions.get(deploymentName + '_postsequence');
       })
       .then(action => {
         console.log(JSON.stringify(action));
