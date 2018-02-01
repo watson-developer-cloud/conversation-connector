@@ -416,7 +416,7 @@ describe('Slack channel integration tests', () => {
 
     expectedResult.slack = params;
 
-    return ow.actions
+    ow.actions
       .invoke({
         name: `${testPipeline}_slack/receive`,
         blocking: true,
@@ -432,47 +432,45 @@ describe('Slack channel integration tests', () => {
         assert.deepEqual(filteredResult, expectedResult);
       })
       .then(() => {
+        return sleep(SLEEP_TIME);
+      })
+      .then(() => {
         // assert pipeline result is correct
         return ow.activations.list();
       })
       .then(activations => {
-        sleep(10000)
-          .then(() => {
-            for (let i = 0; i < activations.length; i += 1) {
-              if (activations[i].name === testPipeline) {
-                return activations[i].activationId;
-              }
-            }
-            throw new Error('No activations found.');
-          })
-          .then(activationId => {
-            return ow.activations.get({ name: activationId });
-          })
-          .then(res => {
-            const response = res.response.result;
-            if (response.error) {
-              throw new Error(response.error);
-            }
-            return response;
-          })
-          .then(res => {
-            // Update the expectedMultiPostResult's activationId, since this is dynamically generated we can't predict it
-            for (
-              let i = 0;
-              i < expectedMultiPostResult.postResponses.successfulPosts.length;
-              i += 1
-            ) {
-              expectedMultiPostResult.postResponses.successfulPosts[
-                i
-              ].activationId = res.postResponses.successfulPosts[
-                i
-              ].activationId;
-            }
-            assert.deepEqual(res, expectedMultiPostResult);
-          })
-          .catch(error => {
-            assert(false, error);
-          });
+        for (let i = 0; i < activations.length; i += 1) {
+          if (activations[i].name === testPipeline) {
+            return activations[i].activationId;
+          }
+        }
+        throw new Error('No activations found.');
+      })
+      .then(activationId => {
+        return ow.activations.get({ name: activationId });
+      })
+      .then(res => {
+        const response = res.response.result;
+        if (response.error) {
+          throw new Error(response.error);
+        }
+        return response;
+      })
+      .then(res => {
+        // Update the expectedMultiPostResult's activationId, since this is dynamically generated we can't predict it
+        for (
+          let i = 0;
+          i < expectedMultiPostResult.postResponses.successfulPosts.length;
+          i += 1
+        ) {
+          expectedMultiPostResult.postResponses.successfulPosts[
+            i
+          ].activationId = res.postResponses.successfulPosts[i].activationId;
+        }
+        assert.deepEqual(res, expectedMultiPostResult);
+      })
+      .catch(error => {
+        assert(false, error);
       });
   })
     .timeout(10000)
