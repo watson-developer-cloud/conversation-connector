@@ -26,6 +26,8 @@ const envParams = process.env;
 
 const pipelineName = envParams.__TEST_PIPELINE_NAME;
 
+const SLEEP_TIME = 3000;
+
 const outputText = 'Message coming from Slack integration test.';
 
 describe('Slack channel integration tests', () => {
@@ -34,6 +36,7 @@ describe('Slack channel integration tests', () => {
   let params;
   let expectedResult;
   let expectedPipelineResult;
+  let expectedMultiPostResult;
   let attachmentData;
   let attachmentPayload;
 
@@ -77,10 +80,86 @@ describe('Slack channel integration tests', () => {
     };
 
     expectedPipelineResult = {
-      as_user: 'true',
-      channel: 'DXXXXXXXX',
-      text: outputText,
-      token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
+      postResponses: {
+        successfulPosts: [
+          {
+            successResponse: {
+              as_user: 'true',
+              channel: 'DXXXXXXXX',
+              text: outputText,
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
+            },
+            activationId: ''
+          }
+        ],
+        failedPosts: []
+      }
+    };
+
+    expectedMultiPostResult = {
+      postResponses: {
+        successfulPosts: [
+          {
+            successResponse: {
+              channel: 'DXXXXXXXX',
+              text: 'Here is your multi-modal response.',
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
+              as_user: 'true'
+            },
+            activationId: ''
+          },
+          {
+            successResponse: {
+              channel: 'DXXXXXXXX',
+              attachments: [
+                {
+                  title: 'Image title',
+                  pretext: 'Image description',
+                  image_url: 'https://s.w-x.co/240x180_twc_default.png'
+                }
+              ],
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
+              as_user: 'true'
+            },
+            activationId: ''
+          },
+          {
+            successResponse: {
+              channel: 'DXXXXXXXX',
+              attachments: [
+                {
+                  text: 'Choose your location',
+                  callback_id: 'Choose your location',
+                  actions: [
+                    {
+                      name: 'Location 1',
+                      type: 'button',
+                      text: 'Location 1',
+                      value: 'Location 1'
+                    },
+                    {
+                      name: 'Location 2',
+                      type: 'button',
+                      text: 'Location 2',
+                      value: 'Location 2'
+                    },
+                    {
+                      name: 'Location 3',
+                      type: 'button',
+                      text: 'Location 3',
+                      value: 'Location 3'
+                    }
+                  ]
+                }
+              ],
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
+              as_user: 'true'
+            },
+            activationId: ''
+          }
+        ],
+        failedPosts: []
+      }
     };
 
     attachmentData = [
@@ -179,6 +258,11 @@ describe('Slack channel integration tests', () => {
             return response;
           })
           .then(res => {
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated
+            // we can't predict it
+            expectedPipelineResult.postResponses.successfulPosts[
+              0
+            ].activationId = res.postResponses.successfulPosts[0].activationId;
             assert.deepEqual(res, expectedPipelineResult);
           })
           .catch(error => {
@@ -193,7 +277,9 @@ describe('Slack channel integration tests', () => {
   it('validate slack receives text and posts an attached message', () => {
     const testPipeline = `${pipelineName}-integration-slack-send-attached-message`;
 
-    expectedPipelineResult.attachments = attachmentData;
+    expectedPipelineResult.postResponses.successfulPosts[
+      0
+    ].successResponse.attachments = attachmentData;
 
     return ow.actions
       .invoke({
@@ -232,6 +318,11 @@ describe('Slack channel integration tests', () => {
             return response;
           })
           .then(res => {
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated
+            // we can't predict it
+            expectedPipelineResult.postResponses.successfulPosts[
+              0
+            ].activationId = res.postResponses.successfulPosts[0].activationId;
             assert.deepEqual(res, expectedPipelineResult);
           })
           .catch(error => {
@@ -251,7 +342,9 @@ describe('Slack channel integration tests', () => {
     };
 
     expectedResult = attachmentPayload.original_message;
-    expectedPipelineResult.attachments = [
+    expectedPipelineResult.postResponses.successfulPosts[
+      0
+    ].successResponse.attachments = [
       { text: 'Message coming from Slack integration test.' }
     ];
 
@@ -286,6 +379,11 @@ describe('Slack channel integration tests', () => {
             return response;
           })
           .then(res => {
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated
+            // we can't predict it
+            expectedPipelineResult.postResponses.successfulPosts[
+              0
+            ].activationId = res.postResponses.successfulPosts[0].activationId;
             assert.deepEqual(res, expectedPipelineResult);
           })
           .catch(error => {
@@ -296,4 +394,101 @@ describe('Slack channel integration tests', () => {
         assert(false, error);
       });
   }).retries(10);
+
+  it('validate slack channel package works for multipost messages', () => {
+    const testPipeline = `${pipelineName}-integration-slack-send-attached-multipost`;
+
+    const requestMultipost = 'Show me a multimedia response';
+
+    params = {
+      token: envParams.__TEST_SLACK_VERIFICATION_TOKEN,
+      team_id: 'TXXXXXXXX',
+      api_app_id: 'AXXXXXXXX',
+      event: {
+        type: 'message',
+        channel: 'DXXXXXXXX',
+        user: 'bot-id',
+        text: requestMultipost,
+        ts: 'XXXXXXXXX.XXXXXX'
+      },
+      type: 'event_callback',
+      authed_users: ['UXXXXXXX1', 'UXXXXXXX2', 'bot-id'],
+      event_id: 'EvXXXXXXXX',
+      event_time: 'XXXXXXXXXX'
+    };
+
+    expectedResult.slack = params;
+
+    ow.actions
+      .invoke({
+        name: `${testPipeline}_slack/receive`,
+        blocking: true,
+        result: true,
+        params
+      })
+      .then(result => {
+        // assert slack/receive result is correct
+        const filteredResult = result;
+        delete filteredResult.auth._id;
+        delete filteredResult.auth._rev;
+        delete filteredResult.auth._revs_info;
+        assert.deepEqual(filteredResult, expectedResult);
+      })
+      .then(() => {
+        return sleep(SLEEP_TIME);
+      })
+      .then(() => {
+        // assert pipeline result is correct
+        return ow.activations.list();
+      })
+      .then(activations => {
+        for (let i = 0; i < activations.length; i += 1) {
+          if (activations[i].name === testPipeline) {
+            return activations[i].activationId;
+          }
+        }
+        throw new Error('No activations found.');
+      })
+      .then(activationId => {
+        return ow.activations.get({ name: activationId });
+      })
+      .then(res => {
+        const response = res.response.result;
+        if (response.error) {
+          throw new Error(response.error);
+        }
+        return response;
+      })
+      .then(res => {
+        // Update the expectedMultiPostResult's activationId, since this is dynamically generated
+        // we can't predict it
+        for (
+          let i = 0;
+          i < expectedMultiPostResult.postResponses.successfulPosts.length;
+          i += 1
+        ) {
+          expectedMultiPostResult.postResponses.successfulPosts[
+            i
+          ].activationId = res.postResponses.successfulPosts[i].activationId;
+        }
+        assert.deepEqual(res, expectedMultiPostResult);
+      })
+      .catch(error => {
+        assert(false, error);
+      });
+  })
+    .timeout(10000)
+    .retries(10);
+
+  /**
+     * Sleep for a specified amount of milliseconds.
+     *
+     * @param  {integer} ms - number of milliseconds
+     * @return {Promise}    - Promise resolve
+     */
+  function sleep(ms) {
+    return new Promise(resolve => {
+      setTimeout(resolve, ms);
+    });
+  }
 });

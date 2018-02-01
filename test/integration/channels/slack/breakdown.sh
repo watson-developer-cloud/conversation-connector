@@ -13,8 +13,10 @@ CLOUDANT_AUTH_KEY="${PIPELINE_SEND_TEXT}"
 curl -s -XDELETE ${__TEST_CLOUDANT_URL}/authdb/${CLOUDANT_AUTH_KEY}?rev=$(curl -s ${__TEST_CLOUDANT_URL}/authdb/${CLOUDANT_AUTH_KEY} | jq -r ._rev) > /dev/null
 
 ${WSK} action delete ${PIPELINE_SEND_TEXT} > /dev/null
+${WSK} action delete ${PIPELINE_SEND_TEXT}_postsequence > /dev/null
 ${WSK} action delete ${PIPELINE_SEND_TEXT}_slack/send-text > /dev/null
 ${WSK} action delete ${PIPELINE_SEND_TEXT}_slack/post > /dev/null
+${WSK} action delete ${PIPELINE_SEND_TEXT}_slack/multiple_post > /dev/null
 ${WSK} action delete ${PIPELINE_SEND_TEXT}_slack/receive > /dev/null
 
 ${WSK} package delete ${PIPELINE_SEND_TEXT}_slack > /dev/null
@@ -28,8 +30,10 @@ CLOUDANT_AUTH_KEY="${PIPELINE_SEND_ATTACHED_MESSAGE}"
 curl -s -XDELETE ${__TEST_CLOUDANT_URL}/authdb/${CLOUDANT_AUTH_KEY}?rev=$(curl -s ${__TEST_CLOUDANT_URL}/authdb/${CLOUDANT_AUTH_KEY} | jq -r ._rev) > /dev/null
 
 ${WSK} action delete ${PIPELINE_SEND_ATTACHED_MESSAGE} > /dev/null
+${WSK} action delete ${PIPELINE_SEND_ATTACHED_MESSAGE}_postsequence > /dev/null
 ${WSK} action delete ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/send-attached-message > /dev/null
 ${WSK} action delete ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/post > /dev/null
+${WSK} action delete ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/multiple_post > /dev/null
 ${WSK} action delete ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/receive > /dev/null
 
 ${WSK} package delete ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack > /dev/null
@@ -43,8 +47,10 @@ CLOUDANT_AUTH_KEY="${PIPELINE_SEND_ATTACHED_RESPONSE}"
 curl -s -XDELETE ${__TEST_CLOUDANT_URL}/authdb/${CLOUDANT_AUTH_KEY}?rev=$(curl -s ${__TEST_CLOUDANT_URL}/authdb/${CLOUDANT_AUTH_KEY} | jq -r ._rev) > /dev/null
 
 ${WSK} action delete ${PIPELINE_SEND_ATTACHED_RESPONSE} > /dev/null
+${WSK} action delete ${PIPELINE_SEND_ATTACHED_RESPONSE}_postsequence > /dev/null
 ${WSK} action delete ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/send-attached-message-response > /dev/null
 ${WSK} action delete ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/post > /dev/null
+${WSK} action delete ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/multiple_post > /dev/null
 ${WSK} action delete ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/receive > /dev/null
 
 ${WSK} package delete ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack > /dev/null

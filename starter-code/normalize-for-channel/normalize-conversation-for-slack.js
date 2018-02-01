@@ -103,21 +103,19 @@ function insertConversationOutput(params, output) {
       ? params.conversation.output.generic
       : [Object.assign({}, params.conversation.output.generic)];
 
-    // Add the attachment array.
-    slackOutput.attachments = slackOutput.attachments
-      ? slackOutput.attachments
-      : [];
+    // Add the message array.
+    slackOutput.message = [];
 
     generic.forEach(element => {
       switch (element.response_type) {
         case 'image':
-          slackOutput.attachments.push(generateSlackImageData(element));
+          slackOutput.message.push(generateSlackImageData(element));
           break;
         case 'option':
-          slackOutput.attachments.push(generateSlackOptionsData(element));
+          slackOutput.message.push(generateSlackOptionsData(element));
           break;
         default:
-          slackOutput.text = element.text;
+          slackOutput.message.push({ text: element.text });
       }
       return element;
     });
@@ -147,9 +145,13 @@ function insertConversationOutput(params, output) {
  */
 function generateSlackImageData(element) {
   return {
-    title: element.title,
-    pretext: element.description,
-    image_url: element.source
+    attachments: [
+      {
+        title: element.title,
+        pretext: element.description,
+        image_url: element.source
+      }
+    ]
   };
 }
 
@@ -171,9 +173,13 @@ function generateSlackOptionsData(element) {
   });
 
   return {
-    text: element.title,
-    callback_id: element.title,
-    actions: buttonsData
+    attachments: [
+      {
+        text: element.title,
+        callback_id: element.title,
+        actions: buttonsData
+      }
+    ]
   };
 }
 

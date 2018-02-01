@@ -5,8 +5,10 @@ export WSK=${WSK-wsk}
 DEPLOY_NAME=$1
 
 ${WSK} action delete $1-endtoend-slack-nocontext > /dev/null
+${WSK} action delete $1-endtoend-slack-nocontext_postsequence > /dev/null
 ${WSK} action delete $1-endtoend-slack-nocontext_slack/receive > /dev/null
 ${WSK} action delete $1-endtoend-slack-nocontext_slack/post > /dev/null
+${WSK} action delete $1-endtoend-slack-nocontext_slack/multiple_post > /dev/null
 ${WSK} action delete $1-endtoend-slack-nocontext_conversation/call-conversation > /dev/null
 ${WSK} action delete $1-endtoend-slack-nocontext_starter-code/pre-conversation > /dev/null
 ${WSK} action delete $1-endtoend-slack-nocontext_starter-code/post-conversation > /dev/null
@@ -19,8 +21,10 @@ ${WSK} package delete $1-endtoend-slack-nocontext_conversation > /dev/null
 ${WSK} package delete $1-endtoend-slack-nocontext_starter-code > /dev/null
 
 ${WSK} action delete $1-endtoend-slack-withcontext > /dev/null
+${WSK} action delete $1-endtoend-slack-withcontext_postsequence > /dev/null
 ${WSK} action delete $1-endtoend-slack-withcontext_slack/receive > /dev/null
 ${WSK} action delete $1-endtoend-slack-withcontext_slack/post > /dev/null
+${WSK} action delete $1-endtoend-slack-withcontext_slack/multiple_post > /dev/null
 ${WSK} action delete $1-endtoend-slack-withcontext_conversation/call-conversation > /dev/null
 ${WSK} action delete $1-endtoend-slack-withcontext_context/load-context > /dev/null
 ${WSK} action delete $1-endtoend-slack-withcontext_context/save-context > /dev/null
