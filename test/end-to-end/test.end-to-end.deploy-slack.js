@@ -19,6 +19,7 @@
 const assert = require('assert');
 const crypto = require('crypto');
 const openwhisk = require('openwhisk');
+const _ = require('underscore');
 
 const apihost = 'openwhisk.ng.bluemix.net';
 
@@ -82,6 +83,9 @@ describe('End-to-End tests: Slack Deploy UI', () => {
     const authUrl = `/oauth/authorize?client_id=${params.state.slack.client_id}&scope=bot+chat:write:bot&redirect_uri=${redirectUrl}&state=${state}`;
     const redirAuthUrl = `https://slack.com/signin?redir=${encodeURIComponent(authUrl)}`;
 
+    const expectedPostSequenceActions = [`/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/post-normalize`,
+        `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/post`];
+
     return ow.actions
       .invoke({
         name: actionCheckDeploy,
@@ -120,15 +124,15 @@ describe('End-to-End tests: Slack Deploy UI', () => {
       })
       .then(() => {
           const supplierWsk = openwhisk({
-              api_key: process.env.__OW_API_KEY,
-              namespace: process.env.__OW_NAMESPACE,
+              api_key: process.env.__TEST_DEPLOYUSER_WSK_API_KEY,
+              namespace: process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE,
               apihost
           });
 
         return supplierWsk.actions.get(deploymentName + '_postsequence');
       })
       .then(action => {
-        console.log(JSON.stringify(action));
+        assert(true, _.isEqual(action.exec.components, expectedPostSequenceActions));
       })
       .catch(error => {
         assert(false, error);
