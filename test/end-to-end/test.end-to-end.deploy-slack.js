@@ -115,7 +115,11 @@ describe('End-to-End tests: Slack Deploy UI', () => {
         expectedResult.authorize_url = redirAuthUrl;
 
         assert.deepEqual(result, expectedResult);
-      })
+      }).then(() => {
+            return ow.actions.get(deploymentName + '_postsequence');
+        }).then(action => {
+          console.log(JSON.stringify(action));
+        })
       .catch(error => {
         assert(false, error);
       });
