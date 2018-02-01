@@ -590,6 +590,52 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
     );
   });
 
+  it('validate normalization works for generic response_type - option (options.value is JSON object)', () => {
+    delete textMsgParams.conversation.output.text;
+    delete textMsgParams.conversation.output.facebook;
+
+    delete textRes.raw_output_data.conversation.output.text;
+    delete textRes.raw_output_data.conversation.output.facebook;
+    delete textRes.text;
+
+    // Make the first option value an object instead of a string.
+    genericFromConversation[2].options[0].value = {
+      input: {
+        text: 'Location 1'
+      },
+      intents: [
+        {
+          intent: 'get-location',
+          confidence: 0.8177993774414063
+        }
+      ],
+      entities: [
+        {
+          entity: 'Location',
+          location: [0, 9],
+          value: '1',
+          confidence: 1
+        }
+      ]
+    };
+
+    // Add a generic option response from Conversation
+    textMsgParams.conversation.output.generic = genericFromConversation[2];
+
+    textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
+    delete textRes.message;
+    textRes.message = [genericForFacebook[2]];
+
+    return actionNormForFacebook(textMsgParams).then(
+      result => {
+        assert.deepEqual(result, textRes);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
   it('validate error when no conversation data', () => {
     delete textMsgParams.conversation.output;
 
