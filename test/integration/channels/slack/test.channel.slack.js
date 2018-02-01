@@ -392,7 +392,7 @@ describe('Slack channel integration tests', () => {
       });
   }).retries(10);
 
-  it('validate slack channel package works for multipost messages', done => {
+  it('validate slack channel package works for multipost messages', () => {
     const testPipeline = `${pipelineName}-integration-slack-send-attached-multipost`;
 
     const requestMultipost = 'Show me a multimedia response';
