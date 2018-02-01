@@ -26,6 +26,8 @@ const envParams = process.env;
 
 const pipelineName = envParams.__TEST_PIPELINE_NAME;
 
+const SLEEP_TIME = 3000;
+
 const outputText = 'Message coming from Slack integration test.';
 
 describe('Slack channel integration tests', () => {
@@ -429,40 +431,47 @@ describe('Slack channel integration tests', () => {
         delete filteredResult.auth._revs_info;
         assert.deepEqual(filteredResult, expectedResult);
 
-        return ow.activations
-          .list()
-          .then(activations => {
-            for (let i = 0; i < activations.length; i += 1) {
-              if (activations[i].name === testPipeline) {
-                return activations[i].activationId;
-              }
-            }
-            throw new Error('No activations found.');
-          })
-          .then(activationId => {
-            return ow.activations.get({ name: activationId });
-          })
-          .then(res => {
-            const response = res.response.result;
-            if (response.error) {
-              throw new Error(JSON.stringify(response.error));
-            }
-            return response;
-          })
-          .then(res => {
-            // Update the expectedMultiPostResult's activationId, since this is dynamically generated we can't predict it
-            for (
-              let i = 0;
-              i < expectedMultiPostResult.postResponses.successfulPosts.length;
-              i += 1
-            ) {
-              expectedMultiPostResult.postResponses.successfulPosts[
-                i
-              ].activationId = res.postResponses.successfulPosts[
-                i
-              ].activationId;
-            }
-            assert.deepEqual(res, expectedMultiPostResult);
+        return sleep(SLEEP_TIME)
+          .then(() => {
+            return ow.activations
+              .list()
+              .then(activations => {
+                for (let i = 0; i < activations.length; i += 1) {
+                  if (activations[i].name === testPipeline) {
+                    return activations[i].activationId;
+                  }
+                }
+                throw new Error('No activations found.');
+              })
+              .then(activationId => {
+                return ow.activations.get({ name: activationId });
+              })
+              .then(res => {
+                const response = res.response.result;
+                if (response.error) {
+                  throw new Error(JSON.stringify(response.error));
+                }
+                return response;
+              })
+              .then(res => {
+                // Update the expectedMultiPostResult's activationId, since this is dynamically generated we can't predict it
+                for (
+                  let i = 0;
+                  i <
+                  expectedMultiPostResult.postResponses.successfulPosts.length;
+                  i += 1
+                ) {
+                  expectedMultiPostResult.postResponses.successfulPosts[
+                    i
+                  ].activationId = res.postResponses.successfulPosts[
+                    i
+                  ].activationId;
+                }
+                assert.deepEqual(res, expectedMultiPostResult);
+              })
+              .catch(error => {
+                assert(false, error);
+              });
           })
           .catch(error => {
             assert(false, error);
@@ -472,4 +481,16 @@ describe('Slack channel integration tests', () => {
         assert(false, error);
       });
   }).retries(10);
+
+  /**
+     * Sleep for a specified amount of milliseconds.
+     *
+     * @param  {integer} ms - number of milliseconds
+     * @return {Promise}    - Promise resolve
+     */
+  function sleep(ms) {
+    return new Promise(resolve => {
+      setTimeout(resolve, ms);
+    });
+  }
 });
