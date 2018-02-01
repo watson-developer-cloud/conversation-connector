@@ -131,6 +131,7 @@ function main(params) {
                     userWsk,
                     wskNamespace,
                     deployName,
+                    deployName,
                     defaultPipelineActions
                 );
             })
@@ -141,6 +142,7 @@ function main(params) {
                 return createPipeline(
                     userWsk,
                     wskNamespace,
+                    deployName,
                     postSequence,
                     postSequenceActions
                 );
@@ -404,14 +406,15 @@ function checkPipelineActions(ow, namespace, deployName) {
  *
  * @param  {Object} ow           - user's Cloud Functions
  * @param  {string} namespace    - Cloud Functions namespace
+ * @param  {string} deployName   - Name of the overall deploy specified by the user
  * @param  {string} sequenceName   - Name of the sequence to create
  * @param  {string} includedActions - actions to be included in the sequence
  * @return {Promise}             - resolution of sequence action update
  */
-function createPipeline(ow, namespace, sequenceName, includedActions) {
+function createPipeline(ow, namespace, deployName, sequenceName, includedActions) {
     const pipelineActions = JSON.parse(JSON.stringify(includedActions));
     for (let i = 0; i < pipelineActions.length; i += 1) {
-        pipelineActions[i] = `/${namespace}/${sequenceName}_${pipelineActions[i]}`;
+        pipelineActions[i] = `/${namespace}/${deployName}_${pipelineActions[i]}`;
     }
 
     return ow.actions.update({
