@@ -258,7 +258,8 @@ describe('Slack channel integration tests', () => {
             return response;
           })
           .then(res => {
-            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated
+            // we can't predict it
             expectedPipelineResult.postResponses.successfulPosts[
               0
             ].activationId = res.postResponses.successfulPosts[0].activationId;
@@ -317,7 +318,8 @@ describe('Slack channel integration tests', () => {
             return response;
           })
           .then(res => {
-            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated
+            // we can't predict it
             expectedPipelineResult.postResponses.successfulPosts[
               0
             ].activationId = res.postResponses.successfulPosts[0].activationId;
@@ -377,7 +379,8 @@ describe('Slack channel integration tests', () => {
             return response;
           })
           .then(res => {
-            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated
+            // we can't predict it
             expectedPipelineResult.postResponses.successfulPosts[
               0
             ].activationId = res.postResponses.successfulPosts[0].activationId;
@@ -457,7 +460,8 @@ describe('Slack channel integration tests', () => {
         return response;
       })
       .then(res => {
-        // Update the expectedMultiPostResult's activationId, since this is dynamically generated we can't predict it
+        // Update the expectedMultiPostResult's activationId, since this is dynamically generated
+        // we can't predict it
         for (
           let i = 0;
           i < expectedMultiPostResult.postResponses.successfulPosts.length;

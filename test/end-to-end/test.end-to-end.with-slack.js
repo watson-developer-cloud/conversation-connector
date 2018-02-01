@@ -369,7 +369,8 @@ describe('End-to-End tests: with Slack package', () => {
         return response;
       })
       .then(res => {
-        // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+        // Update the expectedPipelineResult's activationId, since this is dynamically generated
+        // we can't predict it
         expectedPipelineResult.postResponses.successfulPosts[
           0
         ].activationId = res.postResponses.successfulPosts[0].activationId;
@@ -430,7 +431,8 @@ describe('End-to-End tests: with Slack package', () => {
         return response;
       })
       .then(res => {
-        // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+        // Update the expectedPipelineResult's activationId, since this is dynamically generated
+        // we can't predict it
         expectedPipelineResult.postResponses.successfulPosts[
           0
         ].activationId = res.postResponses.successfulPosts[0].activationId;
@@ -493,7 +495,8 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
-          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
           expectedPipelineResult.postResponses.successfulPosts[
             0
           ].activationId = res.postResponses.successfulPosts[0].activationId;
@@ -544,7 +547,8 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
-          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
           expectedPipelineResult.postResponses.successfulPosts[
             0
           ].activationId = res.postResponses.successfulPosts[0].activationId;
@@ -613,7 +617,8 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
-          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
           expectedPipelineResult.postResponses.successfulPosts[
             0
           ].activationId = res.postResponses.successfulPosts[0].activationId;
@@ -679,7 +684,8 @@ describe('End-to-End tests: with Slack package', () => {
           delete expectedPipelineResult.postResponses.successfulPosts[
             0
           ].successResponse.ts;
-          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
           expectedPipelineResult.postResponses.successfulPosts[
             0
           ].activationId = res.postResponses.successfulPosts[0].activationId;
@@ -748,7 +754,8 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
-          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
           expectedPipelineResult.postResponses.successfulPosts[
             0
           ].activationId = res.postResponses.successfulPosts[0].activationId;
@@ -814,7 +821,8 @@ describe('End-to-End tests: with Slack package', () => {
           delete expectedPipelineResult.postResponses.successfulPosts[
             0
           ].successResponse.ts;
-          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
           expectedPipelineResult.postResponses.successfulPosts[
             0
           ].activationId = res.postResponses.successfulPosts[0].activationId;
@@ -890,7 +898,8 @@ describe('End-to-End tests: with Slack package', () => {
             }
           };
 
-          // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
           expectedPipelineResult.postResponses.successfulPosts[
             0
           ].activationId = res.postResponses.successfulPosts[0].activationId;
@@ -963,7 +972,8 @@ describe('End-to-End tests: with Slack package', () => {
             return response;
           })
           .then(res => {
-            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated
+            // we can't predict it
             expectedPipelineResult.postResponses.successfulPosts[
               0
             ].activationId = res.postResponses.successfulPosts[0].activationId;
@@ -1021,7 +1031,8 @@ describe('End-to-End tests: with Slack package', () => {
             return response;
           })
           .then(res => {
-            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated
+            // we can't predict it
             for (
               let i = 0;
               i < expectedMultiPostResult.postResponses.successfulPosts.length;
