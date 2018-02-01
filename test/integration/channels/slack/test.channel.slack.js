@@ -34,6 +34,7 @@ describe('Slack channel integration tests', () => {
   let params;
   let expectedResult;
   let expectedPipelineResult;
+  let expectedMultiPostResult;
   let attachmentData;
   let attachmentPayload;
 
@@ -85,6 +86,72 @@ describe('Slack channel integration tests', () => {
               channel: 'DXXXXXXXX',
               text: outputText,
               token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
+            },
+            activationId: ''
+          }
+        ],
+        failedPosts: []
+      }
+    };
+
+    expectedMultiPostResult = {
+      postResponses: {
+        successfulPosts: [
+          {
+            successResponse: {
+              channel: 'DXXXXXXXX',
+              text: 'Here is your multi-modal response.',
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
+              as_user: 'true'
+            },
+            activationId: ''
+          },
+          {
+            successResponse: {
+              channel: 'DXXXXXXXX',
+              attachments: [
+                {
+                  title: 'Image title',
+                  pretext: 'Image description',
+                  image_url: 'https://s.w-x.co/240x180_twc_default.png'
+                }
+              ],
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
+              as_user: 'true'
+            },
+            activationId: ''
+          },
+          {
+            successResponse: {
+              channel: 'DXXXXXXXX',
+              attachments: [
+                {
+                  text: 'Choose your location',
+                  callback_id: 'Choose your location',
+                  actions: [
+                    {
+                      name: 'Location 1',
+                      type: 'button',
+                      text: 'Location 1',
+                      value: 'Location 1'
+                    },
+                    {
+                      name: 'Location 2',
+                      type: 'button',
+                      text: 'Location 2',
+                      value: 'Location 2'
+                    },
+                    {
+                      name: 'Location 3',
+                      type: 'button',
+                      text: 'Location 3',
+                      value: 'Location 3'
+                    }
+                  ]
+                }
+              ],
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
+              as_user: 'true'
             },
             activationId: ''
           }
@@ -383,11 +450,19 @@ describe('Slack channel integration tests', () => {
             return response;
           })
           .then(res => {
-            // Update the expectedPipelineResult's activationId, since this is dynamically generated we can't predict it
-            expectedPipelineResult.postResponses.successfulPosts[
-              0
-            ].activationId = res.postResponses.successfulPosts[0].activationId;
-            assert.deepEqual(res, expectedPipelineResult);
+            // Update the expectedMultiPostResult's activationId, since this is dynamically generated we can't predict it
+            for (
+              let i = 0;
+              i < expectedMultiPostResult.postResponses.successfulPosts.length;
+              i += 1
+            ) {
+              expectedMultiPostResult.postResponses.successfulPosts[
+                i
+              ].activationId = res.postResponses.successfulPosts[
+                i
+              ].activationId;
+            }
+            assert.deepEqual(res, expectedMultiPostResult);
           })
           .catch(error => {
             assert(false, error);
