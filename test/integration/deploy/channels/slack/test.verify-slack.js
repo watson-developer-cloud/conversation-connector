@@ -23,9 +23,12 @@
 const assert = require('assert');
 const crypto = require('crypto');
 const openwhisk = require('openwhisk');
+const _ = require('underscore');
 
 const actionPopulateActions = 'populate-actions';
 const actionVerifySlack = 'verify-slack';
+
+const apihost = 'openwhisk.ng.bluemix.net';
 
 describe('deploy verify-slack integration tests', () => {
   const ow = openwhisk();
@@ -73,6 +76,23 @@ describe('deploy verify-slack integration tests', () => {
     const authUrl = `/oauth/authorize?client_id=${params.state.slack.client_id}&scope=bot+chat:write:bot&redirect_uri=${redirectUrl}&state=${state}`;
     const redirAuthUrl = `https://slack.com/signin?redir=${encodeURIComponent(authUrl)}`;
 
+    const expectedPostSequenceActions = [
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/post-normalize`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/post`
+    ];
+
+    const expectedMainSequenceActions = [
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/pre-normalize`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/normalize-slack-for-conversation`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_context/load-context`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/pre-conversation`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_conversation/call-conversation`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/post-conversation`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_context/save-context`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/normalize-conversation-for-slack`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_slack/multiple_post`
+    ];
+
     return ow.actions
       .invoke({
         name: actionPopulateActions,
@@ -100,6 +120,24 @@ describe('deploy verify-slack integration tests', () => {
           authorize_url: redirAuthUrl
         });
       })
+      .then(() => {
+        return validatePipelineCreation(deploymentName);
+      })
+      .then(action => {
+        assert(
+          true,
+          _.isEqual(action.exec.components, expectedMainSequenceActions)
+        );
+      })
+      .then(() => {
+        return validatePipelineCreation(deploymentName + '_postsequence');
+      })
+      .then(action => {
+        assert(
+          true,
+          _.isEqual(action.exec.components, expectedPostSequenceActions)
+        );
+      })
       .catch(error => {
         assert(false, error);
       });
@@ -111,5 +149,14 @@ describe('deploy verify-slack integration tests', () => {
       .createHmac('sha256', hmacKey)
       .update('authorize')
       .digest('hex');
+  }
+
+  function validatePipelineCreation(pipelineName, expectedActions) {
+    const supplierWsk = openwhisk({
+      api_key: process.env.__TEST_DEPLOYUSER_WSK_API_KEY,
+      namespace: process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE,
+      apihost
+    });
+    return supplierWsk.actions.get(pipelineName);
   }
 });
