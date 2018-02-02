@@ -340,6 +340,48 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
     );
   });
 
+  it('validate normalization works for generic response_type - option (options.value is JSON object)', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Make the first option value an object instead of a string.
+    genericFromConversation[2].options[0].value = {
+      input: {
+        text: 'Location 1'
+      },
+      intents: [
+        {
+          intent: 'get-location',
+          confidence: 0.8177993774414063
+        }
+      ],
+      entities: [
+        {
+          entity: 'Location',
+          location: [0, 9],
+          value: '1',
+          confidence: 1
+        }
+      ]
+    };
+
+    // Add a generic option response from Conversation
+    params.conversation.output.generic = genericFromConversation[2];
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    expectedResult = Object.assign(expectedResult, genericForSlack[2]);
+
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
   it('validate normalization works for multiple generic response_type list', () => {
     delete params.conversation.output.text;
     delete expectedResult.raw_output_data.conversation.output.text;
