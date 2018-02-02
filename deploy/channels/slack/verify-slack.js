@@ -143,7 +143,7 @@ function main(params) {
           userWsk,
           wskNamespace,
           deployName,
-            sequenceName,
+          sequenceName,
           postSequenceActions
         );
       })

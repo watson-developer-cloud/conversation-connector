@@ -146,7 +146,7 @@ describe('End-to-End tests: Slack Deploy UI', () => {
         );
       })
       .then(() => {
-        return validatePipelineCreation(deploymentName + '_postsequence');
+        return validatePipelineCreation(`${deploymentName}_postsequence`);
       })
       .then(action => {
         assert(
@@ -305,7 +305,7 @@ describe('End-to-End tests: Slack Deploy UI', () => {
       .digest('hex');
   }
 
-  function validatePipelineCreation(pipelineName, expectedActions) {
+  function validatePipelineCreation(pipelineName) {
     const supplierWsk = openwhisk({
       api_key: process.env.__TEST_DEPLOYUSER_WSK_API_KEY,
       namespace: process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE,

@@ -130,7 +130,7 @@ describe('deploy verify-slack integration tests', () => {
         );
       })
       .then(() => {
-        return validatePipelineCreation(deploymentName + '_postsequence');
+        return validatePipelineCreation(`${deploymentName}_postsequence`);
       })
       .then(action => {
         assert(
@@ -151,7 +151,7 @@ describe('deploy verify-slack integration tests', () => {
       .digest('hex');
   }
 
-  function validatePipelineCreation(pipelineName, expectedActions) {
+  function validatePipelineCreation(pipelineName) {
     const supplierWsk = openwhisk({
       api_key: process.env.__TEST_DEPLOYUSER_WSK_API_KEY,
       namespace: process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE,
