@@ -85,7 +85,7 @@ describe('End-to-End tests: Slack Deploy UI', () => {
 
     const expectedPostSequenceActions = [
       `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/post-normalize`,
-      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/post`
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_slack/post`
     ];
 
     const expectedMainSequenceActions = [
@@ -99,6 +99,12 @@ describe('End-to-End tests: Slack Deploy UI', () => {
       `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/normalize-conversation-for-slack`,
       `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_slack/multiple_post`
     ];
+
+    const supplierWsk = openwhisk({
+      api_key: process.env.__TEST_DEPLOYUSER_WSK_API_KEY,
+      namespace: process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE,
+      apihost
+    });
 
     return ow.actions
       .invoke({
@@ -137,21 +143,21 @@ describe('End-to-End tests: Slack Deploy UI', () => {
         assert.deepEqual(result, expectedResult);
       })
       .then(() => {
-        return validatePipelineCreation(deploymentName);
+        return validateSequenceCreation(deploymentName, supplierWsk);
       })
       .then(action => {
         assert(
-          true,
-          _.isEqual(action.exec.components, expectedMainSequenceActions)
+          _.isEqual(action.exec.components, expectedMainSequenceActions), 
+	"main sequence does not contain expected actions."
         );
       })
       .then(() => {
-        return validatePipelineCreation(deploymentName + '_postsequence');
+        return validateSequenceCreation(deploymentName + '_postsequence', supplierWsk);
       })
       .then(action => {
         assert(
-          true,
-          _.isEqual(action.exec.components, expectedPostSequenceActions)
+          _.isEqual(action.exec.components, expectedPostSequenceActions),
+	"post sequence does not contain expected actions."
         );
       })
       .catch(error => {
@@ -305,13 +311,7 @@ describe('End-to-End tests: Slack Deploy UI', () => {
       .digest('hex');
   }
 
-  function validatePipelineCreation(pipelineName, expectedActions) {
-    const supplierWsk = openwhisk({
-      api_key: process.env.__TEST_DEPLOYUSER_WSK_API_KEY,
-      namespace: process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE,
-      apihost
-    });
-
+  function validateSequenceCreation(pipelineName, supplierWsk) {
     return supplierWsk.actions.get(pipelineName);
   }
 });
