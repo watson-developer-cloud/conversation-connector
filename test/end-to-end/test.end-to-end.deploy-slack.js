@@ -152,7 +152,7 @@ describe('End-to-End tests: Slack Deploy UI', () => {
         );
       })
       .then(() => {
-        return validateSequenceCreation(deploymentName + '_postsequence', supplierWsk);
+        return validatePipelineCreation(`${deploymentName}_postsequence`, supplierWsk);
       })
       .then(action => {
         assert(
