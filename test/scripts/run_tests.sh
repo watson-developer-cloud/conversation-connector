@@ -302,8 +302,7 @@ runTestSuite() {
   echo "Running tests: $1"
 
   # Run tests with coverage
-#  ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive $1 -s 5000 -t 20000 -R spec
-	mocha test/end-to-end/test.end-to-end.deploy-slack.js
+  ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive $1 -s 5000 -t 20000 -R spec
 
   RETCODE=$?
 }

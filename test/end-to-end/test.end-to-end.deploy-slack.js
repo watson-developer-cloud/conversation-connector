@@ -147,17 +147,20 @@ describe('End-to-End tests: Slack Deploy UI', () => {
       })
       .then(action => {
         assert(
-          _.isEqual(action.exec.components, expectedMainSequenceActions), 
-	"main sequence does not contain expected actions."
+          _.isEqual(action.exec.components, expectedMainSequenceActions),
+          'main sequence does not contain expected actions.'
         );
       })
       .then(() => {
-        return validatePipelineCreation(`${deploymentName}_postsequence`, supplierWsk);
+        return validateSequenceCreation(
+          `${deploymentName}_postsequence`,
+          supplierWsk
+        );
       })
       .then(action => {
         assert(
           _.isEqual(action.exec.components, expectedPostSequenceActions),
-	"post sequence does not contain expected actions."
+          'post sequence does not contain expected actions.'
         );
       })
       .catch(error => {
