@@ -93,11 +93,11 @@ describe('deploy verify-slack integration tests', () => {
       `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_slack/multiple_post`
     ];
 
-      const supplierWsk = openwhisk({
-          api_key: process.env.__TEST_DEPLOYUSER_WSK_API_KEY,
-          namespace: process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE,
-          apihost
-      });
+    const supplierWsk = openwhisk({
+      api_key: process.env.__TEST_DEPLOYUSER_WSK_API_KEY,
+      namespace: process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE,
+      apihost
+    });
 
     return ow.actions
       .invoke({
@@ -130,19 +130,22 @@ describe('deploy verify-slack integration tests', () => {
         return validateSequenceCreation(deploymentName, supplierWsk);
       })
       .then(action => {
-          assert(
-              _.isEqual(action.exec.components, expectedMainSequenceActions),
-              'main sequence does not contain expected actions.'
-          );
+        assert(
+          _.isEqual(action.exec.components, expectedMainSequenceActions),
+          'main sequence does not contain expected actions.'
+        );
       })
       .then(() => {
-        return validateSequenceCreation(`${deploymentName}_postsequence`, supplierWsk);
+        return validateSequenceCreation(
+          `${deploymentName}_postsequence`,
+          supplierWsk
+        );
       })
       .then(action => {
-          assert(
-              _.isEqual(action.exec.components, expectedPostSequenceActions),
-              'post sequence does not contain expected actions.'
-          );
+        assert(
+          _.isEqual(action.exec.components, expectedPostSequenceActions),
+          'post sequence does not contain expected actions.'
+        );
       })
       .catch(error => {
         assert(false, error);
