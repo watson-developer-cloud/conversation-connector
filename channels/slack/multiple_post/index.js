@@ -35,8 +35,9 @@ function main(params) {
 }
 
 /**
- * Checks the length of normalized message array and sends one
- * reply to the channel for each element in the array.
+ * Checks the length of the normalized message array and sends one
+ * reply to the channel for each element in the array. If there is no message array,
+ * it just posts a single message.
  *
  * @param  {JSON} params - output JSON to be posted back to the channel
  * @return {JSON}        - result of the call(s) to the Post action
@@ -48,7 +49,7 @@ function postMultipleMessages(params) {
   const sequenceName = `${deployName}_postsequence`;
 
   // At minimum we will send one message to the channel,
-  // but if Conversation contains an array, send more
+  // but if the message array exists send one message for each element of the array
   const size = Array.isArray(params.message) ? params.message.length : 1;
 
   const responses = { successfulPosts: [], failedPosts: [] };
@@ -75,8 +76,11 @@ function postMessage(sequenceName, params, responses, size, index, ow) {
   if (index < size) {
     const paramsForInvocation = Object.assign({}, params);
 
+    // If we have an array of messages, extract the next element we haven't sent and store
+    // it at the root of the JSON
     if (Array.isArray(params.message)) {
-      paramsForInvocation.message = params.message[index];
+      Object.assign(paramsForInvocation, params.message[index]);
+      delete paramsForInvocation.message;
     }
 
     return invokeAction(sequenceName, paramsForInvocation, ow)

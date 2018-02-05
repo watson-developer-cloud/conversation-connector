@@ -103,21 +103,19 @@ function insertConversationOutput(params, output) {
       ? params.conversation.output.generic
       : [Object.assign({}, params.conversation.output.generic)];
 
-    // Add the attachment array.
-    slackOutput.attachments = slackOutput.attachments
-      ? slackOutput.attachments
-      : [];
+    // Add the message array.
+    slackOutput.message = [];
 
     generic.forEach(element => {
       switch (element.response_type) {
         case 'image':
-          slackOutput.attachments.push(generateSlackImageData(element));
+          slackOutput.message.push(generateSlackImageData(element));
           break;
         case 'option':
-          slackOutput.attachments.push(generateSlackOptionsData(element));
+          slackOutput.message.push(generateSlackOptionsData(element));
           break;
         default:
-          slackOutput.text = element.text;
+          slackOutput.message.push({ text: element.text });
       }
       return element;
     });
@@ -139,6 +137,23 @@ function insertConversationOutput(params, output) {
 }
 
 /**
+ * Function normalizes the provided option value to
+ * string format so Facebook accepts it.
+ * @param {string/JSON} value - option value (could be string/JSON obj)
+ * @return {string} - stringified option value
+ */
+function getNormalizedOptionsValue(value) {
+  let normalizedValue = value;
+  if (value instanceof Object) {
+    assert(value.input && value.input.text); // Input and text both must be present
+    assert(typeof value.input.text, 'string'); // Text must be string
+    normalizedValue = value.input.text; // Do this for MVP as a safeguard
+  }
+  assert.equal(typeof normalizedValue, 'string'); // Default case (for MVP)
+  return normalizedValue;
+}
+
+/**
  * Generates the image attachment data as per Slack specs.
  *
  * @param  {JSON} params - The generic element object
@@ -147,9 +162,13 @@ function insertConversationOutput(params, output) {
  */
 function generateSlackImageData(element) {
   return {
-    title: element.title,
-    pretext: element.description,
-    image_url: element.source
+    attachments: [
+      {
+        title: element.title,
+        pretext: element.description,
+        image_url: element.source
+      }
+    ]
   };
 }
 
@@ -166,14 +185,18 @@ function generateSlackOptionsData(element) {
     updatedOptionObj.name = optionObj.label;
     updatedOptionObj.type = 'button';
     updatedOptionObj.text = optionObj.label;
-    updatedOptionObj.value = optionObj.value;
+    updatedOptionObj.value = getNormalizedOptionsValue(optionObj.value);
     return updatedOptionObj;
   });
 
   return {
-    text: element.title,
-    callback_id: element.title,
-    actions: buttonsData
+    attachments: [
+      {
+        text: element.title,
+        callback_id: element.title,
+        actions: buttonsData
+      }
+    ]
   };
 }
 
