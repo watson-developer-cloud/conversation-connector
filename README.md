@@ -43,101 +43,19 @@ The following list provides a detailed description of all of the actions that ma
 - **`post-conversation`** performs any custom processing of the Conversation response JSON. This is an opportunity to modify the received context before it is saved in the database. By default, this action is empty.
 - **`save-context`** saves the Conversation context in the Cloudant `contextdb` database.
 - **`normalize-conversation-for-<channel>`** converts the JSON response from the Conversation format to the format expected by the channel. This includes extracting the Conversation response, in text and/or multimedia, and storing it in the appropriate location in the channel JSON. Facebook Messenger and Slack expect different payloads so there's a need to translate the Conversation response to channel-specific format.
-- **`multiple_post`** Examines the reply from `normalize-conversation-for-<channel>` and posts one or more replies to the channel as needed.
+- **`multiple_post`** splits an interactive multimedia response into multiple responses, as needed. This is necessary because certain response types cannot be combined in a single message. If the output from `normalize-conversation-for-<channel>` contains multiple media types, it is split into separate messages and then sent to `post-normalization` in series.
 - **`post-normalization`** performs any final processing of the channel JSON before it is posted to the channel.
 - **`post`** posts the output to the channel app.
 
-## Interactive messages
+## Interactive responses
 
-In addition to basic text responses, both Facebook Messenger and Slack support responses that include interactive controls such as buttons and menus. The connector pipeline provides support for channel-specific JSON, which you can use to implement interactive responses. One can add a channel-specific JSON directly inside a dialog node output from within Conversation, or, respond with a channel-agnostic generic response which is normalized to channel-specific format by the `normalize-conversation-for-<channel>` Cloud Function.
+In addition to basic text responses, both Facebook Messenger and Slack support responses that include interactive controls such as buttons and menus. To specify an interactive response, you insert a block of JSON data into the output of a dialog node, using either the Conversation tool or the REST API.
 
-*Note: If you are using Slack, make sure you have enabled the interactive message support. For more information, see the Slack deployment [README](channels/slack/README.md#interactive-messages).*
+*Note: If you want to use interactive messages with Slack, make sure you have enabled the interactive message support. For more information, see the Slack deployment [README](channels/slack/README.md#interactive-messages).*
 
-### Via channel-specific JSON
+### Generic JSON format
 
-In the Conversation tool, edit the dialog node that you want to return an interactive response. Insert the channel-specific JSON into the `output.<channel>` field.
-
-For example, for Slack, you might use the following JSON to display buttons for selecting a T-shirt size:
-
-```json
-{
-  "output": {
-    "text": {
-      "values": [
-        "What shirt size would you like?"
-      ],
-      "selection_policy": "sequential"
-    },
-    "slack": {
-      "text": "What shirt size would you like?",
-      "attachments": [
-        {
-          "actions": [
-            {
-              "name": "shirt_size_small",
-              "text": "Small",
-              "type": "button",
-              "value": "small"
-            },
-            {
-              "name": "shirt_size_medium",
-              "text": "Medium",
-              "type": "button",
-              "value": "medium"
-            },
-            {
-              "name": "shirt_size_large",
-              "text": "Large",
-              "type": "button",
-              "value": "large"
-            }
-          ],
-          "fallback": "Sorry! We cannot support buttons at the moment. Please type in: small, medium, or large.",
-          "callback_id": "shirt_size"
-        }
-      ]
-    }
-  }
-}
-```
-The connector will include this data in the `attachment` property of the Slack JSON, and Slack will show the user the buttons they can click on in the client. (For more information, see Slack's [message attachment's documentation](https://api.slack.com/docs/message-attachments).)
-
-For Facebook Messenger, the approach is the same, but the JSON details differ:
-
-```json
-  "output": {
-    "facebook": {
-      "message": {
-        "text": "Which size would you like?",
-        "quick_replies": [
-          {
-            "title": "Small",
-            "payload": "small",
-            "content_type": "text"
-          },
-          {
-            "title": "Medium",
-            "payload": "medium",
-            "content_type": "text"
-          },
-          {
-            "title": "Large",
-            "payload": "large",
-            "content_type": "text"
-          }
-        ]
-      }
-    }
-  }
-```
-
-For more information, see [Facebook's message template pages](https://developers.facebook.com/docs/messenger-platform/send-messages/templates).
-
-### Via channel-agnostic generic JSON
-
-There is now in-built support for translating generic multi-modal responses from Conversation to a channel-specific format.
-The `normalize-conversation-for-<channel>` action is responsible for the bulk of the translation.
-Here's a sample Conversation output JSON containing an array of generic responses in text, image and options:
+You can specify interactive responses using a generic JSON format that supports either Slack or Facebook Messenger deployments. To specify an interactive response in the generic JSON format, insert the JSON into the `output.generic` field of the dialog node response. The following example shows how you might send a response containing multiple response types (text, an image, and clickable options):
 
 ```json
 {
@@ -176,91 +94,21 @@ Here's a sample Conversation output JSON containing an array of generic response
 }
 ```
 
-**Slack**
-The generic response array is translated to a *single* message in Slack comprising of text alongwith attachment data. For the above example, the equivalent Slack message after translation is as follows:
+For more information about the supported response types and how to specify them, see (COMING SOON: response types reference).
 
-```json
-{
-  "text": "Here are your nearest stores.",
-  "attachments": [
-    {
-      "image_url": "http://...",
-      "pretext": "Some description for the image",
-      "title": "Image title"
-    },
-    {
-      "actions": [
-        {
-          "name": "Location 1",
-          "text": "Location 1",
-          "type": "button",
-          "value": "Location 1"
-        },
-        {
-          "name": "Location 2",
-          "text": "Location 2",
-          "type": "button",
-          "value": "Location 2"
-        },
-        {
-          "name": "Location 3",
-          "text": "Location 3",
-          "type": "button",
-          "value": "Location 3"
-        }
-      ],
-      "callback_id": "Click on one of the following",
-      "text": "Click on one of the following"
-    }
-  ],
-  "channel": "DXXXXXXXX",
-  "ts": "XXXXXXXXXX.XXXXXX"
-}
-}
-```
-**Facebook**
-The generic response array is translated to a *list of Facebook messages payloads* comprising of text along with attachment data. For the above example, the equivalent message list after translation is as follows:
+At run time, this response is converted to the channel-specific format by the `normalize-conversation-for-<channel>` pipeline action. If the response contains multiple media types or attachments, the generic response is converted into a series of separate message payloads. These message payloads are then sent to the `multiple-post` action, which sends each message payload in a separate message.
 
-```json
-[
-  {
-    "text": "Here are your nearest stores."
-  },
-  {
-    "attachment": {
-      "type": "image",
-      "payload": {
-        "url": "http://..."
-      }
-    }
-  },
-  {
-    "text": "Click on one of the following",
-    "quick_replies": [
-      {
-        "content_type": "text",
-        "title": "Location 1",
-        "payload": "Location 1"
-      },
-      {
-        "content_type": "text",
-        "title": "Location 2",
-        "payload": "Location 2"
-      },
-      {
-        "content_type": "text",
-        "title": "Location 3",
-        "payload": "Location 3"
-      }
-    ]
-  }
-]
-```
-In case Facebook is the channel in question, the output of `normalize-conversation-for-<channel>` is sent to `multiple_post` which splits the array into individual Facebook messages and invokes a `sub-pipeline` comprising of `starter-code/post-normalize` and `facebook/post` functions. Each message is separately passed through this subpipeline. Hence, a multi-modal response from Conversation is broken down into individual messages and POSTed to Facebook messenger.
+*Note: When a response is split into multiple messages, the Conversation connector delivers these messages to the channel (Slack or Facebook Messenger) in sequence. It is the responsibility of the channel to deliver these messages to the end user; this can be affected by network or server issues.*
 
-Additionally, Facebook only allows upto 11 elements in a quick reply array. So, if the options list in the Conversation response has over 11 options, it's translated to the [Facebook generic template](https://developers.facebook.com/docs/messenger-platform/send-messages/template/generic) format with buttons in groups of three.
+### Native JSON format
 
-*Note: Since multiple messages(coming from one Conversation response) will be fired off in quick succession, they may appear out of order if there's some delay in delivery or, Facebook servers are slow.*
+In addition to the generic JSON format, the Conversation connector also supports channel-specific responses written using the native Slack and Facebook Messenger formats. You might want to use the native JSON formats if you need to specify a response type that is not currently supported by the generic JSON format.
+
+You can specify native JSON for Slack or Facebook using the appropriate field in the dialog node response:
+
+- `output.slack`: insert any JSON you want included in the `attachment` field of the Slack response. For more information about the Slack JSON format, see the Slack [documentation](https://api.slack.com/docs/message-attachments).
+
+- `output.facebook`: insert any JSON you want included in the `message.attachment.payload` field of the Facebook response. For more information about the Facebook JSON format, see the Facebook [documentation](https://developers.facebook.com/docs/messenger-platform/send-messages/templates).
 
 ## Customizing the pipeline
 
@@ -271,27 +119,28 @@ For more extensive customization, you might want to add, remove, or change code 
 To browse and edit the deployed actions, use the [Cloud Functions editor](https://console.bluemix.net/openwhisk/manage/actions?env_id=ibm:yp:us-south). The actions are deployed in several Cloud Functions packages, as follows:
 
 - `slack` package (Slack deployments only):
-    - `receive`
-    - `post`
+  - `receive`
+  - `post`
+  - `multiple_post`
 - `facebook` package (Facebook deployments only):
-    - `receive`
-    - `batched_messages`
-    - `post`
-    - `multiple_post`
+  - `receive`
+  - `batched_messages`
+  - `post`
+  - `multiple_post`
 - `starter-code` package:
-    - `pre-normalize`
-    - `normalize-slack-for-conversation` (Slack deployments only)
-    - `normalize-facebook-for-conversation` (Facebook deployments only)
-    - `pre-conversation`
-    - `post-conversation`
-    - `normalize-conversation-for-slack` (Slack deployments only)
-    - `normalize-conversation-for-facebook` (Facebook deployments only)
-    - `post-normalization`
+  - `pre-normalize`
+  - `normalize-slack-for-conversation` (Slack deployments only)
+  - `normalize-facebook-for-conversation` (Facebook deployments only)
+  - `pre-conversation`
+  - `post-conversation`
+  - `normalize-conversation-for-slack` (Slack deployments only)
+  - `normalize-conversation-for-facebook` (Facebook deployments only)
+  - `post-normalization`
 - `context` package:
-    - `load-context`
-    - `save-context`
+  - `load-context`
+  - `save-context`
 - `conversation` package:
-    - `call-conversation`
+  - `call-conversation`
 
 The actual names of the deployed actions are as follows:
     `<deployment_name>_<package_name>/<action_name>`
