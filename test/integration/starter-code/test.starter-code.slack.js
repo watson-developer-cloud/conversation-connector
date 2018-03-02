@@ -150,6 +150,11 @@ describe('starter-code integration tests for slack', () => {
 
     genericData = [
       {
+        response_type: 'pause',
+        time: 1000,
+        typing: true
+      },
+      {
         response_type: 'text',
         text: outputText
       },
@@ -181,22 +186,27 @@ describe('starter-code integration tests for slack', () => {
 
     slackMultiModalData = {
       message: [
+        {
+          response_type: 'pause',
+          time: 1000,
+          typing: true
+        },
         { text: outputText },
         {
           attachments: [
             {
-              image_url: genericData[1].source,
-              pretext: genericData[1].description,
-              title: genericData[1].title
+              image_url: genericData[2].source,
+              pretext: genericData[2].description,
+              title: genericData[2].title
             }
           ]
         },
         {
           attachments: [
             {
-              text: genericData[2].title,
-              callback_id: genericData[2].title,
-              actions: genericData[2].options.map(e => {
+              text: genericData[3].title,
+              callback_id: genericData[3].title,
+              actions: genericData[3].options.map(e => {
                 const el = {};
                 el.name = e.label;
                 el.type = 'button';

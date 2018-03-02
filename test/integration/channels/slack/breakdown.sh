@@ -54,3 +54,20 @@ ${WSK} action delete ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/multiple_post > /d
 ${WSK} action delete ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/receive > /dev/null
 
 ${WSK} package delete ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack > /dev/null
+
+
+# Request and receive an interactive message requiring multipost
+PIPELINE_SEND_ATTACHED_MULTIPOST="$1-integration-slack-send-attached-multipost"
+
+CLOUDANT_AUTH_KEY="${PIPELINE_SEND_ATTACHED_MULTIPOST}"
+
+curl -s -XDELETE ${__TEST_CLOUDANT_URL}/authdb/${CLOUDANT_AUTH_KEY}?rev=$(curl -s ${__TEST_CLOUDANT_URL}/authdb/${CLOUDANT_AUTH_KEY} | jq -r ._rev) > /dev/null
+
+${WSK} action delete ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/send-attached-message-multipost > /dev/null
+${WSK} action delete ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/post > /dev/null
+${WSK} action delete ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/multiple_post > /dev/null
+${WSK} action delete ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/receive > /dev/null
+${WSK} action delete ${PIPELINE_SEND_ATTACHED_MULTIPOST}_postsequence > /dev/null
+${WSK} action delete ${PIPELINE_SEND_ATTACHED_MULTIPOST} > /dev/null
+
+${WSK} package delete ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack > /dev/null

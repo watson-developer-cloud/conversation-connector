@@ -120,6 +120,11 @@ describe('starter-code integration tests for facebook', () => {
 
     genericData = [
       {
+        response_type: 'pause',
+        time: 1000,
+        typing: true
+      },
+      {
         response_type: 'text',
         text: outputText
       },
@@ -151,19 +156,23 @@ describe('starter-code integration tests for facebook', () => {
 
     facebookMultiModalData = [
       {
+        sender_action: 'typing_on',
+        time: 1000
+      },
+      {
         text: outputText
       },
       {
         attachment: {
           type: 'image',
           payload: {
-            url: genericData[1].source
+            url: genericData[2].source
           }
         }
       },
       {
-        text: genericData[2].title,
-        quick_replies: genericData[2].options.map(e => {
+        text: genericData[3].title,
+        quick_replies: genericData[3].options.map(e => {
           const el = {};
           el.content_type = 'text';
           el.title = e.label;

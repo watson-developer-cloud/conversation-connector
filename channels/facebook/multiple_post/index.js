@@ -73,15 +73,55 @@ function postMultipleMessages(params) {
  */
 function postMessage(sequenceName, params, responses, size, index, ow) {
   if (index < size) {
-    const paramsForInvocation = Object.assign({}, params);
+    let paramsForInvocation = Object.assign({}, params);
+    let toInvokePost = true;
+    let sleepDuration = params.message.time;
+    let result; // to temporarily store the invocation result
 
+    // params.message will be an array only for generic responses.
     if (Array.isArray(params.message)) {
-      paramsForInvocation.message = params.message[index];
+      sleepDuration = params.message[index].time;
+      // If pause-type response, then don't create the message object.
+      // Just copy all the fields of the message object into paramsForInvocation.
+      if (params.message[index].time && !params.message[index].sender_action) {
+        toInvokePost = false;
+      }
+      if (params.message[index].sender_action) {
+        delete paramsForInvocation.message;
+        paramsForInvocation = Object.assign(
+          paramsForInvocation,
+          params.message[index]
+        );
+      } else {
+        paramsForInvocation.message = params.message[index];
+      }
     }
-
-    return invokeAction(sequenceName, paramsForInvocation, ow)
-      .then(result => {
-        responses.successfulPosts.push(result);
+    if (toInvokePost) {
+      return invokeAction(sequenceName, paramsForInvocation, ow)
+        .then(res => {
+          result = res;
+          return sleep(sleepDuration);
+        })
+        .then(() => {
+          responses.successfulPosts.push(result);
+          return postMessage(
+            sequenceName,
+            params,
+            responses,
+            size,
+            index + 1,
+            ow
+          );
+        })
+        .catch(e => {
+          // Capture the response, don't send any further messages
+          responses.failedPosts.push(e);
+        });
+    }
+    // If post is not invoked, just sleep for specified duration
+    // and invoke the action with the next set of parameters.
+    return sleep(sleepDuration)
+      .then(() => {
         return postMessage(
           sequenceName,
           params,
@@ -96,7 +136,25 @@ function postMessage(sequenceName, params, responses, size, index, ow) {
         responses.failedPosts.push(e);
       });
   }
-  return responses;
+  return new Promise(resolve => {
+    resolve(responses);
+  });
+}
+
+/**
+ * Sleep for a supplied amount of milliseconds.
+ *
+ * @param  {integer} ms - number of milliseconds to sleep
+ * @return {Promise}    - Promise resolve
+ */
+function sleep(ms) {
+  return new Promise(resolve => {
+    if (ms) {
+      setTimeout(resolve, ms);
+    } else {
+      resolve();
+    }
+  });
 }
 
 /**

@@ -157,7 +157,6 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
     try {
       func(textMsgParams);
     } catch (e) {
-      assert.equal('AssertionError', e.name);
       assert.equal(e.message, errorBadSupplier);
     }
   });
@@ -169,7 +168,6 @@ describe('Starter Code Normalize-Facebook-For-Conversation Unit Tests', () => {
     try {
       func(textMsgParams);
     } catch (e) {
-      assert.equal('AssertionError', e.name);
       assert.equal(e.message, errorNoFacebookData);
     }
   });

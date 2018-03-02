@@ -150,7 +150,9 @@ describe('deploy verify-slack integration tests', () => {
       .catch(error => {
         assert(false, error);
       });
-  }).retries(4);
+  })
+    .timeout(30000)
+    .retries(4);
 
   function createHmacKey(clientId, clientSecret) {
     const hmacKey = `${clientId}&${clientSecret}`;

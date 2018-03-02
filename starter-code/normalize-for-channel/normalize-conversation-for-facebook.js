@@ -108,10 +108,18 @@ function generateFacebookPayload(params) {
           facebookMessage = generateFbTemplateMessage(element);
         }
         break;
-      default:
+      case 'pause':
+        facebookMessage = generateFbPauseMessage(element);
+        break;
+      case 'text':
         facebookMessage = generateFbTextMessage(element);
+        break;
+      default:
+        facebookMessage = undefined;
     }
-    facebookMessageList.push(facebookMessage);
+    if (facebookMessage) {
+      facebookMessageList.push(facebookMessage);
+    }
     return element;
   });
   return facebookMessageList;
@@ -214,6 +222,22 @@ function generateFbTemplateMessage(element) {
       }
     }
   };
+}
+
+/**
+ * Function generates a user_typing event message as per Facebook guidelines
+ * from the generic pause element returned from Conversation.
+ * @param {JSON} element - JSON object containing pause
+ * @return {JSON} - Facebook message containing sender_typing
+ */
+function generateFbPauseMessage(element) {
+  const message = {
+    time: element.time
+  };
+  if (element.typing) {
+    message.sender_action = 'typing_on';
+  }
+  return message;
 }
 
 /**
