@@ -114,8 +114,14 @@ function insertConversationOutput(params, output) {
         case 'option':
           slackOutput.message.push(generateSlackOptionsData(element));
           break;
-        default:
+        case 'pause':
+          slackOutput.message.push(generateSlackPauseMessage(element));
+          break;
+        case 'text':
           slackOutput.message.push({ text: element.text });
+          break;
+        default:
+          break;
       }
       return element;
     });
@@ -198,6 +204,17 @@ function generateSlackOptionsData(element) {
       }
     ]
   };
+}
+
+/**
+ * Boilerplate function which should eventually translate
+ * pause response type to Slack-acceptable sender-typing event
+ * from the generic pause element returned from Conversation.
+ * @param {JSON} element - JSON object containing pause
+ * @return {JSON} - Slack message containing sender_typing
+ */
+function generateSlackPauseMessage(element) {
+  return element;
 }
 
 /**

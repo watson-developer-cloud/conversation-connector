@@ -32,6 +32,11 @@ function main(params) {
 
     const genericData = [
       {
+        response_type: 'pause',
+        time: 1000,
+        typing: true
+      },
+      {
         response_type: 'text',
         text: 'Output text from mock-conversation.'
       },

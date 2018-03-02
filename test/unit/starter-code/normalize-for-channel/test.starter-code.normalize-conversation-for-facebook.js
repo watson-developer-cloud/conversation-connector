@@ -163,6 +163,11 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
           value: 'Location 12'
         }
       ]
+    },
+    {
+      time: '10000',
+      typing: true,
+      response_type: 'pause'
     }
   ];
 
@@ -277,6 +282,10 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
           ]
         }
       }
+    },
+    {
+      sender_action: 'typing_on',
+      time: genericFromConversation[4].time
     }
   ];
 
@@ -625,6 +634,87 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
     textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
     delete textRes.message;
     textRes.message = [genericForFacebook[2]];
+
+    return actionNormForFacebook(textMsgParams).then(
+      result => {
+        assert.deepEqual(result, textRes);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - pause (typing TRUE)', () => {
+    delete textMsgParams.conversation.output.text;
+    delete textMsgParams.conversation.output.facebook;
+
+    delete textRes.raw_output_data.conversation.output.text;
+    delete textRes.raw_output_data.conversation.output.facebook;
+    delete textRes.text;
+
+    // Add a generic pause response from Conversation
+    textMsgParams.conversation.output.generic = genericFromConversation[4];
+
+    textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
+    delete textRes.message;
+    textRes.message = [genericForFacebook[4]];
+
+    return actionNormForFacebook(textMsgParams).then(
+      result => {
+        assert.deepEqual(result, textRes);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - pause (typing FALSE)', () => {
+    delete textMsgParams.conversation.output.text;
+    delete textMsgParams.conversation.output.facebook;
+
+    delete textRes.raw_output_data.conversation.output.text;
+    delete textRes.raw_output_data.conversation.output.facebook;
+    delete textRes.text;
+
+    genericFromConversation[4].typing = false;
+    // Add a generic pause response from Conversation
+    textMsgParams.conversation.output.generic = genericFromConversation[4];
+
+    textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
+    delete textRes.message;
+    delete genericForFacebook[4].sender_action;
+    textRes.message = [genericForFacebook[4]];
+
+    return actionNormForFacebook(textMsgParams).then(
+      result => {
+        assert.deepEqual(result, textRes);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate no action taken for generic response_type- UNKNOWN', () => {
+    delete textMsgParams.conversation.output.text;
+    delete textMsgParams.conversation.output.facebook;
+
+    delete textRes.raw_output_data.conversation.output.text;
+    delete textRes.raw_output_data.conversation.output.facebook;
+    delete textRes.text;
+
+    // Add an unknown generic response from Conversation
+    textMsgParams.conversation.output.generic = [
+      {
+        response_type: 'connect_to_agent',
+        message_to_human_agent: 'Customer needs to know their PUK.',
+        topic: 'Find PUK'
+      }
+    ];
+    textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
+    textRes.message = []; // Facebook POST doesn't need to be invoked. Result list is empty.
 
     return actionNormForFacebook(textMsgParams).then(
       result => {

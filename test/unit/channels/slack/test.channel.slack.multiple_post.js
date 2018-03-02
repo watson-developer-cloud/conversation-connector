@@ -22,7 +22,7 @@ const sinon = require('sinon');
 
 const previousTestName = process.env.__OW_ACTION_NAME;
 
-describe('Multiple_post Slack Unit Tests', () => {
+describe('Slack Multi-post Unit Tests', () => {
   const apiHost = 'xxx';
   const apiKey = 'xxx';
   const namespace = 'xxx';
@@ -239,6 +239,148 @@ describe('Multiple_post Slack Unit Tests', () => {
     );
   });
 
+  it('validate multipost with empty message array', () => {
+    const multiPostParams = {
+      raw_input_data: {
+        conversation: {
+          input: {
+            text: 'show me a multimedia response'
+          },
+          context: {
+            conversation_id: 'fcc88abe-fd43-4361-adee-394f639d6d94',
+            system: {
+              branch_exited_reason: 'completed',
+              dialog_request_counter: 6,
+              branch_exited: true,
+              dialog_turn_counter: 6,
+              dialog_stack: [
+                {
+                  dialog_node: 'root'
+                }
+              ],
+              _node_output_map: {
+                node_18_1484802647885: [0]
+              }
+            }
+          }
+        },
+        provider: 'slack',
+        auth: {
+          conversation: {
+            username: 'xxx',
+            password: 'xxx',
+            workspace_id: 'xxx'
+          },
+          _revs_info: [
+            {
+              rev: '2-e2a470f05b05c43208870457ad0f8db8',
+              status: 'available'
+            },
+            {
+              rev: '1-d792e5a468d5d351231dcb0968a36a56',
+              status: 'available'
+            }
+          ],
+          _id: '23a563c0-05d3-11e8-94cf-73584df37eea',
+          slack: {
+            client_id: 'xxx',
+            client_secret: 'xxx',
+            verification_token: 'xxx',
+            bot_users: {
+              xxx: {
+                access_token: 'xxx',
+                bot_access_token: 'xxx'
+              }
+            }
+          },
+          _rev: '2-e2a470f05b05c43208870457ad0f8db8'
+        },
+        bot_id: 'xxx',
+        slack: {
+          team_id: 'xxx',
+          event: {
+            channel: 'xxx',
+            ts: '1517348453.000747',
+            text: 'show me a multimedia response',
+            event_ts: '1517348453.000747',
+            type: 'message',
+            user: 'xxx'
+          },
+          api_app_id: 'xxx',
+          authed_users: ['xxx'],
+          event_time: 1517348453,
+          token: 'xxx',
+          type: 'event_callback',
+          event_id: 'Ev916HGH8S'
+        },
+        cloudant_context_key: 'xxx'
+      },
+      channel: 'xxx',
+      url: 'https://slack.com/api/chat.postMessage',
+      ts: '1517348453.000747',
+      message: [],
+      raw_output_data: {
+        conversation: {
+          entities: [],
+          context: {
+            conversation_id: 'fcc88abe-fd43-4361-adee-394f639d6d94',
+            system: {
+              branch_exited_reason: 'completed',
+              dialog_request_counter: 7,
+              branch_exited: true,
+              dialog_turn_counter: 7,
+              dialog_stack: [
+                {
+                  dialog_node: 'root'
+                }
+              ],
+              _node_output_map: {
+                node_18_1484802647885: [0]
+              }
+            }
+          },
+          intents: [
+            {
+              intent: 'multimodal',
+              confidence: 0.8660579204559327
+            }
+          ],
+          output: {
+            text: [],
+            nodes_visited: ['node_1_1514502764444'],
+            generic: [
+              {
+                response_type: 'connect_to_agent',
+                message_to_human_agent: 'Customer needs to know their PUK.',
+                topic: 'Find PUK'
+              }
+            ],
+            log_messages: []
+          },
+          input: {
+            text: 'show me a multimedia response'
+          }
+        }
+      }
+    };
+
+    const multiPostResponse = {
+      postResponses: {
+        successfulPosts: [],
+        failedPosts: []
+      }
+    };
+
+    return mockMultiplePost.main(multiPostParams).then(
+      result => {
+        assert.deepEqual(result, multiPostResponse);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
   it('validate multipost with arrayed message', () => {
     const multiPostParams = {
       raw_input_data: {
@@ -320,6 +462,11 @@ describe('Multiple_post Slack Unit Tests', () => {
       ts: '1517348453.000747',
       message: [
         {
+          response_type: 'pause',
+          time: 3000,
+          typing: true
+        },
+        {
           text: 'Here is your multi-modal response.'
         },
         {
@@ -330,6 +477,10 @@ describe('Multiple_post Slack Unit Tests', () => {
               image_url: 'https://s.w-x.co/240x180_twc_default.png'
             }
           ]
+        },
+        {
+          response_type: 'pause',
+          time: 3000
         },
         {
           attachments: [
@@ -391,6 +542,11 @@ describe('Multiple_post Slack Unit Tests', () => {
             nodes_visited: ['node_1_1514502764444'],
             generic: [
               {
+                response_type: 'pause',
+                time: 3000,
+                typing: true
+              },
+              {
                 text: 'Here is your multi-modal response.',
                 response_type: 'text'
               },
@@ -399,6 +555,10 @@ describe('Multiple_post Slack Unit Tests', () => {
                 source: 'https://s.w-x.co/240x180_twc_default.png',
                 description: 'Image description',
                 response_type: 'image'
+              },
+              {
+                response_type: 'pause',
+                time: 3000
               },
               {
                 title: 'Choose your location',
@@ -641,7 +801,7 @@ describe('Multiple_post Slack Unit Tests', () => {
         assert(false, error);
       }
     );
-  });
+  }).timeout(7000);
 
   it('validate multipost simple failure case', () => {
     const failedPost = {
@@ -791,7 +951,7 @@ describe('Multiple_post Slack Unit Tests', () => {
           {
             failureResponse: {
               name: 'OpenWhiskError',
-              message: 'POST https://xxx/api/v1/namespaces/xxx/actions/deployname_postsequence?blocking=true Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"',
+              message: 'POST https://xxx/api/v1/namespaces/xxx/actions/deployname_postsequence Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"',
               error: {
                 duration: 648,
                 name: 'post',

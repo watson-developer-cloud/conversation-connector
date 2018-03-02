@@ -154,6 +154,11 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
             value: 'Location 3'
           }
         ]
+      },
+      {
+        time: '10000',
+        typing: true,
+        response_type: 'pause'
       }
     ];
 
@@ -195,6 +200,9 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
         ]
       },
       {
+        message: [genericFromConversation[3]]
+      },
+      {
         message: [
           { text },
           {
@@ -221,7 +229,8 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
                 })
               }
             ]
-          }
+          },
+          genericFromConversation[3]
         ]
       }
     ];
@@ -395,6 +404,55 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
       expectedResult = Object.assign(expectedResult, e);
       return expectedResult;
     });
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - pause', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Add a generic image response from Conversation
+    params.conversation.output.generic = genericFromConversation[3];
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    expectedResult = Object.assign(expectedResult, genericForSlack[3]);
+
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate no action taken for generic response_type- UNKNOWN', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Add an unknown generic response from Conversation
+    params.conversation.output.generic = [
+      {
+        response_type: 'connect_to_agent',
+        message_to_human_agent: 'Customer needs to know their PUK.',
+        topic: 'Find PUK'
+      }
+    ];
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    expectedResult.message = []; // Result list is empty.
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+
     return actionNormForSlack(params).then(
       result => {
         assert.deepEqual(result, expectedResult);

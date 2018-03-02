@@ -22,7 +22,7 @@ const sinon = require('sinon');
 
 const previousTestName = process.env.__OW_ACTION_NAME;
 
-describe('Multi-post Unit Tests', () => {
+describe('Facebook Multi-post Unit Tests', () => {
   const apiHost = 'xxx';
   const apiKey = 'xxx';
   const namespace = 'xxx';
@@ -239,12 +239,112 @@ describe('Multi-post Unit Tests', () => {
     );
   });
 
+  it('validate multipost with empty message array', () => {
+    const multiPostParams = {
+      recipient: {
+        id: 'xxx'
+      },
+      message: [],
+      raw_input_data: {
+        conversation: {
+          input: {
+            text: 'Show me an image'
+          },
+          context: {}
+        },
+        provider: 'facebook',
+        auth: {
+          conversation: {
+            username: 'xxx',
+            password: 'xxx',
+            workspace_id: 'xxx'
+          },
+          _revs_info: [
+            {
+              rev: '1-a11033fca1d3ccd1fad5c0b2ba5de0d3',
+              status: 'available'
+            }
+          ],
+          _id: '8bcca000-fbc2-11e7-8a63-0d454d7bbecd',
+          facebook: {
+            app_secret: 'xxx',
+            page_access_token: 'xxx',
+            verification_token: 'xxx'
+          },
+          _rev: '1-a11033fca1d3ccd1fad5c0b2ba5de0d3'
+        },
+        facebook: {
+          sender: {
+            id: 'xxx'
+          },
+          recipient: {
+            id: 'xxx'
+          },
+          timestamp: 1516220585636,
+          message: {
+            mid: 'mid.$cAAdxoMih2R1nNw9epFhBcocloKpX',
+            seq: 1084,
+            text: 'Show me an image'
+          }
+        },
+        cloudant_context_key: 'xxx'
+      },
+      raw_output_data: {
+        conversation: {
+          entities: [],
+          context: {},
+          intents: [
+            {
+              intent: 'multimodal',
+              confidence: 1
+            }
+          ],
+          output: {
+            text: [],
+            nodes_visited: ['node_1_1514502764444'],
+            generic: [
+              {
+                response_type: 'connect_to_agent',
+                message_to_human_agent: 'Customer needs to know their PUK.',
+                topic: 'Find PUK'
+              }
+            ],
+            log_messages: []
+          },
+          input: {
+            text: 'Show me an image'
+          }
+        }
+      }
+    };
+
+    const multiPostResponse = {
+      postResponses: {
+        successfulPosts: [],
+        failedPosts: []
+      }
+    };
+
+    return mockMultiplePost.main(multiPostParams).then(
+      result => {
+        assert.deepEqual(result, multiPostResponse);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
   it('validate multipost with arrayed message', () => {
     const multiPostParams = {
       recipient: {
         id: 'xxx'
       },
       message: [
+        {
+          sender_action: 'typing_on',
+          time: 3000
+        },
         {
           text: 'Here is your multi-modal response.'
         },
@@ -255,6 +355,9 @@ describe('Multi-post Unit Tests', () => {
               url: 'https://xxx.com/xxx.png'
             }
           }
+        },
+        {
+          time: 3000
         },
         {
           text: 'Choose your location',
@@ -384,6 +487,11 @@ describe('Multi-post Unit Tests', () => {
             nodes_visited: ['node_1_1514502764444'],
             generic: [
               {
+                time: 3000,
+                typing: true,
+                response_type: 'pause'
+              },
+              {
                 text: 'Here is your multi-modal response.',
                 response_type: 'text'
               },
@@ -392,6 +500,11 @@ describe('Multi-post Unit Tests', () => {
                 source: 'https://xxx.com/xxx.png',
                 description: 'Image description',
                 response_type: 'image'
+              },
+              {
+                time: 2000,
+                typing: false,
+                response_type: 'pause'
               },
               {
                 title: 'Choose your location',
@@ -425,6 +538,40 @@ describe('Multi-post Unit Tests', () => {
       duration: 290,
       name: 'psequence_postsequence',
       subject: 'xxx',
+      activationId: '3812cc2341964f6992cc234196cf69bf',
+      publish: false,
+      annotations: [
+        { key: 'topmost', value: true },
+        { key: 'path', value: 'xxx_xxx/psequence_postsequence' },
+        { key: 'kind', value: 'sequence' },
+        { key: 'limits', value: { timeout: 60000, memory: 256, logs: 10 } }
+      ],
+      version: '0.0.1',
+      response: {
+        result: {
+          text: 200,
+          params: {
+            recipient: { id: 'xxx' },
+            sender_action: 'typing_on'
+          },
+          url: 'https://graph.facebook.com/v2.6/me/messages'
+        },
+        success: true,
+        status: 'success'
+      },
+      end: 1516220587532,
+      logs: [
+        '4b77186c543346e3b7186c543386e3cc',
+        '441e31363e9141c09e31363e91e1c04f'
+      ],
+      start: 1516220587157,
+      namespace: 'xxx_xxx'
+    };
+
+    const postResponse2 = {
+      duration: 290,
+      name: 'psequence_postsequence',
+      subject: 'xxx',
       activationId: '4812cc2341964f6992cc234196cf69bf',
       publish: false,
       annotations: [
@@ -455,7 +602,7 @@ describe('Multi-post Unit Tests', () => {
       namespace: 'xxx_xxx'
     };
 
-    const postResponse2 = {
+    const postResponse3 = {
       duration: 775,
       name: 'psequence_postsequence',
       subject: 'xxx',
@@ -494,7 +641,7 @@ describe('Multi-post Unit Tests', () => {
       namespace: 'xxx_xxx'
     };
 
-    const postResponse3 = {
+    const postResponse4 = {
       duration: 570,
       name: 'psequence_postsequence',
       subject: 'xxx',
@@ -544,6 +691,19 @@ describe('Multi-post Unit Tests', () => {
     const multiPostResponse = {
       postResponses: {
         successfulPosts: [
+          {
+            successResponse: {
+              text: 200,
+              params: {
+                recipient: {
+                  id: 'xxx'
+                },
+                sender_action: 'typing_on'
+              },
+              url: 'https://graph.facebook.com/v2.6/me/messages'
+            },
+            activationId: '3812cc2341964f6992cc234196cf69bf'
+          },
           {
             successResponse: {
               text: 200,
@@ -628,7 +788,9 @@ describe('Multi-post Unit Tests', () => {
       .post(mockCloudFunctionsEndpoints.actionsEndpoint)
       .reply(200, postResponse2)
       .post(mockCloudFunctionsEndpoints.actionsEndpoint)
-      .reply(200, postResponse3);
+      .reply(200, postResponse3)
+      .post(mockCloudFunctionsEndpoints.actionsEndpoint)
+      .reply(200, postResponse4);
 
     return mockMultiplePost.main(multiPostParams).then(
       result => {
@@ -642,7 +804,7 @@ describe('Multi-post Unit Tests', () => {
         assert(false, error);
       }
     );
-  });
+  }).timeout(7000);
 
   it('validate multipost simple failure case', () => {
     const failedPost = {
@@ -802,7 +964,7 @@ describe('Multi-post Unit Tests', () => {
           {
             failureResponse: {
               name: 'OpenWhiskError',
-              message: 'POST https://xxx/api/v1/namespaces/xxx/actions/deployname_postsequence?blocking=true Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"',
+              message: 'POST https://xxx/api/v1/namespaces/xxx/actions/deployname_postsequence Returned HTTP 400 (Bad Request) --> "Action returned with status code 400, message: Bad Request"',
               error: {
                 duration: 648,
                 name: 'psequence_postsequence',
