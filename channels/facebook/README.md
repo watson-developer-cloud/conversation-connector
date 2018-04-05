@@ -38,13 +38,15 @@ You can use either of two methods to deploy your workspace to a Facebook Messeng
 
     **Note:** If you have already created the app you want to use, select it from the **My Apps** menu.
 
-1.  In the navigation pane, click **Dashboard**.
+1.  In the navigation pane, click **Settings -> Basic**.
 
 1.  Click **Show** and then copy the displayed app secret to the clipboard.
 
 1.  In the deployment form, paste the app secret into the **Facebook App Secret** field.
 
-1.  In the Facebook app page, click **+ Add Product**. Under **Select a product**, hover over **Messenger** and click **Set Up**. 
+1.  In the Facebook app page, go to the bottom of the navigation pane and click the plus sign (**`+`**) next to **PRODUCTS**.
+
+1. Under **Add a Product**, go to the **Messenger** tile and click **Set Up**. 
 
 1.  In the Messenger settings, scroll down to **Token Generation**. Click **Select a Page** and choose the Facebook page you want to use for your app. 
 
@@ -109,13 +111,15 @@ That's it. You're all set. You can now go to Facebook Messenger, search for your
 
     **Note:** If you have already created the app you want to use, select it from the **My Apps** menu.
 
-1.  In the navigation pane, click **Dashboard**.
+1.  In the navigation pane, click **Settings -> Basic**.
 
 1.  Click **Show** and then copy the displayed app secret to the clipboard.
 
 1.  In the root directory of your local copy of the repository, edit the `providers.json` file.  Paste the app secret value into the `app_secret` field of the `facebook` object.
 
-1.  In the Facebook app page, click **+ Add Product**. Under **Select a product**, hover over **Messenger** and click **Set Up**.
+1.  In the Facebook app page, go to the bottom of the navigation pane and click the plus sign (**`+`**) next to **PRODUCTS**.
+
+1. Under **Add a Product**, go to the **Messenger** tile and click **Set Up**. 
 
 1.  In the Messenger settings, scroll down to **Token Generation**. Click **Select a Page** and choose the Facebook page you want to use for your app.
 
