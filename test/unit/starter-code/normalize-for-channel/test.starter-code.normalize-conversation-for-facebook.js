@@ -574,7 +574,6 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
 
     return actionNormForFacebook(textMsgParams).then(
       result => {
-        // console.log('AUDIO RESULT: ' + JSON.stringify(result));
         assert.deepEqual(result, textRes);
       },
       error => {
