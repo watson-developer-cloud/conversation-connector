@@ -31,6 +31,7 @@ const pipelineName = envParams.__TEST_PIPELINE_NAME;
 
 const inputText = 'Turn on lights';
 const outputText = 'Output text from mock-conversation.';
+const imageUrl = 'https://a.slack-edge.com/66f9/img/api/attachment_image.png';
 
 describe('starter-code integration tests for slack', () => {
   // Setup the ow module for the upcoming calls
@@ -39,6 +40,9 @@ describe('starter-code integration tests for slack', () => {
   let params;
   let expectedResult;
   let slackData;
+  let genericData;
+  let slackMultiModalData;
+
   const auth = {
     conversation: {
       username: envParams.__TEST_CONVERSATION_USERNAME,
@@ -143,6 +147,78 @@ describe('starter-code integration tests for slack', () => {
         }
       ]
     };
+
+    genericData = [
+      {
+        response_type: 'pause',
+        time: 1000,
+        typing: true
+      },
+      {
+        response_type: 'text',
+        text: outputText
+      },
+      {
+        response_type: 'image',
+        source: imageUrl,
+        title: 'Image title',
+        description: 'Image description'
+      },
+      {
+        response_type: 'option',
+        title: 'Choose your location',
+        options: [
+          {
+            label: 'Location 1',
+            value: 'Location 1'
+          },
+          {
+            label: 'Location 2',
+            value: 'Location 2'
+          },
+          {
+            label: 'Location 3',
+            value: 'Location 3'
+          }
+        ]
+      }
+    ];
+
+    slackMultiModalData = {
+      message: [
+        {
+          response_type: 'pause',
+          time: 1000,
+          typing: true
+        },
+        { text: outputText },
+        {
+          attachments: [
+            {
+              image_url: genericData[2].source,
+              pretext: genericData[2].description,
+              title: genericData[2].title
+            }
+          ]
+        },
+        {
+          attachments: [
+            {
+              text: genericData[3].title,
+              callback_id: genericData[3].title,
+              actions: genericData[3].options.map(e => {
+                const el = {};
+                el.name = e.label;
+                el.type = 'button';
+                el.text = e.label;
+                el.value = e.value;
+                return el;
+              })
+            }
+          ]
+        }
+      ]
+    };
   });
 
   it('validate starter-code handles text from conversation', () => {
@@ -174,6 +250,29 @@ describe('starter-code integration tests for slack', () => {
       expectedResult.raw_output_data.conversation.output.slack = slackData;
       expectedResult.attachments = slackData.attachments;
       delete expectedResult.ts;
+
+      return ow.actions
+        .invoke({ name: actionName, blocking: true, result: true, params })
+        .then(
+          result => {
+            assert.deepEqual(result, expectedResult);
+          },
+          error => {
+            assert(false, error);
+          }
+        );
+    }
+  ).retries(4);
+
+  it(
+    'validate starter-code converts generic data from conversation to slack-specific format',
+    () => {
+      const actionName = `${pipelineName}_starter-code/integration-pipeline-slack-with-generic-data`;
+
+      expectedResult.raw_output_data.conversation.output.generic = genericData;
+      expectedResult = Object.assign(expectedResult, slackMultiModalData);
+      delete expectedResult.raw_output_data.conversation.output.text;
+      delete expectedResult.text;
 
       return ow.actions
         .invoke({ name: actionName, blocking: true, result: true, params })

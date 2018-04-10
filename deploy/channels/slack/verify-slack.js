@@ -28,6 +28,7 @@ const actionsToPopulate = [
   'starter-code/normalize-conversation-for-slack',
   'slack/receive',
   'slack/post',
+  'slack/multiple_post',
   'slack/deploy'
 ];
 
@@ -42,7 +43,8 @@ const requiredActions = [
   'context/save-context',
   'starter-code/normalize-conversation-for-slack',
   'starter-code/post-normalize',
-  'slack/post'
+  'slack/post',
+  'slack/multiple_post'
 ];
 
 const defaultPipelineActions = [
@@ -54,9 +56,10 @@ const defaultPipelineActions = [
   'starter-code/post-conversation',
   'context/save-context',
   'starter-code/normalize-conversation-for-slack',
-  'starter-code/post-normalize',
-  'slack/post'
+  'slack/multiple_post'
 ];
+
+const postSequenceActions = ['starter-code/post-normalize', 'slack/post'];
 
 const webExportActions = ['slack/receive', 'slack/deploy'];
 
@@ -123,7 +126,26 @@ function main(params) {
         return checkPipelineActions(userWsk, wskNamespace, deployName);
       })
       .then(() => {
-        return createPipeline(userWsk, wskNamespace, deployName);
+        // Create the main pipeline receive will call
+        return createPipeline(
+          userWsk,
+          wskNamespace,
+          deployName,
+          deployName,
+          defaultPipelineActions
+        );
+      })
+      .then(() => {
+        // Create the post sequence that multiple_post will call
+        const sequenceName = `${deployName}_postsequence`;
+
+        return createPipeline(
+          userWsk,
+          wskNamespace,
+          deployName,
+          sequenceName,
+          postSequenceActions
+        );
       })
       .then(() => {
         return getAnnotations(userWsk, wskNamespace, deployName);
@@ -380,21 +402,29 @@ function checkPipelineActions(ow, namespace, deployName) {
 }
 
 /**
- * Creates the sequence action of the Slack pipeline in the user's Cloud Functions.
+ * Creates a sequence in the user's Cloud Functions.
  *
  * @param  {Object} ow           - user's Cloud Functions
  * @param  {string} namespace    - Cloud Functions namespace
- * @param  {string} deployName   - deployment name
+ * @param  {string} deployName   - Name of the overall deploy specified by the user
+ * @param  {string} sequenceName   - Name of the sequence to create
+ * @param  {string} includedActions - actions to be included in the sequence
  * @return {Promise}             - resolution of sequence action update
  */
-function createPipeline(ow, namespace, deployName) {
-  const pipelineActions = JSON.parse(JSON.stringify(defaultPipelineActions));
+function createPipeline(
+  ow,
+  namespace,
+  deployName,
+  sequenceName,
+  includedActions
+) {
+  const pipelineActions = JSON.parse(JSON.stringify(includedActions));
   for (let i = 0; i < pipelineActions.length; i += 1) {
     pipelineActions[i] = `/${namespace}/${deployName}_${pipelineActions[i]}`;
   }
 
   return ow.actions.update({
-    name: deployName,
+    name: sequenceName,
     action: {
       exec: {
         kind: 'sequence',
