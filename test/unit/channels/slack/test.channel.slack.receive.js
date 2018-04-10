@@ -262,7 +262,6 @@ describe('Slack Receive Unit Tests', () => {
     try {
       func(messageParams);
     } catch (e) {
-      assert.equal('AssertionError', e.name);
       assert.equal(e.message, errorNoVerificationToken);
     }
   });
@@ -290,7 +289,6 @@ describe('Slack Receive Unit Tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       },
       error => {
-        assert.equal(error.error.name, 'AssertionError');
         assert.equal(error.error.message, errorBadVerificationToken);
       }
     );

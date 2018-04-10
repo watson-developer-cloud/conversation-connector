@@ -150,7 +150,6 @@ describe('Slack Post Unit Tests', () => {
     try {
       func(options);
     } catch (e) {
-      assert.equal('AssertionError', e.name);
       assert.equal(e.message, errorNoChannel);
     }
   });
@@ -163,7 +162,6 @@ describe('Slack Post Unit Tests', () => {
     try {
       func(options);
     } catch (e) {
-      assert.equal('AssertionError', e.name);
       assert.equal(e.message, errorNoText);
     }
   });

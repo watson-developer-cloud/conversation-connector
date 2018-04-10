@@ -37,7 +37,7 @@ const errorBadUri = `Invalid URI "${badUri}"`;
 const errorMovedPermanently = 'Action returned with status code 301, message: Moved Permanently';
 const errorNoPageAccessToken = 'auth.facebook.page_access_token not found.';
 const errorNoRecipientId = 'Recepient id not provided.';
-const errorNoMessageText = 'Message object not provided.';
+const errorNoMessageText = 'Must provide message object or sender_action.';
 
 describe('Facebook Post Unit Tests', () => {
   let postParams = {};
@@ -132,7 +132,6 @@ describe('Facebook Post Unit Tests', () => {
         assert(false, result);
       },
       error => {
-        assert.equal(error.name, 'AssertionError');
         assert.equal(error.message, errorNoPageAccessToken);
       }
     );
@@ -152,7 +151,7 @@ describe('Facebook Post Unit Tests', () => {
     );
   });
 
-  it('validate error when no message text provided', () => {
+  it('validate error when no message text or sender_action provided', () => {
     delete postParams.message;
     func = facebookPost.main;
     return func(postParams).then(

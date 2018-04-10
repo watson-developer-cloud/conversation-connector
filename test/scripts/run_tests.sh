@@ -172,7 +172,7 @@ createWhiskArtifacts() {
   echo 'Creating Whisk packages and actions...'
 
   # Generate the pipeline auth key
-  PIPELINE_AUTH_KEY=`uuidgen`
+  PIPELINE_AUTH_KEY=`node -e "{x=require('uuid'); console.log(x.v1())}"`
 
   ## UPDATE ALL RELEVANT RESOURCES
   cd starter-code; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
@@ -302,7 +302,7 @@ runTestSuite() {
   echo "Running tests: $1"
 
   # Run tests with coverage
-  istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive $1 -s 5000 -t 20000 -R spec
+  ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive $1 -s 5000 -t 20000 -R spec
 
   RETCODE=$?
 }
