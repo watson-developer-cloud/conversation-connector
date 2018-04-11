@@ -159,7 +159,6 @@ describe('conversation unit tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       })
       .catch(error => {
-        assert.equal(error.name, 'AssertionError');
         assert.equal(error.message, errorNoConversationInput);
       });
   });
@@ -173,7 +172,6 @@ describe('conversation unit tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       })
       .catch(error => {
-        assert.equal(error.name, 'AssertionError');
         assert.equal(error.message, errorNoProvider);
       });
   });
@@ -235,7 +233,6 @@ describe('conversation unit tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       })
       .catch(e => {
-        assert.equal('AssertionError', e.name);
         assert.equal(errorNoConversationObjInAuth, e.message);
       });
   });
@@ -252,7 +249,6 @@ describe('conversation unit tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       })
       .catch(e => {
-        assert.equal('AssertionError', e.name);
         assert.equal(errorNoConversationUsernameInAuth, e.message);
       });
   });
@@ -269,7 +265,6 @@ describe('conversation unit tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       })
       .catch(e => {
-        assert.equal('AssertionError', e.name);
         assert.equal(errorNoConversationPassInAuth, e.message);
       });
   });
@@ -286,7 +281,6 @@ describe('conversation unit tests', () => {
         assert(false, 'Action succeeded unexpectedly.');
       })
       .catch(e => {
-        assert.equal('AssertionError', e.name);
         assert.equal(errorNoConversationWorkspaceIdInAuth, e.message);
       });
   });

@@ -218,7 +218,6 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
     try {
       func(textMessageParams);
     } catch (e) {
-      assert.equal('AssertionError', e.name);
       assert.equal(e.message, errorBadSupplier);
     }
   });
@@ -229,7 +228,6 @@ describe('Starter Code Normalize-Slack-For-Conversation Unit Tests', () => {
     try {
       func(textMessageParams);
     } catch (e) {
-      assert.equal('AssertionError', e.name);
       assert.equal(e.message, errorNoSlackData);
     }
   });

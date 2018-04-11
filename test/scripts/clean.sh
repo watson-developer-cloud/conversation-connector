@@ -17,6 +17,7 @@ ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_slack/post" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_facebook/receive" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_facebook/post" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_facebook/batched_messages" > /dev/null
+${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_facebook/multiple_post" > /dev/null
 
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/pre-conversation" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_starter-code/post-conversation" > /dev/null

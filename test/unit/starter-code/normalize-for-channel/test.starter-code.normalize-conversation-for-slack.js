@@ -30,7 +30,7 @@ const urlChatPostMessage = 'https://slack.com/api/chat.postMessage';
 const urlChatUpdate = 'https://slack.com/api/chat.update';
 
 const errorNoConversation = 'No conversation output.';
-const errorNoOutputMessage = 'No conversation output message.';
+const errorNoOutputMessage = 'No facebook/generic/text field in conversation.output.';
 const errorNoRawInputData = 'No raw input data found.';
 const errorNoSlackInputData = 'No Slack input data found.';
 const errorNoConvInputData = 'No Conversation input data found.';
@@ -43,6 +43,9 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
   let textMessageParams;
   let payload;
   let attachmentMessageParams;
+
+  let genericForSlack;
+  let genericFromConversation;
 
   beforeEach(() => {
     textMessageParams = {
@@ -124,9 +127,116 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
       channel,
       text
     };
+
+    genericFromConversation = [
+      {
+        response_type: 'text',
+        text
+      },
+      {
+        response_type: 'image',
+        source: 'http://my-website.com/path/to/image.jpg'
+      },
+      {
+        response_type: 'option',
+        title: 'Select a location',
+        options: [
+          {
+            label: 'Location 1',
+            value: 'Location 1'
+          },
+          {
+            label: 'Location 2',
+            value: 'Location 2'
+          },
+          {
+            label: 'Location 3',
+            value: 'Location 3'
+          }
+        ]
+      },
+      {
+        time: '10000',
+        typing: true,
+        response_type: 'pause'
+      }
+    ];
+
+    genericForSlack = [
+      {
+        message: [{ text }]
+      },
+      {
+        message: [
+          {
+            attachments: [
+              {
+                image_url: genericFromConversation[1].source,
+                pretext: genericFromConversation[1].description,
+                title: genericFromConversation[1].title
+              }
+            ]
+          }
+        ]
+      },
+      {
+        message: [
+          {
+            attachments: [
+              {
+                text: genericFromConversation[2].title,
+                callback_id: genericFromConversation[2].title,
+                actions: genericFromConversation[2].options.map(e => {
+                  const el = {};
+                  el.name = e.label;
+                  el.type = 'button';
+                  el.text = e.label;
+                  el.value = e.value;
+                  return el;
+                })
+              }
+            ]
+          }
+        ]
+      },
+      {
+        message: [genericFromConversation[3]]
+      },
+      {
+        message: [
+          { text },
+          {
+            attachments: [
+              {
+                image_url: genericFromConversation[1].source,
+                pretext: genericFromConversation[1].description,
+                title: genericFromConversation[1].title
+              }
+            ]
+          },
+          {
+            attachments: [
+              {
+                text: genericFromConversation[2].title,
+                callback_id: genericFromConversation[2].title,
+                actions: genericFromConversation[2].options.map(e => {
+                  const el = {};
+                  el.name = e.label;
+                  el.type = 'button';
+                  el.text = e.label;
+                  el.value = e.value;
+                  return el;
+                })
+              }
+            ]
+          },
+          genericFromConversation[3]
+        ]
+      }
+    ];
   });
 
-  it('validate normalization works', () => {
+  it('validate normalization works for text messages', () => {
     return actionNormForSlack(params).then(
       result => {
         assert.deepEqual(result, expectedResult);
@@ -165,6 +275,255 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
     expectedResult.url = urlChatUpdate;
     expectedResult.attachments = [{ text }];
     delete expectedResult.text;
+
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - text', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Add a generic text response from Conversation
+    params.conversation.output.generic = genericFromConversation[0];
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    expectedResult = Object.assign(expectedResult, genericForSlack[0]);
+
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - image', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Add a generic image response from Conversation
+    params.conversation.output.generic = genericFromConversation[1];
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    expectedResult = Object.assign(expectedResult, genericForSlack[1]);
+
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - audio', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Add a generic image response from Conversation
+    params.conversation.output.generic = [
+      {
+        response_type: 'audio',
+        title: 'Some audio here',
+        description: 'some audio here',
+        source: 'https://this.is.an/audio.mp3'
+      }
+    ];
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    expectedResult = Object.assign(expectedResult, {
+      message: [
+        {
+          text: '<https://this.is.an/audio.mp3|Some audio here>',
+          unfurl_links: true,
+          unfurl_media: true
+        }
+      ]
+    });
+
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - video', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Add a generic image response from Conversation
+    params.conversation.output.generic = [
+      {
+        response_type: 'video',
+        title: 'Some video here',
+        description: 'some video here',
+        source: 'https://this.is.a/video.mp4'
+      }
+    ];
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    expectedResult = Object.assign(expectedResult, {
+      message: [
+        {
+          text: '<https://this.is.a/video.mp4|Some video here>',
+          unfurl_links: true,
+          unfurl_media: true
+        }
+      ]
+    });
+
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - option', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Add a generic option response from Conversation
+    params.conversation.output.generic = genericFromConversation[2];
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    expectedResult = Object.assign(expectedResult, genericForSlack[2]);
+
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - option (options.value is JSON object)', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Make the first option value an object instead of a string.
+    genericFromConversation[2].options[0].value = {
+      input: {
+        text: 'Location 1'
+      },
+      intents: [
+        {
+          intent: 'get-location',
+          confidence: 0.8177993774414063
+        }
+      ],
+      entities: [
+        {
+          entity: 'Location',
+          location: [0, 9],
+          value: '1',
+          confidence: 1
+        }
+      ]
+    };
+
+    // Add a generic option response from Conversation
+    params.conversation.output.generic = genericFromConversation[2];
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    expectedResult = Object.assign(expectedResult, genericForSlack[2]);
+
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for multiple generic response_type list', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Add a generic option response from Conversation
+    params.conversation.output.generic = genericFromConversation;
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    genericForSlack.map(e => {
+      expectedResult = Object.assign(expectedResult, e);
+      return expectedResult;
+    });
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - pause', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Add a generic image response from Conversation
+    params.conversation.output.generic = genericFromConversation[3];
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    expectedResult = Object.assign(expectedResult, genericForSlack[3]);
+
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate no action taken for generic response_type- UNKNOWN', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Add an unknown generic response from Conversation
+    params.conversation.output.generic = [
+      {
+        response_type: 'connect_to_agent',
+        message_to_human_agent: 'Customer needs to know their PUK.',
+        topic: 'Find PUK'
+      }
+    ];
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    expectedResult.message = []; // Result list is empty.
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
 
     return actionNormForSlack(params).then(
       result => {
@@ -221,7 +580,7 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
   });
 
   it('validate error when no conversation output', () => {
-    delete params.conversation.output;
+    delete params.conversation.output.text;
 
     return actionNormForSlack(params).then(
       () => {

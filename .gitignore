@@ -14,6 +14,9 @@ pids
 # Production system credentials file
 providers.json
 
+# Test environment file
+test/resources/.env
+
 # Ignore changes in slack and OW binding files so devs can use their own slack apps and namespaces
 test/resources/openwhisk-bindings.json
 test/resources/slack-bindings.json

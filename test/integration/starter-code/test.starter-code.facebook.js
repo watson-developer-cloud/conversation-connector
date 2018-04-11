@@ -27,12 +27,18 @@ const envParams = process.env;
 
 const pipelineName = envParams.__TEST_PIPELINE_NAME;
 
+const outputText = 'Output text from mock-conversation.';
+const imageUrl = 'https://a.slack-edge.com/66f9/img/api/attachment_image.png';
+
 describe('starter-code integration tests for facebook', () => {
   const ow = openwhisk();
 
   let params;
   let expectedResult;
   let facebookData;
+  let genericData;
+  let facebookMultiModalData;
+
   const auth = {
     conversation: {
       username: envParams.__TEST_CONVERSATION_USERNAME,
@@ -66,13 +72,13 @@ describe('starter-code integration tests for facebook', () => {
         facebook: params.facebook,
         provider: 'facebook',
         auth,
-        cloudant_context_key: `facebook_1481847138543615_${process.env.__TEST_CONVERSATION_WORKSPACE_ID}_185643828639058`,
+        cloudant_context_key: `facebook_${process.env.__TEST_FACEBOOK_SENDER_ID}_${process.env.__TEST_CONVERSATION_WORKSPACE_ID}_${process.env.__TEST_FACEBOOK_RECIPIENT_ID}`,
         conversation: { input: { text: 'hello, world!' } }
       },
-      message: { text: 'Output text from mock-conversation.' },
+      message: { text: outputText },
       raw_output_data: {
         conversation: {
-          output: { text: ['Output text from mock-conversation.'] },
+          output: { text: [outputText] },
           context: {
             conversation_id: '06aae48c-a5a9-4bbc-95eb-2ddd26db9a7b',
             system: {
@@ -94,7 +100,7 @@ describe('starter-code integration tests for facebook', () => {
         payload: {
           elements: [
             {
-              title: 'Output text from mock-conversation.',
+              title: outputText,
               buttons: [
                 {
                   type: 'postback',
@@ -111,6 +117,70 @@ describe('starter-code integration tests for facebook', () => {
         }
       }
     };
+
+    genericData = [
+      {
+        response_type: 'pause',
+        time: 1000,
+        typing: true
+      },
+      {
+        response_type: 'text',
+        text: outputText
+      },
+      {
+        response_type: 'image',
+        source: imageUrl,
+        title: 'Image title',
+        description: 'Image description'
+      },
+      {
+        response_type: 'option',
+        title: 'Choose your location',
+        options: [
+          {
+            label: 'Location 1',
+            value: 'Location 1'
+          },
+          {
+            label: 'Location 2',
+            value: 'Location 2'
+          },
+          {
+            label: 'Location 3',
+            value: 'Location 3'
+          }
+        ]
+      }
+    ];
+
+    facebookMultiModalData = [
+      {
+        sender_action: 'typing_on',
+        time: 1000
+      },
+      {
+        text: outputText
+      },
+      {
+        attachment: {
+          type: 'image',
+          payload: {
+            url: genericData[2].source
+          }
+        }
+      },
+      {
+        text: genericData[3].title,
+        quick_replies: genericData[3].options.map(e => {
+          const el = {};
+          el.content_type = 'text';
+          el.title = e.label;
+          el.payload = e.value;
+          return el;
+        })
+      }
+    ];
   });
 
   it('validate starter-code-facebook actions work', () => {
@@ -140,6 +210,29 @@ describe('starter-code integration tests for facebook', () => {
       expectedResult.message = facebookData;
       expectedResult.raw_output_data.conversation.output.facebook = {};
       expectedResult.raw_output_data.conversation.output.facebook = facebookData;
+
+      return ow.actions
+        .invoke({ name: actionName, blocking: true, result: true, params })
+        .then(
+          result => {
+            assert.deepEqual(result, expectedResult);
+          },
+          error => {
+            assert(false, error);
+          }
+        );
+    }
+  ).retries(4);
+
+  it(
+    'validate starter-code converts generic data from conversation to facebook-specific format',
+    () => {
+      const actionName = `${pipelineName}_starter-code/integration-pipeline-facebook-with-generic-data`;
+
+      expectedResult.raw_output_data.conversation.output.generic = genericData;
+      expectedResult.message = facebookMultiModalData;
+
+      delete expectedResult.raw_output_data.conversation.output.text;
 
       return ow.actions
         .invoke({ name: actionName, blocking: true, result: true, params })
