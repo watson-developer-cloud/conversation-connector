@@ -328,6 +328,78 @@ describe('Starter-Code Normalize-For-Slack Unit Tests', () => {
     );
   });
 
+  it('validate normalization works for generic response_type - audio', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Add a generic image response from Conversation
+    params.conversation.output.generic = [
+      {
+        response_type: 'audio',
+        title: 'Some audio here',
+        description: 'some audio here',
+        source: 'https://this.is.an/audio.mp3'
+      }
+    ];
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    expectedResult = Object.assign(expectedResult, {
+      message: [
+        {
+          text: '<https://this.is.an/audio.mp3|Some audio here>',
+          unfurl_links: true,
+          unfurl_media: true
+        }
+      ]
+    });
+
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
+  it('validate normalization works for generic response_type - video', () => {
+    delete params.conversation.output.text;
+    delete expectedResult.raw_output_data.conversation.output.text;
+    delete expectedResult.text;
+
+    // Add a generic image response from Conversation
+    params.conversation.output.generic = [
+      {
+        response_type: 'video',
+        title: 'Some video here',
+        description: 'some video here',
+        source: 'https://this.is.a/video.mp4'
+      }
+    ];
+
+    expectedResult.raw_output_data.conversation.output.generic = params.conversation.output.generic;
+    expectedResult = Object.assign(expectedResult, {
+      message: [
+        {
+          text: '<https://this.is.a/video.mp4|Some video here>',
+          unfurl_links: true,
+          unfurl_media: true
+        }
+      ]
+    });
+
+    return actionNormForSlack(params).then(
+      result => {
+        assert.deepEqual(result, expectedResult);
+      },
+      error => {
+        assert(false, error);
+      }
+    );
+  });
+
   it('validate normalization works for generic response_type - option', () => {
     delete params.conversation.output.text;
     delete expectedResult.raw_output_data.conversation.output.text;

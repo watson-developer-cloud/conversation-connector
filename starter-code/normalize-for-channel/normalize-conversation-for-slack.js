@@ -111,6 +111,12 @@ function insertConversationOutput(params, output) {
         case 'image':
           slackOutput.message.push(generateSlackImageData(element));
           break;
+        case 'audio':
+          slackOutput.message.push(generateSlackAudioData(element));
+          break;
+        case 'video':
+          slackOutput.message.push(generateSlackVideoData(element));
+          break;
         case 'option':
           slackOutput.message.push(generateSlackOptionsData(element));
           break;
@@ -175,6 +181,34 @@ function generateSlackImageData(element) {
         image_url: element.source
       }
     ]
+  };
+}
+
+/**
+ * Converts the generic formatted audio to a Slack audio link to unfurl.
+ *
+ * @param  {JSON} element - generic formatted audio element
+ * @return {JSON}         - element containing audio link to unfurl
+ */
+function generateSlackAudioData(element) {
+  return {
+    text: `<${element.source}|${element.title}>`,
+    unfurl_links: true,
+    unfurl_media: true
+  };
+}
+
+/**
+ * Converts the generic formatted video to a Slack video link to unfurl.
+ *
+ * @param  {JSON} element - generic formatted video element
+ * @return {JSON}         - element containing video link to unfurl
+ */
+function generateSlackVideoData(element) {
+  return {
+    text: `<${element.source}|${element.title}>`,
+    unfurl_links: true,
+    unfurl_media: true
   };
 }
 
