@@ -2,11 +2,11 @@
 
 You can use either of two methods to deploy your workspace to a Slack app:
 
-- Use [the Conversation tool](https://console.bluemix.net/docs/services/conversation/slack-deploy.html) if you want to quickly deploy your app with just a few clicks.
+- Use [the Watson Assistant Deploy tool](https://console.bluemix.net/docs/services/assistant/conversation-connector.html) if you want to quickly deploy your app with just a few clicks.
 
 - Use [manual deployment](#manual-deployment) if you want to deploy your app by modifying configuration files and running scripts. You might want to use this method if you are customizing the Conversation connector, or if you need to repair or update components of an existing deployment.
 
-**Note:** This process is intended to connect an existing Watson Conversation workspace to a Slack app. If you have not yet built a workspace, you must do so first. For more information, see the [Conversation documentation](https://console.bluemix.net/docs/services/conversation/index.html#about).
+**Note:** This process is intended to connect an existing Watson Assistant workspace to a Slack app. If you have not yet built a workspace, you must do so first. For more information, see the [Watson Assistant documentation](https://console.bluemix.net/docs/services/conversation/getting-started.html#gettingstarted).
 
 ## Manual deployment
 
@@ -51,17 +51,6 @@ You can use either of two methods to deploy your workspace to a Slack app:
 
 1.  On the Bot User page, click **Add a Bot User**. Verify the display name and bot username, and then toggle **Always Show My Bot as Online** to **On**. Click **Add Bot User** and then **Save Changes**.
 
-1.  Click **Event Subscriptions**. Toggle the **Enable Events** switch to **On**.
-
-1.  Scroll down to **Subscribe to Bot Events** and click **Add Bot User Event**. You must select at least one event. For most bots, the following events are good choices:
-
-    - `message.im`
-    - `message.channels`
-    - `message.mpim`
-    - `message.groups`
-
-    Click **Save Changes**.
-
 1.  Click **Basic Information** and scroll down to **App Credentials**.
 
 1.  In the root directory of your local copy of the repository, edit the `providers.json` file.
@@ -96,7 +85,16 @@ You can use either of two methods to deploy your workspace to a Slack app:
 
     1.  Confirm that **Enable as Web Action** is selected. Copy the URL from the **Web Action URL**.
 
-1.  In the Slack app settings, click **Event Subscriptions**.
+1.  In the Slack app settings, click **Event Subscriptions**. Toggle the **Enable Events** switch to **On**.
+
+1.  Scroll down to **Subscribe to Bot Events** and click **Add Bot User Event**. You must select at least one event. For most bots, the following events are good choices:
+
+    - `message.im`
+    - `message.channels`
+    - `message.mpim`
+    - `message.groups`
+
+    Click **Save Changes**.
 
 1.  Under **Enable Events**, paste in the request URL you copied from the terminal window. Toggle the switch at the top to **On**. After Slack has verified the URL, click **Save Changes**.
 
