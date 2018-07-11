@@ -169,7 +169,7 @@ describe('Facebook channel integration tests', () => {
       sub_pipeline: facebookSubPipeline,
       batched_messages: facebookBatchedMessageAction,
       __ow_headers: {
-        'x-hub-signature': 'sha1=eb4412b17e32da9656bb3e3551094d531438b6da'
+        'x-hub-signature': 'sha1=c7fdff60a002338e23a1ac0ac47c746691bd07d5'
       },
       object: 'page',
       entry: [
