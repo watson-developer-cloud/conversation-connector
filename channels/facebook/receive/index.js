@@ -509,18 +509,22 @@ function extractCurrentPackageName(actionName) {
  *      escaped payload = 'A\u00e4\u00f6\u00e5c'
  */
 function escapeSpecialChars(payload) {
-  return payload.replace(/[\s\S]/g, function (escape) {
-    //Escapes % < @ and other special chars
-    if (escape.charCodeAt() == 37 || escape.charCodeAt() == 60 || escape.charCodeAt() == 64 || escape.charCodeAt() >= 160) {
-      return '\\u' + ('0000' + escape.charCodeAt().toString(16)).slice(-4);
-    }
-    //Escapes / to \/
-    else if (escape.charCodeAt() == 47) {
+  return payload.replace(/[\s\S]/g, escape => {
+    // Escapes % @ and other special chars
+    if (
+      escape.charCodeAt() === 37 ||
+      escape.charCodeAt() === 64 ||
+      escape.charCodeAt() >= 160
+    ) {
+      return '\\u' + ('0000' + escape.charCodeAt().toString(16)).slice(-4); // eslint-disable-line prefer-template
+    } else if (escape.charCodeAt() === 60) {
+      // Oddly Facebook uses upper case for <
+      return '\\u003C';
+    } else if (escape.charCodeAt() === 47) {
+      // Escapes / to \/
       return '\\/';
     }
-    else {
-      return escape;
-    }
+    return escape;
   });
 }
 
@@ -533,5 +537,6 @@ module.exports = {
   getCloudantCreds,
   checkCloudantCredentials,
   createCloudantObj,
-  retrieveDoc
+  retrieveDoc,
+  escapeSpecialChars
 };
