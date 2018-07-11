@@ -687,7 +687,7 @@ describe('Facebook Receive Unit Tests', () => {
       ]
     };
 
-    const escapedPayload = facebookReceive.escapeSpecialChars(payload);
+    const escapedPayload = facebookReceive.escapeSpecialChars(JSON.stringify(payload));
 
     assert.deepEqual(escapedPayload, expectedPayload);
   });
