@@ -679,7 +679,7 @@ describe('Facebook Receive Unit Tests', () => {
               message: {
                 mid: 'tC5r1wf9jgfBMS35kXawBPFF_CSAABSKz_iJoG0xKU7shK3n4isF1blraNkKR1TlnYzd-8S_jxNfpsHxFfjuKQ',
                 seq: 1867,
-                text: '\u003C\u0040\u0025\/u00e4\u00f6\u00e5' // eslint-disable-line no-useless-escape
+                text: '\u003C\u0040\u0025\/\u00e4\u00f6\u00e5' // eslint-disable-line no-useless-escape
               }
             }
           ]
@@ -689,6 +689,6 @@ describe('Facebook Receive Unit Tests', () => {
 
     const escapedPayload = facebookReceive.escapeSpecialChars(JSON.stringify(payload));
 
-    assert.deepEqual(escapedPayload, expectedPayload);
+    assert.deepEqual(JSON.parse(escapedPayload), expectedPayload);
   });
 });
