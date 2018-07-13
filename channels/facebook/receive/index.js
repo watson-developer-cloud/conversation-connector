@@ -275,7 +275,7 @@ function verifyFacebookSignatureHeader(params, auth) {
   // Construct the request payload. For more information, refer to
   // https://developers.facebook.com/docs/messenger-platform/webhook-reference#format
   const requestPayload = pick(params, ['object', 'entry']);
-  const buffer = new Buffer(escapeSpecialChars(JSON.stringify(requestPayload)));
+  const buffer = new Buffer(JSON.stringify(requestPayload));
 
   // Get the expected hash from the key i.e. if the key is sha1=1234
   // then remove the algorithm (sha1=) to get the hash.
@@ -497,37 +497,6 @@ function extractCurrentPackageName(actionName) {
   return actionName.split('/')[2];
 }
 
-/**
- *  Escape unicode version of the payload, with lower case hex digits.
- *  Also escapes / to \/, < to \u003c, % to \u0025 and @ to \u0040. For more information, refer to
- *  https://developers.facebook.com/docs/messenger-platform/webhook-reference#security
- *
- *  @payload  {string} The payload to be escaped.
- *
- *  @return - the escaped payload
- *  eg: payload = 'Aäöåc' then,
- *      escaped payload = 'A\u00e4\u00f6\u00e5c'
- */
-function escapeSpecialChars(payload) {
-  return payload.replace(/[\s\S]/g, escape => {
-    // Escapes % @ and other special chars
-    if (
-      escape.charCodeAt() === 37 ||
-      escape.charCodeAt() === 64 ||
-      escape.charCodeAt() >= 160
-    ) {
-      return '\\u' + ('0000' + escape.charCodeAt().toString(16)).slice(-4); // eslint-disable-line prefer-template
-    } else if (escape.charCodeAt() === 60) {
-      // Oddly Facebook uses upper case for <
-      return '\\u003C';
-    } else if (escape.charCodeAt() === 47) {
-      // Escapes / to \/
-      return '\\/';
-    }
-    return escape;
-  });
-}
-
 module.exports = {
   main,
   name: 'facebook/receive',
@@ -537,6 +506,5 @@ module.exports = {
   getCloudantCreds,
   checkCloudantCredentials,
   createCloudantObj,
-  retrieveDoc,
-  escapeSpecialChars
+  retrieveDoc
 };
