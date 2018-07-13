@@ -641,4 +641,54 @@ describe('Facebook Receive Unit Tests', () => {
       }
     );
   });
+
+  it('validate appropriate escaping of characters', () => {
+    const payload = {
+      object: 'page',
+      entry: [
+        {
+          id: 'x',
+          time: 1531316946940,
+          messaging: [
+            {
+              sender: { id: 'y' },
+              recipient: { id: 'z' },
+              timestamp: 1531316946634,
+              message: {
+                mid: 'tC5r1wf9jgfBMS35kXawBPFF_CSAABSKz_iJoG0xKU7shK3n4isF1blraNkKR1TlnYzd-8S_jxNfpsHxFfjuKQ',
+                seq: 1867,
+                text: '<@%/äöå'
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    const expectedPayload = {
+      object: 'page',
+      entry: [
+        {
+          id: 'x',
+          time: 1531316946940,
+          messaging: [
+            {
+              sender: { id: 'y' },
+              recipient: { id: 'z' },
+              timestamp: 1531316946634,
+              message: {
+                mid: 'tC5r1wf9jgfBMS35kXawBPFF_CSAABSKz_iJoG0xKU7shK3n4isF1blraNkKR1TlnYzd-8S_jxNfpsHxFfjuKQ',
+                seq: 1867,
+                text: '\u003C\u0040\u0025\/\u00e4\u00f6\u00e5' // eslint-disable-line no-useless-escape
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    const escapedPayload = facebookReceive.escapeSpecialChars(JSON.stringify(payload));
+
+    assert.deepEqual(JSON.parse(escapedPayload), expectedPayload);
+  });
 });
