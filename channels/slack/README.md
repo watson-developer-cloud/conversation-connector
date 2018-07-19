@@ -2,7 +2,7 @@
 
 Deploy your app by modifying a set of configuration files and running scripts. You can use this method to customize the Conversation connector, or to repair and update components of an existing deployment.
 
-**Note:** This process is intended to connect an existing Watson Conversation workspace to a Slack app. If you have not yet built a workspace, you must do so first. For more information, see the [Conversation documentation](https://console.bluemix.net/docs/services/conversation/index.html#about).
+**Note:** This process is intended to connect an existing Watson Assistant workspace to a Slack app. If you have not yet built a workspace, you must do so first. For more information, see the [Watson Assistant documentation](https://console.bluemix.net/docs/services/conversation/index.html#about).
 
 **Note:** This process is supported only on Linux/UNIX and macOS systems.
 
