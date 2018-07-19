@@ -2,15 +2,15 @@
 
 You can use either of two methods to deploy your workspace to a Slack app:
 
-- Use [the Conversation tool](https://console.bluemix.net/docs/services/conversation/slack-deploy.html) if you want to quickly deploy your app with just a few clicks.
+- Use the [Watson Assistant tool](https://console.bluemix.net/docs/services/conversation/conversation-connector.html#deploying-to-slack-using-the-watson-assistant-tool) if you want to quickly deploy your app with just a few clicks.
 
 - Use [manual deployment](#manual-deployment) if you want to deploy your app by modifying configuration files and running scripts. You might want to use this method if you are customizing the Conversation connector, or if you need to repair or update components of an existing deployment.
 
-**Note:** This process is intended to connect an existing Watson Conversation workspace to a Slack app. If you have not yet built a workspace, you must do so first. For more information, see the [Conversation documentation](https://console.bluemix.net/docs/services/conversation/index.html#about).
+**Note:** This process is intended to connect an existing Watson Assistant workspace to a Slack app. If you have not yet built a workspace, you must do so first. For more information, see the [Watson Assistant documentation](https://console.bluemix.net/docs/services/conversation/index.html).
 
 ## Manual deployment
 
-**Note:** The manual deployment process is supported only on Linux/UNIX and macOS systems.
+**Note:** This process is supported only on Linux/UNIX and macOS systems.
 
 1.  Clone or download this GitHub repository to your local file system.
 
