@@ -130,8 +130,12 @@ function extractFacebookParams(params) {
 function validateParameters(params) {
   // Required: Channel identifier
   assert(params.recipient && params.recipient.id, 'Recepient id not provided.');
-  // Required: Message to send
-  assert(params.message, 'Message object not provided.');
+
+  // Required: Message object or sender_action
+  assert(
+    params.message || params.sender_action,
+    'Must provide message object or sender_action.'
+  );
 
   // Required: raw_input_data and Facebook Auth
   assert(

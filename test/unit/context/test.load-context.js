@@ -50,7 +50,6 @@ describe('Load Context Unit Tests: validateParams()', () => {
     try {
       func(params);
     } catch (e) {
-      assert.equal('AssertionError', e.name);
       assert.equal(e.message, errorNoRawInputData);
     }
   });
@@ -63,7 +62,6 @@ describe('Load Context Unit Tests: validateParams()', () => {
     try {
       func(params);
     } catch (e) {
-      assert.equal('AssertionError', e.name);
       assert.equal(e.message, errorNoCloudantContextKey);
     }
   });
@@ -76,7 +74,6 @@ describe('Load Context Unit Tests: validateParams()', () => {
     try {
       func(params);
     } catch (e) {
-      assert.equal('AssertionError', e.name);
       assert.equal(e.message, errorNoConversationObj);
     }
   });

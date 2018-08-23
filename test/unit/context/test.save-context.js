@@ -480,7 +480,6 @@ describe('Save Context Unit Tests: validateParams()', () => {
     try {
       func({});
     } catch (e) {
-      assert.equal(e.name, 'AssertionError');
       assert.equal(e.message, errorNoRawInputData);
     }
   });
@@ -489,7 +488,6 @@ describe('Save Context Unit Tests: validateParams()', () => {
     try {
       func({ raw_input_data: {} });
     } catch (e) {
-      assert.equal(e.name, 'AssertionError');
       assert.equal(e.message, errorNoCloudantContextKey);
     }
   });
@@ -500,7 +498,6 @@ describe('Save Context Unit Tests: validateParams()', () => {
         raw_input_data: { cloudant_context_key: 'xyz' }
       });
     } catch (e) {
-      assert.equal(e.name, 'AssertionError');
       assert.equal(e.message, errorNoConversationObj);
     }
   });
