@@ -99,8 +99,7 @@ function generateFacebookPayload(params) {
   generic.forEach(element => {
     switch (element.response_type) {
       case 'image':
-      case 'audio':
-        facebookMessage = generateFbSimpleMediaMessage(element);
+        facebookMessage = generateFbImageMessage(element);
         break;
       case 'option':
         if (element.options.length < MAX_QUICK_REPLIES_OPTIONS) {
@@ -111,9 +110,6 @@ function generateFacebookPayload(params) {
         break;
       case 'pause':
         facebookMessage = generateFbPauseMessage(element);
-        break;
-      case 'video':
-        facebookMessage = generateFbVideoMessage(element);
         break;
       case 'text':
         facebookMessage = generateFbTextMessage(element);
@@ -147,37 +143,20 @@ function getNormalizedOptionsValue(value) {
 }
 
 /**
- * Function generates a message containing a media type
- * (image or audio right now possibly video in future) as an attachment
+ * Function generates a message containing image as attachment
  * as per Facebook guidelines from the generic element returned
  * from Conversation.
- * @param {JSON} element - JSON object containing media data
- * @return {JSON} - Facebook message containing media data
+ * @param {JSON} element - JSON object containing image data
+ * @return {JSON} - Facebook message containing image data
  */
-function generateFbSimpleMediaMessage(element) {
+function generateFbImageMessage(element) {
   return {
     attachment: {
-      type: element.response_type,
+      type: 'image',
       payload: {
         url: element.source // Required
       }
     }
-  };
-}
-
-/**
- * Function generates a video message as per Facebook guidelines
- * from the generic element returned from Conversation.
- * @param {JSON} element - JSON object containing a video URL
- * @return {JSON} - Facebook message containing a video URL
- */
-function generateFbVideoMessage(element) {
-  return {
-    // TODO we could send this as an attachment instead but unless
-    // we store the video ahead of time and send the attachment_id
-    // things are incredibly slow (FB grabs the video, moves it to
-    // their servers and then shows it to the user).
-    text: encodeURI(element.source) // Required
   };
 }
 

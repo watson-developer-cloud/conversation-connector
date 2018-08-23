@@ -168,18 +168,6 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
       time: '10000',
       typing: true,
       response_type: 'pause'
-    },
-    {
-      title: 'Audio title',
-      source: 'http://www.audio.com/audio/mp3/mp3.mp3',
-      description: 'Audio description',
-      response_type: 'audio'
-    },
-    {
-      title: 'Video title',
-      source: 'https://www.video.com/video/mp4/mp4.mp4',
-      description: 'Video description',
-      response_type: 'video'
     }
   ];
 
@@ -298,17 +286,6 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
     {
       sender_action: 'typing_on',
       time: genericFromConversation[4].time
-    },
-    {
-      attachment: {
-        type: 'audio',
-        payload: {
-          url: genericFromConversation[5].source
-        }
-      }
-    },
-    {
-      text: genericFromConversation[6].source
     }
   ];
 
@@ -527,50 +504,6 @@ describe('Starter-Code Normalize-For-Facebook Unit Tests', () => {
     textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
     delete textRes.message;
     textRes.message = [genericForFacebook[2]];
-
-    return actionNormForFacebook(textMsgParams).then(
-      result => {
-        assert.deepEqual(result, textRes);
-      },
-      error => {
-        assert(false, error);
-      }
-    );
-  });
-
-  it('validate normalization works for generic response_type - video', () => {
-    delete textMsgParams.conversation.output.text;
-    delete textMsgParams.conversation.output.facebook;
-
-    // Add a generic image response from Conversation
-    textMsgParams.conversation.output.generic = genericFromConversation[6];
-
-    textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
-
-    delete textRes.message;
-    textRes.message = [genericForFacebook[6]];
-
-    return actionNormForFacebook(textMsgParams).then(
-      result => {
-        assert.deepEqual(result, textRes);
-      },
-      error => {
-        assert(false, error);
-      }
-    );
-  });
-
-  it('validate normalization works for generic response_type - audio', () => {
-    delete textMsgParams.conversation.output.text;
-    delete textMsgParams.conversation.output.facebook;
-
-    // Add a generic image response from Conversation
-    textMsgParams.conversation.output.generic = genericFromConversation[5];
-
-    textRes.raw_output_data.conversation.output.generic = textMsgParams.conversation.output.generic;
-
-    delete textRes.message;
-    textRes.message = [genericForFacebook[5]];
 
     return actionNormForFacebook(textMsgParams).then(
       result => {
