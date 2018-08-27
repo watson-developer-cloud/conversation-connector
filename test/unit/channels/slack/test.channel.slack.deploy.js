@@ -17,9 +17,18 @@
 'use strict';
 
 const assert = require('assert');
-const cloudant = require('@cloudant/cloudant');
 const crypto = require('crypto');
 const nock = require('nock');
+
+let Cloudant;
+
+try {
+  // For local usage and future if Cloud Functions updates
+  Cloudant = require('@cloudant/cloudant');
+} catch (error) {
+  // For Cloud Functions
+  Cloudant = require('cloudant');
+}
 
 const actionSlackDeploy = require('./../../../../channels/slack/deploy/index.js');
 

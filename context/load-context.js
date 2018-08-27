@@ -15,9 +15,18 @@
  */
 
 const assert = require('assert');
-const Cloudant = require('@cloudant/cloudant');
 const omit = require('object.omit');
 const openwhisk = require('openwhisk');
+
+let Cloudant;
+
+try {
+  // For local usage and future if Cloud Functions updates
+  Cloudant = require('@cloudant/cloudant');
+} catch (error) {
+  // For Cloud Functions
+  Cloudant = require('cloudant');
+}
 
 const CLOUDANT_URL = 'cloudant_url';
 const CLOUDANT_CONTEXT_DBNAME = 'cloudant_context_dbname';
