@@ -36,7 +36,7 @@ const shaMap = {
   'hello, world!': 'sha1=e7d42cb171ec3ca26c2d6de14635bd3ea04bf01d',
   hi: 'sha1=3bcbbbd11ad8ef728dba5d9d903e55abdea24738',
   hogwarts: 'sha1=eb4412b17e32da9656bb3e3551094d531438b6da',
-  multi: 'sha1=d13e82a9fe82a228a40e3bb1a025261cc8489c24'
+  multi: 'sha1=5c915f6d72a4f1b7fb7e1acc82af4c7a1432cb7f'
 };
 
 /** Function allows tests to sleep for certain amount of time
