@@ -17,7 +17,7 @@
 const assert = require('assert');
 const crypto = require('crypto');
 const request = require('request-promise');
-const Cloudant = require('cloudant');
+const Cloudant = require('@cloudant/cloudant');
 const openwhisk = require('openwhisk');
 
 const CLOUDANT_URL = 'cloudant_url';

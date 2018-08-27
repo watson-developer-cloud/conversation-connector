@@ -23,7 +23,7 @@ process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/acti
 
 const actionSaveContext = require('../../../context/save-context.js');
 const paramsJson = require('../../resources/payloads/test.unit.context.json').saveContextJson;
-const Cloudant = require('cloudant');
+const Cloudant = require('@cloudant/cloudant');
 
 const invalidCloudantUrl = 'invalid-url';
 

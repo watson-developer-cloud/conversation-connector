@@ -22,7 +22,7 @@
 
 const assert = require('assert');
 const nock = require('nock');
-const Cloudant = require('cloudant');
+const Cloudant = require('@cloudant/cloudant');
 
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 

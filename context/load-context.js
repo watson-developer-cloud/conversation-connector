@@ -15,7 +15,7 @@
  */
 
 const assert = require('assert');
-const Cloudant = require('cloudant');
+const Cloudant = require('@cloudant/cloudant');
 const omit = require('object.omit');
 const openwhisk = require('openwhisk');
 

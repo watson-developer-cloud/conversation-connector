@@ -17,7 +17,7 @@
 'use strict';
 
 const assert = require('assert');
-const cloudant = require('cloudant');
+const cloudant = require('@cloudant/cloudant');
 const crypto = require('crypto');
 const nock = require('nock');
 
