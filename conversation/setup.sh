@@ -10,6 +10,6 @@ PACKAGE_NAME="${PIPELINE_NAME}conversation"
 
 ${WSK} package update $PACKAGE_NAME \
  -p version "v1" \
- -p version_date "2017-05-26" > /dev/null
+ -p version_date "2018-07-10" > /dev/null
 
 ${WSK} action update $PACKAGE_NAME/call-conversation call-conversation.js > /dev/null
