@@ -20,14 +20,14 @@ const assert = require('assert');
 const crypto = require('crypto');
 const nock = require('nock');
 
-let Cloudant;
+let cloudant;
 
 try {
   // For local usage and future if Cloud Functions updates
-  Cloudant = require('@cloudant/cloudant');
+  cloudant = require('@cloudant/cloudant');
 } catch (error) {
   // For Cloud Functions
-  Cloudant = require('cloudant');
+  cloudant = require('cloudant');
 }
 
 const actionSlackDeploy = require('./../../../../channels/slack/deploy/index.js');
