@@ -64,25 +64,25 @@ processCfLogin() {
 ### GET BX ACCESS TOKENS FOR DEPLOY-USER
 processDeployUserTestTokens() {
   echo 'Grabbing test tokens for deploy user...'
-  ${CF} target -o ${__TEST_DEPLOYUSER_ORG} -s ${__TEST_DEPLOYUSER_SPACE} > /dev/null
+  bx target -o ${__TEST_DEPLOYUSER_ORG} -s ${__TEST_DEPLOYUSER_SPACE} > /dev/null
   export __TEST_DEPLOYUSER_ACCESS_TOKEN=$(cat ~/.cf/config.json | jq -r .AccessToken | awk '{print $2}')
   export __TEST_DEPLOYUSER_REFRESH_TOKEN=$(cat ~/.cf/config.json | jq -r .RefreshToken)
 
   # revert back to main test workspace
-  ${CF} target -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE} > /dev/null
+  bx target -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE} > /dev/null
 }
 
 # Switches the Cloud Functions namespace based on the current Bluemix org/space
 # where user has logged in.
 changeWhiskKey() {
   echo 'Syncing wsk namespace with CF namespace...'
-  WSK_NAMESPACE=`${CF} target | grep 'org:\|Org:' | awk '{print $2}'`_`${CF} target | grep 'space:\|Space:' | awk '{print $2}'`
+  WSK_NAMESPACE=`bx target | grep 'org:\|Org:' | awk '{print $2}'`_`bx target | grep 'space:\|Space:' | awk '{print $2}'`
 
   WSK_CURRENT_NAMESPACE=`${WSK} namespace list | tail -n +2 | head -n 1 2> /dev/null`
   if [ "${WSK_NAMESPACE}" == "${WSK_CURRENT_NAMESPACE}" ]; then
     return
   fi
-  TARGET=`${CF} target | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
+  TARGET=`bx target | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
   WSK_API_HOST="https://openwhisk.${TARGET#*.}"
 
   ACCESS_TOKEN=`cat ~/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`

@@ -81,7 +81,7 @@ checkProvidersExist() {
 ### CHECK OR PROCESS CF LOGIN
 processCfLogin() {
   echo 'Checking for CF login credentials...'
-  ${CF} target &> /dev/null
+  bx target &> /dev/null
   if [ "$?" != "0" ]; then
     __BX_CF_KEY=`jq -r .bluemix.api_key ${PROVIDERS_FILE}`
     # here, __BX_CF_KEY could have come from providers.json OR from env vars
@@ -102,11 +102,11 @@ processCfLogin() {
 # where user has logged in.
 changeWhiskKey() {
   echo 'Syncing wsk namespace with CF namespace...'
-  WSK_NAMESPACE="`${CF} target | grep 'org:\|Org:' | awk '{print $2}'`_`${CF} target | grep 'space:\|Space:' | awk '{print $2}'`"
+  WSK_NAMESPACE="`bx target | grep 'org:\|Org:' | awk '{print $2}'`_`bx target | grep 'space:\|Space:' | awk '{print $2}'`"
   if [ "${WSK_NAMESPACE}" == `${WSK} namespace list | tail -n +2 | head -n 1` ]; then
     return
   fi
-  TARGET=`${CF} target | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
+  TARGET=`bx target | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
   WSK_API_HOST="https://openwhisk.${TARGET#*.}"
 
   ACCESS_TOKEN=`cat ~/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`
