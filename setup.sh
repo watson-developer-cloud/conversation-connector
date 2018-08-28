@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 export WSK="bx wsk"
-export CF="bx cf"
+export CF=${CF-cf}
 
 PROVIDERS_FILE='providers.json'
 
@@ -56,6 +56,12 @@ checkDependencies() {
     exit 1
   fi
 
+  ${CF} &> /dev/null
+  if [ "$?" != "0" ]; then
+    echo 'cf is required to run setup. Please install cf before trying again.'
+    exit 1
+  fi
+
   bx &> /dev/null
   if [ "$?" != "0" ]; then
     echo 'bx is required to run setup. Please install bx along with the cloud-functions plugin before trying again.'
@@ -81,11 +87,11 @@ processLogin() {
   fi
 
   echo 'Syncing wsk namespace with CF namespace...'
-  WSK_NAMESPACE="`bx wsk target --cf | grep 'org:\|Org:' | awk '{print $2}'`_`bx target | grep 'space:\|Space:' | awk '{print $2}'`"
+  WSK_NAMESPACE="`bx target | grep 'org:\|Org:' | awk '{print $2}'`_`bx target | grep 'space:\|Space:' | awk '{print $2}'`"
   if [ "${WSK_NAMESPACE}" == `bx wsk namespace list | tail -n +2 | head -n 1` ]; then
     return
   fi
-  TARGET=`bx target --cf | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
+  TARGET=`bx target | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
   WSK_API_HOST="https://openwhisk.${TARGET#*.}"
 
   ACCESS_TOKEN=`cat ~/.bluemix/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`
