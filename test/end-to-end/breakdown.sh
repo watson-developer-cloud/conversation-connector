@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export WSK=${WSK-wsk}
+export WSK="bx wsk"
 
 DEPLOY_NAME=$1
 

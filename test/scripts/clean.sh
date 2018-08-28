@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-export WSK=${WSK-wsk}
+export WSK="bx wsk"
 
 # Cleans all deploy artifacts in the user's namespace corresponding to the pipeline name passed as argument.
 # Cloud Functions artifacts are named like: ${pipeline_name}_slack, ${pipeline_name}_context, and so on ...
 
 PIPNAME=$1
 
-WSK_API_HOST=`wsk property get --apihost | tr "\t" "\n" | tail -n 1`
-WSK_API_KEY=`wsk property get --auth | tr "\t" "\n" | tail -n 1`
-WSK_NAMESPACE=`wsk namespace list | tail -n +2 | head -n 1`
+WSK_API_HOST=`bx wsk property get --apihost | tr "\t" "\n" | tail -n 1`
+WSK_API_KEY=`bx wsk property get --auth | tr "\t" "\n" | tail -n 1`
+WSK_NAMESPACE=`bx wsk namespace list | tail -n +2 | head -n 1`
 
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_slack/deploy" > /dev/null
 ${WSK} action delete "/${WSK_NAMESPACE}/${PIPNAME}_slack/receive" > /dev/null

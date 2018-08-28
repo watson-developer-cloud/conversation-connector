@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export WSK=${WSK-wsk}
+export WSK="bx wsk"
 export CF=${CF-cf}
 
 PROVIDERS_FILE='providers.json'
@@ -65,7 +65,7 @@ checkDependencies() {
 
   ${WSK} &> /dev/null
   if [ "$?" != "0" ]; then
-    echo 'wsk is required to run setup. Please install wsk before trying again.'
+    echo 'The bx cloud-functions plugin is required to run setup. Please install before trying again.'
     exit 1
   fi
 }
@@ -221,7 +221,7 @@ createPipelines() {
       echo "Your Cloudant Auth DB URL is: ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME}/${PIPELINE_AUTH_KEY}"
 
       ## INJECT ANNOTATIONS INTO ALL PACKAGES
-      for line in `wsk package list | grep "/${PIPELINE_NAME}"`; do
+      for line in `bx wsk package list | grep "/${PIPELINE_NAME}"`; do
         # this creates issues if the package name contains spaces
         resource=`echo $line | awk '{print $1}'`
         package=${resource##*/}
@@ -236,10 +236,10 @@ createPipelines() {
       ## CREATE SEQUENCE ACTION
       if [ "$CHANNEL" == "facebook" ]; then
         sequence="${PIPELINE_NAME}starter-code/pre-normalize,${PIPELINE_NAME}starter-code/normalize-${CHANNEL}-for-conversation,${PIPELINE_NAME}context/load-context,${PIPELINE_NAME}starter-code/pre-conversation,${PIPELINE_NAME}conversation/call-conversation,${PIPELINE_NAME}starter-code/post-conversation,${PIPELINE_NAME}context/save-context,${PIPELINE_NAME}starter-code/normalize-conversation-for-${CHANNEL},${PIPELINE_NAME}${CHANNEL}/multiple_post"
-        echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(wsk namespace list | tail -n +2 | head -n 1)/${PIPELINE_NAME}facebook/receive.text"
+        echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(bx wsk namespace list | tail -n +2 | head -n 1)/${PIPELINE_NAME}facebook/receive.text"
       else
         sequence="${PIPELINE_NAME}starter-code/pre-normalize,${PIPELINE_NAME}starter-code/normalize-${CHANNEL}-for-conversation,${PIPELINE_NAME}context/load-context,${PIPELINE_NAME}starter-code/pre-conversation,${PIPELINE_NAME}conversation/call-conversation,${PIPELINE_NAME}starter-code/post-conversation,${PIPELINE_NAME}context/save-context,${PIPELINE_NAME}starter-code/normalize-conversation-for-${CHANNEL},${PIPELINE_NAME}${CHANNEL}/multiple_post"
-        echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(wsk namespace list | tail -n +2 | head -n 1)/${PIPELINE_NAME}slack/receive.json"
+        echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(bx wsk namespace list | tail -n +2 | head -n 1)/${PIPELINE_NAME}slack/receive.json"
       fi
 
       # There is support for a single Conversation response to be sent in multiple posts to circumvent some channel limitations.

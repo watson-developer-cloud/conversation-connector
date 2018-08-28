@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export WSK=${WSK-wsk}
+export WSK="bx wsk"
 
 ${WSK} action update create-cloudant-lite-instance create-cloudant-lite-instance.js > /dev/null
 ${WSK} action update create-cloudant-database create-cloudant-database.js > /dev/null

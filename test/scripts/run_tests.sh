@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export WSK=${WSK-wsk}
+export WSK="bx wsk"
 export CF=${CF-cf}
 
 echo "Running conversation-connector test suite."
@@ -213,7 +213,7 @@ createWhiskArtifacts() {
   echo "Your Cloudant Auth DB URL is: ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME}/${PIPELINE_AUTH_KEY}"
 
   ## INJECT ANNOTATIONS INTO ALL PACKAGES
-  for line in `wsk package list | grep "/${__TEST_PIPELINE_NAME}_"`; do
+  for line in `bx wsk package list | grep "/${__TEST_PIPELINE_NAME}_"`; do
     # this creates issues if the package name contains spaces
     resource=`echo $line | awk '{print $1}'`
     package=${resource##*/}

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-WSK=${WSK-wsk}
+export WSK="bx wsk"
 
 PACKAGE_NAME="$1"
 

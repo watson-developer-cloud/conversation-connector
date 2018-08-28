@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-WSK=${WSK-wsk}
+export WSK="bx wsk"
 
 PIPELINE_NAME="$1_"
 PACKAGE_NAME="$1_facebook"

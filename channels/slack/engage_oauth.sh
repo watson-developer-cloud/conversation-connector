@@ -6,7 +6,7 @@ PIPELINE_NAME=`echo $PIPELINE | jq -r .name`
 SLACK_CLIENT_ID=`echo $PIPELINE | jq -r .channel.slack.client_id`
 SLACK_CLIENT_SECRET=`echo $PIPELINE | jq -r .channel.slack.client_secret`
 
-SLACK_REDIRECT_URL="https://openwhisk.ng.bluemix.net/api/v1/web/$(wsk namespace list | tail -n +2 | head -n 1)/${PIPELINE_NAME}_slack/deploy.http"
+SLACK_REDIRECT_URL="https://openwhisk.ng.bluemix.net/api/v1/web/$(bx wsk namespace list | tail -n +2 | head -n 1)/${PIPELINE_NAME}_slack/deploy.http"
 
 signature=`node -e "const crypto = require('crypto'); console.log(crypto.createHmac('sha256', process.argv[1]).update('authorize').digest('hex'));" "${SLACK_CLIENT_ID}&${SLACK_CLIENT_SECRET}"`
 

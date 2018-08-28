@@ -23,6 +23,6 @@ SPACE_UUID=`echo $CLOUDFUNCTIONS_KEYS | jq -r '.namespaces[] | select(.name == "
 CLOUDFUNCTIONS_AUTH=$SPACE_UUID:$SPACE_KEY
 
 # Configure the Cloud Functions CLI
-wsk property set --apihost $CLOUDFUNCTIONS_API_HOST --auth "${CLOUDFUNCTIONS_AUTH}"
+bx wsk property set --apihost $CLOUDFUNCTIONS_API_HOST --auth "${CLOUDFUNCTIONS_AUTH}"
 
 ./setup.sh -s
