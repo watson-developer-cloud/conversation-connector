@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 export WSK="bx wsk"
-export CF=${CF-cf}
+export CF="bx cf"
 
 echo "Running conversation-connector test suite."
 
