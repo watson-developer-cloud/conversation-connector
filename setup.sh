@@ -39,7 +39,7 @@ main() {
     # pipeline-DEPLOY.sh
     checkDependencies
     checkProvidersExist
-    processCfLogin
+    processLogin
     changeWhiskKey
   fi
   if [ "${NO_NAME}" == "0" ]; then createCloudantInstanceDatabases
@@ -72,29 +72,15 @@ checkProvidersExist() {
   fi
 }
 
-### CHECK OR PROCESS CF LOGIN
-processCfLogin() {
-  echo 'Checking for CF login credentials...'
+### CHECK OR PROCESS BX LOGIN
+processLogin() {
+  echo 'Checking for BX login credentials...'
   bx target &> /dev/null
   if [ "$?" != "0" ]; then
-    __BX_CF_KEY=`jq -r .bluemix.api_key ${PROVIDERS_FILE}`
-    # here, __BX_CF_KEY could have come from providers.json OR from env vars
-    if [ -n ${__BX_CF_KEY} ]; then
-      BX_API_HOST=`jq -r '.bluemix.apihost' ${PROVIDERS_FILE}`
-      BX_API_HOST=${BX_API_HOST-api.ng.bluemix.net}
-      BX_ORG=`jq -r '.bluemix.org' ${PROVIDERS_FILE}`
-      BX_SPACE=`jq -r '.bluemix.space' ${PROVIDERS_FILE}`
-      bx login -a ${BX_API_HOST} -u apikey -p ${__BX_CF_KEY} -o ${BX_ORG} -s ${BX_SPACE}
-    else
-      echo 'CF not logged in, and no CF API keys provided.'
-      exit 1
-    fi
+     echo 'CF not logged in, and no CF API keys provided.'
+    exit 1
   fi
-}
 
-# Switches the Cloud Functions namespace based on the current Bluemix org/space
-# where user has logged in.
-changeWhiskKey() {
   echo 'Syncing wsk namespace with CF namespace...'
   WSK_NAMESPACE="`bx wsk target --cf | grep 'org:\|Org:' | awk '{print $2}'`_`bx target | grep 'space:\|Space:' | awk '{print $2}'`"
   if [ "${WSK_NAMESPACE}" == `bx wsk namespace list | tail -n +2 | head -n 1` ]; then
