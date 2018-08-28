@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 export WSK="bx wsk"
-export CF="bx cf"
+export CF=${CF-cf}
 
 PROVIDERS_FILE='providers.json'
 
@@ -39,7 +39,7 @@ main() {
     # pipeline-DEPLOY.sh
     checkDependencies
     checkProvidersExist
-    processLogin
+    processCfLogin
     changeWhiskKey
   fi
   if [ "${NO_NAME}" == "0" ]; then createCloudantInstanceDatabases
@@ -54,6 +54,12 @@ checkDependencies() {
   jq --help &> /dev/null
   if [ "$?" != "0" ]; then
     echo 'jq is required to run setup. Please install jq before trying again.'
+    exit 1
+  fi
+
+  ${CF} &> /dev/null
+  if [ "$?" != "0" ]; then
+    echo 'cf is required to run setup. Please install cf before trying again.'
     exit 1
   fi
 
@@ -72,30 +78,44 @@ checkProvidersExist() {
   fi
 }
 
-### CHECK OR PROCESS BX LOGIN
-processLogin() {
-  echo 'Checking for BX login credentials...'
-  bx target &> /dev/null
+### CHECK OR PROCESS CF LOGIN
+processCfLogin() {
+  echo 'Checking for CF login credentials...'
+  ${CF} target &> /dev/null
   if [ "$?" != "0" ]; then
-     echo 'CF not logged in, and no CF API keys provided.'
-    exit 1
+    __BX_CF_KEY=`jq -r .bluemix.api_key ${PROVIDERS_FILE}`
+    # here, __BX_CF_KEY could have come from providers.json OR from env vars
+    if [ -n ${__BX_CF_KEY} ]; then
+      BX_API_HOST=`jq -r '.bluemix.apihost' ${PROVIDERS_FILE}`
+      BX_API_HOST=${BX_API_HOST-api.ng.bluemix.net}
+      BX_ORG=`jq -r '.bluemix.org' ${PROVIDERS_FILE}`
+      BX_SPACE=`jq -r '.bluemix.space' ${PROVIDERS_FILE}`
+      ${CF} login -a ${BX_API_HOST} -u apikey -p ${__BX_CF_KEY} -o ${BX_ORG} -s ${BX_SPACE}
+    else
+      echo 'CF not logged in, and no CF API keys provided.'
+      exit 1
+    fi
   fi
+}
 
+# Switches the Cloud Functions namespace based on the current Bluemix org/space
+# where user has logged in.
+changeWhiskKey() {
   echo 'Syncing wsk namespace with CF namespace...'
-  WSK_NAMESPACE="`bx wsk target --cf | grep 'org:\|Org:' | awk '{print $2}'`_`bx target | grep 'space:\|Space:' | awk '{print $2}'`"
-  if [ "${WSK_NAMESPACE}" == `bx wsk namespace list | tail -n +2 | head -n 1` ]; then
+  WSK_NAMESPACE="`${CF} target | grep 'org:\|Org:' | awk '{print $2}'`_`${CF} target | grep 'space:\|Space:' | awk '{print $2}'`"
+  if [ "${WSK_NAMESPACE}" == `${WSK} namespace list | tail -n +2 | head -n 1` ]; then
     return
   fi
-  TARGET=`bx target --cf | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
+  TARGET=`${CF} target | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
   WSK_API_HOST="https://openwhisk.${TARGET#*.}"
 
-  ACCESS_TOKEN=`cat ~/.bluemix/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`
-  REFRESH_TOKEN=`cat ~/.bluemix/.cf/config.json | jq -r .RefreshToken`
+  ACCESS_TOKEN=`cat ~/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`
+  REFRESH_TOKEN=`cat ~/.cf/config.json | jq -r .RefreshToken`
 
   WSK_CREDENTIALS=`curl -s -X POST -H 'Content-Type: application/json' -d '{"accessToken": "'$ACCESS_TOKEN'", "refreshToken": "'$REFRESH_TOKEN'"}' ${WSK_API_HOST}/bluemix/v2/authenticate`
   WSK_API_KEY=`echo ${WSK_CREDENTIALS} | jq -r ".namespaces[] | select(.name==\"${WSK_NAMESPACE}\") | [.uuid, .key] | join(\":\")"`
 
-  bx wsk property set --apihost ${WSK_API_HOST} --auth "${WSK_API_KEY}" --namespace ${WSK_NAMESPACE}
+  ${WSK} property set --apihost ${WSK_API_HOST} --auth "${WSK_API_KEY}" --namespace ${WSK_NAMESPACE}
 }
 
 ### CHECK OR CREATE CLOUDANT-LITE DATABASE INSTANCE, CREATE AUTH+CONTEXT DATABASES
