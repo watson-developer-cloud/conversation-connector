@@ -90,7 +90,7 @@ processCfLogin() {
       BX_API_HOST=${BX_API_HOST-api.ng.bluemix.net}
       BX_ORG=`jq -r '.bluemix.org' ${PROVIDERS_FILE}`
       BX_SPACE=`jq -r '.bluemix.space' ${PROVIDERS_FILE}`
-      ${CF} login -a ${BX_API_HOST} -u apikey -p ${__BX_CF_KEY} -o ${BX_ORG} -s ${BX_SPACE}
+      bx login -a ${BX_API_HOST} -u apikey -p ${__BX_CF_KEY} -o ${BX_ORG} -s ${BX_SPACE}
     else
       echo 'CF not logged in, and no CF API keys provided.'
       exit 1
