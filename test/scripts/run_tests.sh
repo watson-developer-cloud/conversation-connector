@@ -65,8 +65,8 @@ processCfLogin() {
 processDeployUserTestTokens() {
   echo 'Grabbing test tokens for deploy user...'
   bx target -o ${__TEST_DEPLOYUSER_ORG} -s ${__TEST_DEPLOYUSER_SPACE} > /dev/null
-  export __TEST_DEPLOYUSER_ACCESS_TOKEN=$(cat ~/.cf/config.json | jq -r .AccessToken | awk '{print $2}')
-  export __TEST_DEPLOYUSER_REFRESH_TOKEN=$(cat ~/.cf/config.json | jq -r .RefreshToken)
+  export __TEST_DEPLOYUSER_ACCESS_TOKEN=$(cat ~/.bluemix/.cf/config.json | jq -r .AccessToken | awk '{print $2}')
+  export __TEST_DEPLOYUSER_REFRESH_TOKEN=$(cat ~/.bluemix/.cf/config.json | jq -r .RefreshToken)
 
   # revert back to main test workspace
   bx target -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE} > /dev/null
@@ -85,8 +85,8 @@ changeWhiskKey() {
   TARGET=`bx target | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
   WSK_API_HOST="https://openwhisk.${TARGET#*.}"
 
-  ACCESS_TOKEN=`cat ~/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`
-  REFRESH_TOKEN=`cat ~/.cf/config.json | jq -r .RefreshToken`
+  ACCESS_TOKEN=`cat ~/.bluemix/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`
+  REFRESH_TOKEN=`cat ~/.bluemix/.cf/config.json | jq -r .RefreshToken`
 
   WSK_CREDENTIALS=`curl -s -X POST -H 'Content-Type: application/json' -d '{"accessToken": "'$ACCESS_TOKEN'", "refreshToken": "'$REFRESH_TOKEN'"}' https://${__OW_API_HOST}/bluemix/v2/authenticate`
   WSK_API_KEY=`echo ${WSK_CREDENTIALS} | jq -r ".namespaces[] | select(.name==\"${WSK_NAMESPACE}\") | [.uuid, .key] | join(\":\")"`
@@ -108,7 +108,7 @@ createCloudantInstanceDatabases() {
   if [ "$?" != "0" ]; then
     ${CF} create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
   fi
-  CLOUDANT_URL=`${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +2 | jq -r .url`
+  CLOUDANT_URL=`${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +4 | jq -r .url`
 
   for i in {1..10}; do
     e=`curl -s -XPUT ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME} | jq -r .error`
