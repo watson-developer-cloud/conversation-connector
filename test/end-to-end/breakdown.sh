@@ -46,6 +46,7 @@ curl -s -XPUT ${__TEST_CLOUDANT_URL}/authdb
 bx wsk action delete test-pipeline-facebook | grep -v 'ok'
 bx wsk action delete test-pipeline-context-facebook | grep -v 'ok'
 
+bx target -o ${__TEST_DEPLOYUSER_ORG} -s ${__TEST_DEPLOYUSER_SPACE}
 bx wsk property set --apihost ${__OW_API_HOST} --auth ${__TEST_DEPLOYUSER_WSK_API_KEY} --namespace ${__TEST_DEPLOYUSER_WSK_NAMESPACE}
 
 # Clean all artifacts created in the user-deploy namespace
@@ -77,4 +78,5 @@ for line in `bx wsk package list | tail -n +2`; do
 done
 IFS=$' \t\n'
 
+bx target -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE}
 bx wsk property set --apihost ${__OW_API_HOST} --auth ${__OW_API_KEY} --namespace ${__OW_NAMESPACE}

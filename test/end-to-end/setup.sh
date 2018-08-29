@@ -134,6 +134,7 @@ bx wsk action update --sequence test-pipeline-context-facebook "${PIPELINE_NAME}
 FACEBOOK_POSTSEQUENCE_NAME=${PIPELINE_NAME}_postsequence
 bx wsk action update --sequence ${FACEBOOK_POSTSEQUENCE_NAME} "${PIPELINE_NAME}_starter-code/post-normalize","${PIPELINE_NAME}_facebook/post"
 
+bx target -o ${__TEST_DEPLOYUSER_ORG} -s ${__TEST_DEPLOYUSER_SPACE}
 bx wsk property set --apihost ${__OW_API_HOST} --auth ${__TEST_DEPLOYUSER_WSK_API_KEY} --namespace ${__TEST_DEPLOYUSER_WSK_NAMESPACE}
 
 # Clean the user-deploy namespace to ensure the deploy end-to-end tests are performed
@@ -167,4 +168,5 @@ done
 
 IFS=$' \t\n'
 
+bx target -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE}
 bx wsk property set --apihost ${__OW_API_HOST} --auth ${__OW_API_KEY} --namespace ${__OW_NAMESPACE}
