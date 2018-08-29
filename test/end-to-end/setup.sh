@@ -55,30 +55,30 @@ bx wsk package update ${SLACK_PIPELINE_NO_CONTEXT}_slack \
   -a cloudant_url "${__TEST_CLOUDANT_URL}" \
   -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}" \
   -a cloudant_auth_dbname "authdb" \
-  -a cloudant_context_dbname "contextdb" > /dev/null
+  -a cloudant_context_dbname "contextdb"
 bx wsk package update ${SLACK_PIPELINE_NO_CONTEXT}_starter-code \
   -a cloudant_url "${__TEST_CLOUDANT_URL}" \
   -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}" \
   -a cloudant_auth_dbname "authdb" \
-  -a cloudant_context_dbname "contextdb" > /dev/null
+  -a cloudant_context_dbname "contextdb"
 bx wsk package update ${SLACK_PIPELINE_NO_CONTEXT}_conversation \
   -a cloudant_url "${__TEST_CLOUDANT_URL}" \
   -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}" \
   -a cloudant_auth_dbname "authdb" \
-  -a cloudant_context_dbname "contextdb" > /dev/null
+  -a cloudant_context_dbname "contextdb"
 
-bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_slack/receive  ./channels/slack/receive/index.js -a web-export true > /dev/null
-bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_slack/post ./channels/slack/post/index.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_slack/multiple_post ./channels/slack/multiple_post/index.js &> /dev/null
-bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/pre-conversation ./starter-code/pre-conversation.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/post-conversation ./starter-code/post-conversation.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/pre-normalize ./starter-code/pre-normalize.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/post-normalize ./starter-code/post-normalize.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/normalize-slack-for-conversation ./starter-code/normalize-for-conversation/normalize-slack-for-conversation.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/normalize-conversation-for-slack ./starter-code/normalize-for-channel/normalize-conversation-for-slack.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_conversation/call-conversation ./conversation/call-conversation.js > /dev/null
+bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_slack/receive  ./channels/slack/receive/index.js -a web-export true
+bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_slack/post ./channels/slack/post/index.js
+bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_slack/multiple_post ./channels/slack/multiple_post/index.js
+bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/pre-conversation ./starter-code/pre-conversation.js
+bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/post-conversation ./starter-code/post-conversation.js
+bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/pre-normalize ./starter-code/pre-normalize.js
+bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/post-normalize ./starter-code/post-normalize.js
+bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/normalize-slack-for-conversation ./starter-code/normalize-for-conversation/normalize-slack-for-conversation.js
+bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/normalize-conversation-for-slack ./starter-code/normalize-for-channel/normalize-conversation-for-slack.js
+bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT}_conversation/call-conversation ./conversation/call-conversation.js
 
-bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT} --sequence ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/pre-normalize,${SLACK_PIPELINE_NO_CONTEXT}_starter-code/normalize-slack-for-conversation,${SLACK_PIPELINE_NO_CONTEXT}_starter-code/pre-conversation,${SLACK_PIPELINE_NO_CONTEXT}_conversation/call-conversation,${SLACK_PIPELINE_NO_CONTEXT}_starter-code/post-conversation,${SLACK_PIPELINE_NO_CONTEXT}_starter-code/normalize-conversation-for-slack,${SLACK_PIPELINE_NO_CONTEXT}_slack/multiple_post > /dev/null
+bx wsk action update ${SLACK_PIPELINE_NO_CONTEXT} --sequence ${SLACK_PIPELINE_NO_CONTEXT}_starter-code/pre-normalize,${SLACK_PIPELINE_NO_CONTEXT}_starter-code/normalize-slack-for-conversation,${SLACK_PIPELINE_NO_CONTEXT}_starter-code/pre-conversation,${SLACK_PIPELINE_NO_CONTEXT}_conversation/call-conversation,${SLACK_PIPELINE_NO_CONTEXT}_starter-code/post-conversation,${SLACK_PIPELINE_NO_CONTEXT}_starter-code/normalize-conversation-for-slack,${SLACK_PIPELINE_NO_CONTEXT}_slack/multiple_post
 
 SLACK_NO_CONTEXT_POSTSEQUENCE_NAME=${SLACK_PIPELINE_NO_CONTEXT}_postsequence
 bx wsk action update --sequence ${SLACK_NO_CONTEXT_POSTSEQUENCE_NAME} "${SLACK_PIPELINE_NO_CONTEXT}_starter-code/post-normalize","${SLACK_PIPELINE_NO_CONTEXT}_slack/post"
@@ -93,37 +93,37 @@ bx wsk package update ${SLACK_PIPELINE_WITH_CONTEXT}_slack \
   -a cloudant_url "${__TEST_CLOUDANT_URL}" \
   -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}" \
   -a cloudant_auth_dbname "authdb" \
-  -a cloudant_context_dbname "contextdb" > /dev/null
+  -a cloudant_context_dbname "contextdb"
 bx wsk package update ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code \
   -a cloudant_url "${__TEST_CLOUDANT_URL}" \
   -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}" \
   -a cloudant_auth_dbname "authdb" \
-  -a cloudant_context_dbname "contextdb" > /dev/null
+  -a cloudant_context_dbname "contextdb"
 bx wsk package update ${SLACK_PIPELINE_WITH_CONTEXT}_conversation \
   -a cloudant_url "${__TEST_CLOUDANT_URL}" \
   -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}" \
   -a cloudant_auth_dbname "authdb" \
-  -a cloudant_context_dbname "contextdb" > /dev/null
+  -a cloudant_context_dbname "contextdb"
 bx wsk package update ${SLACK_PIPELINE_WITH_CONTEXT}_context \
   -a cloudant_url "${__TEST_CLOUDANT_URL}" \
   -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}" \
   -a cloudant_auth_dbname "authdb" \
-  -a cloudant_context_dbname "contextdb" > /dev/null
+  -a cloudant_context_dbname "contextdb"
 
-bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_slack/receive ./channels/slack/receive/index.js -a web-export true > /dev/null
-bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_slack/post ./channels/slack/post/index.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_slack/multiple_post ./channels/slack/multiple_post/index.js &> /dev/null
-bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/normalize-slack-for-conversation ./starter-code/normalize-for-conversation/normalize-slack-for-conversation.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/normalize-conversation-for-slack ./starter-code/normalize-for-channel/normalize-conversation-for-slack.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/pre-normalize ./starter-code/pre-normalize.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/post-normalize ./starter-code/post-normalize.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/pre-conversation ./starter-code/pre-conversation.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/post-conversation ./starter-code/post-conversation.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_conversation/call-conversation ./conversation/call-conversation.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_context/load-context ./context/load-context.js > /dev/null
-bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_context/save-context ./context/save-context.js > /dev/null
+bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_slack/receive ./channels/slack/receive/index.js -a web-export true
+bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_slack/post ./channels/slack/post/index.js
+bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_slack/multiple_post ./channels/slack/multiple_post/index.js
+bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/normalize-slack-for-conversation ./starter-code/normalize-for-conversation/normalize-slack-for-conversation.js
+bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/normalize-conversation-for-slack ./starter-code/normalize-for-channel/normalize-conversation-for-slack.js
+bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/pre-normalize ./starter-code/pre-normalize.js
+bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/post-normalize ./starter-code/post-normalize.js
+bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/pre-conversation ./starter-code/pre-conversation.js
+bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/post-conversation ./starter-code/post-conversation.js
+bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_conversation/call-conversation ./conversation/call-conversation.js
+bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_context/load-context ./context/load-context.js
+bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT}_context/save-context ./context/save-context.js
 
-bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT} --sequence ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/pre-normalize,${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/normalize-slack-for-conversation,${SLACK_PIPELINE_WITH_CONTEXT}_context/load-context,${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/pre-conversation,${SLACK_PIPELINE_WITH_CONTEXT}_conversation/call-conversation,${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/post-conversation,${SLACK_PIPELINE_WITH_CONTEXT}_context/save-context,${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/normalize-conversation-for-slack,${SLACK_PIPELINE_WITH_CONTEXT}_slack/multiple_post > /dev/null
+bx wsk action update ${SLACK_PIPELINE_WITH_CONTEXT} --sequence ${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/pre-normalize,${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/normalize-slack-for-conversation,${SLACK_PIPELINE_WITH_CONTEXT}_context/load-context,${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/pre-conversation,${SLACK_PIPELINE_WITH_CONTEXT}_conversation/call-conversation,${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/post-conversation,${SLACK_PIPELINE_WITH_CONTEXT}_context/save-context,${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/normalize-conversation-for-slack,${SLACK_PIPELINE_WITH_CONTEXT}_slack/multiple_post
 
 SLACK_CONTEXT_POSTSEQUENCE_NAME=${SLACK_PIPELINE_WITH_CONTEXT}_postsequence
 bx wsk action update --sequence ${SLACK_CONTEXT_POSTSEQUENCE_NAME} "${SLACK_PIPELINE_WITH_CONTEXT}_starter-code/post-normalize","${SLACK_PIPELINE_WITH_CONTEXT}_slack/post"
@@ -134,7 +134,7 @@ bx wsk action update --sequence test-pipeline-context-facebook "${PIPELINE_NAME}
 FACEBOOK_POSTSEQUENCE_NAME=${PIPELINE_NAME}_postsequence
 bx wsk action update --sequence ${FACEBOOK_POSTSEQUENCE_NAME} "${PIPELINE_NAME}_starter-code/post-normalize","${PIPELINE_NAME}_facebook/post"
 
-bx wsk property set --apihost ${__OW_API_HOST} --auth ${__TEST_DEPLOYUSER_WSK_API_KEY} --namespace ${__TEST_DEPLOYUSER_WSK_NAMESPACE} > /dev/null
+bx wsk property set --apihost ${__OW_API_HOST} --auth ${__TEST_DEPLOYUSER_WSK_API_KEY} --namespace ${__TEST_DEPLOYUSER_WSK_NAMESPACE}
 
 # Clean the user-deploy namespace to ensure the deploy end-to-end tests are performed
 #   with the user starting with no artifacts
@@ -143,28 +143,28 @@ while [ $(bx wsk action list | tail -n +2 | wc -l | awk '{print $1}') -gt 0 ]; d
   for line in `bx wsk action list | tail -n +2`; do
     actionName=${line%% *}
     execution=${line##* }
-    bx wsk action delete $actionName > /dev/null
+    bx wsk action delete $actionName
   done
 done
 
 for line in `bx wsk package list | tail -n +2`; do
   packageName=${line%% *}
   execution=${line##* }
-  bx wsk package delete $packageName > /dev/null
+  bx wsk package delete $packageName
 done
 
 for line in `bx wsk trigger list | tail -n +2`; do
   triggerName=${line%% *}
   execution=${line##* }
-  bx wsk trigger delete $triggerName > /dev/null
+  bx wsk trigger delete $triggerName
 done
 
 for line in `bx wsk rule list | tail -n +2`; do
   ruleName=${line%% *}
   execution=${line##* }
-  bx wsk rule delete $ruleName > /dev/null
+  bx wsk rule delete $ruleName
 done
 
 IFS=$' \t\n'
 
-bx wsk property set --apihost ${__OW_API_HOST} --auth ${__OW_API_KEY} --namespace ${__OW_NAMESPACE} > /dev/null
+bx wsk property set --apihost ${__OW_API_HOST} --auth ${__OW_API_KEY} --namespace ${__OW_NAMESPACE}

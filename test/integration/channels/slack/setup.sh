@@ -50,17 +50,17 @@ bx wsk package update ${PIPELINE_SEND_TEXT}_slack \
   -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}" \
   -a cloudant_url "${__TEST_CLOUDANT_URL}" \
   -a cloudant_auth_dbname "authdb" \
-  -a cloudant_context_dbname "contextdb" > /dev/null
+  -a cloudant_context_dbname "contextdb"
 
-bx wsk action update ${PIPELINE_SEND_TEXT}_slack/receive ./channels/slack/receive/index.js -a web-export true > /dev/null
-bx wsk action update ${PIPELINE_SEND_TEXT}_slack/post ./channels/slack/post/index.js > /dev/null
-bx wsk action update ${PIPELINE_SEND_TEXT}_slack/multiple_post ./channels/slack/multiple_post/index.js > /dev/null
+bx wsk action update ${PIPELINE_SEND_TEXT}_slack/receive ./channels/slack/receive/index.js -a web-export true
+bx wsk action update ${PIPELINE_SEND_TEXT}_slack/post ./channels/slack/post/index.js
+bx wsk action update ${PIPELINE_SEND_TEXT}_slack/multiple_post ./channels/slack/multiple_post/index.js
 
-bx wsk action update ${PIPELINE_SEND_TEXT}_slack/send-text ./test/integration/channels/slack/send-text.js > /dev/null
-bx wsk action update ${PIPELINE_SEND_TEXT} --sequence ${PIPELINE_SEND_TEXT}_slack/send-text,${PIPELINE_SEND_TEXT}_slack/multiple_post > /dev/null
+bx wsk action update ${PIPELINE_SEND_TEXT}_slack/send-text ./test/integration/channels/slack/send-text.js
+bx wsk action update ${PIPELINE_SEND_TEXT} --sequence ${PIPELINE_SEND_TEXT}_slack/send-text,${PIPELINE_SEND_TEXT}_slack/multiple_post
 
 PIPELINE_SEND_TEXT_POST_SEQUENCE="${PIPELINE_SEND_TEXT}_slack/post"
-bx wsk action update ${PIPELINE_SEND_TEXT}_postsequence --sequence ${PIPELINE_SEND_TEXT_POST_SEQUENCE} > /dev/null
+bx wsk action update ${PIPELINE_SEND_TEXT}_postsequence --sequence ${PIPELINE_SEND_TEXT_POST_SEQUENCE}
 
 # send text and receive an interactive message
 PIPELINE_SEND_ATTACHED_MESSAGE="$1-integration-slack-send-attached-message"
@@ -73,17 +73,17 @@ bx wsk package update ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack \
   -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}" \
   -a cloudant_url "${__TEST_CLOUDANT_URL}" \
   -a cloudant_auth_dbname "authdb" \
-  -a cloudant_context_dbname "contextdb" > /dev/null
+  -a cloudant_context_dbname "contextdb"
 
-bx wsk action update ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/receive ./channels/slack/receive/index.js -a web-export true > /dev/null
-bx wsk action update ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/post ./channels/slack/post/index.js > /dev/null
-bx wsk action update ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/multiple_post ./channels/slack/multiple_post/index.js > /dev/null
+bx wsk action update ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/receive ./channels/slack/receive/index.js -a web-export true
+bx wsk action update ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/post ./channels/slack/post/index.js
+bx wsk action update ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/multiple_post ./channels/slack/multiple_post/index.js
 
-bx wsk action update ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/send-attached-message ./test/integration/channels/slack/send-attached-message.js > /dev/null
-bx wsk action update ${PIPELINE_SEND_ATTACHED_MESSAGE} --sequence ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/send-attached-message,${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/multiple_post > /dev/null
+bx wsk action update ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/send-attached-message ./test/integration/channels/slack/send-attached-message.js
+bx wsk action update ${PIPELINE_SEND_ATTACHED_MESSAGE} --sequence ${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/send-attached-message,${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/multiple_post
 
 PIPELINE_SEND_ATTACHED_MESSAGE_POST_SEQUENCE="${PIPELINE_SEND_ATTACHED_MESSAGE}_slack/post"
-bx wsk action update ${PIPELINE_SEND_ATTACHED_MESSAGE}_postsequence --sequence ${PIPELINE_SEND_ATTACHED_MESSAGE_POST_SEQUENCE} > /dev/null
+bx wsk action update ${PIPELINE_SEND_ATTACHED_MESSAGE}_postsequence --sequence ${PIPELINE_SEND_ATTACHED_MESSAGE_POST_SEQUENCE}
 
 # send interactive click and receive a click response
 PIPELINE_SEND_ATTACHED_RESPONSE="$1-integration-slack-send-attached-response"
@@ -96,17 +96,17 @@ bx wsk package update ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack \
   -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}" \
   -a cloudant_url "${__TEST_CLOUDANT_URL}" \
   -a cloudant_auth_dbname "authdb" \
-  -a cloudant_context_dbname "contextdb" > /dev/null
+  -a cloudant_context_dbname "contextdb"
 
-bx wsk action update ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/receive ./channels/slack/receive/index.js -a web-export true > /dev/null
-bx wsk action update ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/post ./channels/slack/post/index.js > /dev/null
-bx wsk action update ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/multiple_post ./channels/slack/multiple_post/index.js > /dev/null
+bx wsk action update ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/receive ./channels/slack/receive/index.js -a web-export true
+bx wsk action update ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/post ./channels/slack/post/index.js
+bx wsk action update ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/multiple_post ./channels/slack/multiple_post/index.js
 
-bx wsk action update ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/send-attached-message-response ./test/integration/channels/slack/send-attached-message-response.js > /dev/null
-bx wsk action update ${PIPELINE_SEND_ATTACHED_RESPONSE} --sequence ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/send-attached-message-response,${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/multiple_post > /dev/null
+bx wsk action update ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/send-attached-message-response ./test/integration/channels/slack/send-attached-message-response.js
+bx wsk action update ${PIPELINE_SEND_ATTACHED_RESPONSE} --sequence ${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/send-attached-message-response,${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/multiple_post
 
 PIPELINE_SEND_ATTACHED_RESPONSE_POST_SEQUENCE="${PIPELINE_SEND_ATTACHED_RESPONSE}_slack/post"
-bx wsk action update ${PIPELINE_SEND_ATTACHED_RESPONSE}_postsequence --sequence ${PIPELINE_SEND_ATTACHED_RESPONSE_POST_SEQUENCE} > /dev/null
+bx wsk action update ${PIPELINE_SEND_ATTACHED_RESPONSE}_postsequence --sequence ${PIPELINE_SEND_ATTACHED_RESPONSE_POST_SEQUENCE}
 
 # Request and receive an interactive message requiring multipost
 PIPELINE_SEND_ATTACHED_MULTIPOST="$1-integration-slack-send-attached-multipost"
@@ -119,14 +119,14 @@ bx wsk package update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack \
   -a cloudant_auth_key "${CLOUDANT_AUTH_KEY}" \
   -a cloudant_url "${__TEST_CLOUDANT_URL}" \
   -a cloudant_auth_dbname "authdb" \
-  -a cloudant_context_dbname "contextdb" > /dev/null
+  -a cloudant_context_dbname "contextdb"
 
-bx wsk action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/receive ./channels/slack/receive/index.js -a web-export true > /dev/null
-bx wsk action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/post ./channels/slack/post/index.js > /dev/null
-bx wsk action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/multiple_post ./channels/slack/multiple_post/index.js > /dev/null
+bx wsk action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/receive ./channels/slack/receive/index.js -a web-export true
+bx wsk action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/post ./channels/slack/post/index.js
+bx wsk action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/multiple_post ./channels/slack/multiple_post/index.js
 
-bx wsk action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/send-attached-message-multipost ./test/integration/channels/slack/send-attached-message-multipost.js > /dev/null
-bx wsk action update ${PIPELINE_SEND_ATTACHED_MULTIPOST} --sequence ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/send-attached-message-multipost,${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/multiple_post > /dev/null
+bx wsk action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/send-attached-message-multipost ./test/integration/channels/slack/send-attached-message-multipost.js
+bx wsk action update ${PIPELINE_SEND_ATTACHED_MULTIPOST} --sequence ${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/send-attached-message-multipost,${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/multiple_post
 
 PIPELINE_SEND_ATTACHED_MULTIPOST_POST_SEQUENCE="${PIPELINE_SEND_ATTACHED_MULTIPOST}_slack/post"
-bx wsk action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_postsequence --sequence ${PIPELINE_SEND_ATTACHED_MULTIPOST_POST_SEQUENCE} > /dev/null
+bx wsk action update ${PIPELINE_SEND_ATTACHED_MULTIPOST}_postsequence --sequence ${PIPELINE_SEND_ATTACHED_MULTIPOST_POST_SEQUENCE}

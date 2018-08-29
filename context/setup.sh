@@ -20,7 +20,7 @@ if [ "${CLOUDANT_URL}" != "" ]; then
   done
 fi
 
-bx wsk package update ${PIPELINE_NAME}context > /dev/null
+bx wsk package update ${PIPELINE_NAME}context
 
-bx wsk action update ${PIPELINE_NAME}context/load-context load-context.js > /dev/null
-bx wsk action update ${PIPELINE_NAME}context/save-context save-context.js > /dev/null
+bx wsk action update ${PIPELINE_NAME}context/load-context load-context.js
+bx wsk action update ${PIPELINE_NAME}context/save-context save-context.js

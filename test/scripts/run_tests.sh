@@ -51,7 +51,7 @@ processCfLogin() {
   echo 'Logging into Bluemix using cf...'
   #Login to Bluemix
   if [ -n ${__TEST_BX_CF_KEY} ]; then
-    bx login -a ${__TEST_BX_API_HOST} --apikey ${__TEST_BX_CF_KEY} -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE} > /dev/null
+    bx login -a ${__TEST_BX_API_HOST} --apikey ${__TEST_BX_CF_KEY} -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE}
   else
     echo 'CF not logged in, and missing ${__TEST_BX_CF_KEY}'
     exit 1
@@ -61,12 +61,12 @@ processCfLogin() {
 ### GET BX ACCESS TOKENS FOR DEPLOY-USER
 processDeployUserTestTokens() {
   echo 'Grabbing test tokens for deploy user...'
-  bx target -o ${__TEST_DEPLOYUSER_ORG} -s ${__TEST_DEPLOYUSER_SPACE} > /dev/null
+  bx target -o ${__TEST_DEPLOYUSER_ORG} -s ${__TEST_DEPLOYUSER_SPACE}
   export __TEST_DEPLOYUSER_ACCESS_TOKEN=$(cat ~/.bluemix/.cf/config.json | jq -r .AccessToken | awk '{print $2}')
   export __TEST_DEPLOYUSER_REFRESH_TOKEN=$(cat ~/.bluemix/.cf/config.json | jq -r .RefreshToken)
 
   # revert back to main test workspace
-  bx target -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE} > /dev/null
+  bx target -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE}
 }
 
 # Switches the Cloud Functions namespace based on the current Bluemix org/space
@@ -75,7 +75,7 @@ changeWhiskKey() {
   echo 'Syncing wsk namespace with CF namespace...'
   WSK_NAMESPACE=`bx target | grep 'org:\|Org:' | awk '{print $2}'`_`bx target | grep 'space:\|Space:' | awk '{print $2}'`
 
-  WSK_CURRENT_NAMESPACE=`bx wsk namespace list | tail -n +2 | head -n 1 2> /dev/null`
+  WSK_CURRENT_NAMESPACE=`bx wsk namespace list | tail -n +2 | head -n 1 2`
   if [ "${WSK_NAMESPACE}" == "${WSK_CURRENT_NAMESPACE}" ]; then
     return
   fi
@@ -88,7 +88,7 @@ changeWhiskKey() {
   WSK_CREDENTIALS=`curl -s -X POST -H 'Content-Type: application/json' -d '{"accessToken": "'$ACCESS_TOKEN'", "refreshToken": "'$REFRESH_TOKEN'"}' https://${__OW_API_HOST}/bluemix/v2/authenticate`
   WSK_API_KEY=`echo ${WSK_CREDENTIALS} | jq -r ".namespaces[] | select(.name==\"${WSK_NAMESPACE}\") | [.uuid, .key] | join(\":\")"`
 
-  bx wsk property set --apihost ${WSK_API_HOST} --auth "${WSK_API_KEY}" --namespace ${WSK_NAMESPACE} > /dev/null
+  bx wsk property set --apihost ${WSK_API_HOST} --auth "${WSK_API_KEY}" --namespace ${WSK_NAMESPACE}
 }
 
 ### CHECK OR CREATE CLOUDANT-LITE DATABASE INSTANCE, CREATE AUTH DATABASE
@@ -97,11 +97,11 @@ createCloudantInstanceDatabases() {
   CLOUDANT_INSTANCE_NAME='conversation-connector'
   CLOUDANT_INSTANCE_KEY='conversation-connector-key'
 
-  bx cf service ${CLOUDANT_INSTANCE_NAME} > /dev/null
+  bx cf service ${CLOUDANT_INSTANCE_NAME}
   if [ "$?" != "0" ]; then
     bx cf create-service cloudantNoSQLDB Lite ${CLOUDANT_INSTANCE_NAME}
   fi
-  bx cf service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} > /dev/null
+  bx cf service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
   if [ "$?" != "0" ]; then
     bx cf create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
   fi
@@ -219,7 +219,7 @@ createWhiskArtifacts() {
       -a cloudant_auth_key "${PIPELINE_AUTH_KEY}" \
       -a cloudant_url "${CLOUDANT_URL}" \
       -a cloudant_auth_dbname "${CLOUDANT_AUTH_DBNAME}" \
-      -a cloudant_context_dbname "${CLOUDANT_CONTEXT_DBNAME}" &> /dev/null
+      -a cloudant_context_dbname "${CLOUDANT_CONTEXT_DBNAME}"
   done
 }
 
@@ -309,7 +309,7 @@ runTestSuite() {
 # $2 - database_name
 deleteCloudantDb() {
   echo "Deleting cloudant database $2"
-  curl -s -XDELETE "$1/$2" | grep -v "error" > /dev/null
+  curl -s -XDELETE "$1/$2" | grep -v "error"
 }
 
 main

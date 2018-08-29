@@ -46,13 +46,13 @@ main() {
 
 ### CHECK IF THE USER HAS INSTALLED ALL REQUIRED PROGRAMS
 checkDependencies() {
-  jq --help &> /dev/null
+  jq --help
   if [ "$?" != "0" ]; then
     echo 'jq is required to run setup. Please install jq before trying again.'
     exit 1
   fi
 
-  bx &> /dev/null
+  bx
   if [ "$?" != "0" ]; then
     echo 'bx is required to run setup. Please install bx along with the cloud-functions plugin before trying again.'
     exit 1
@@ -70,7 +70,7 @@ checkProvidersExist() {
 ### CHECK OR PROCESS BX LOGIN
 processLogin() {
   echo 'Checking for BX login credentials...'
-  bx target &> /dev/null
+  bx target
   if [ "$?" != "0" ]; then
     echo 'CF not logged in, and no CF API keys provided.'
     exit 1
@@ -99,11 +99,11 @@ createCloudantInstanceDatabases() {
   CLOUDANT_INSTANCE_NAME='conversation-connector'
   CLOUDANT_INSTANCE_KEY='conversation-connector-key'
 
-  bx cf service ${CLOUDANT_INSTANCE_NAME} > /dev/null
+  bx cf service ${CLOUDANT_INSTANCE_NAME}
   if [ "$?" != "0" ]; then
     bx cf create-service cloudantNoSQLDB Lite ${CLOUDANT_INSTANCE_NAME}
   fi
-  bx cf service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} > /dev/null
+  bx cf service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
   if [ "$?" != "0" ]; then
     bx cf create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
   fi
@@ -136,7 +136,7 @@ createPipelines() {
   PIPELINES=''
 
   if [ -z "$BUTTON_DEPLOY" ]; then
-    jq -r '.pipeline[]' ${PROVIDERS_FILE} &> /dev/null
+    jq -r '.pipeline[]' ${PROVIDERS_FILE}
     if [ "$?" != "0" ]; then
       echo 'ERROR: Providers/credentials file missing pipeline JSON key.'
       exit 1
@@ -205,7 +205,7 @@ createPipelines() {
           -a cloudant_auth_key "${PIPELINE_AUTH_KEY}" \
           -a cloudant_url "${CLOUDANT_URL}" \
           -a cloudant_auth_dbname "${CLOUDANT_AUTH_DBNAME}" \
-          -a cloudant_context_dbname "${CLOUDANT_CONTEXT_DBNAME}" &> /dev/null
+          -a cloudant_context_dbname "${CLOUDANT_CONTEXT_DBNAME}"
       done
 
       ## CREATE SEQUENCE ACTION
@@ -220,9 +220,9 @@ createPipelines() {
       # There is support for a single Conversation response to be sent in multiple posts to circumvent some channel limitations.
       # multiple_post will invoke the postsequence sequence for each part of the overall response.
       postSequence="${PIPELINE_NAME}starter-code/post-normalize,${PIPELINE_NAME}${CHANNEL}/post"
-      bx wsk action update ${PIPELINE_NAME}postsequence --sequence ${postSequence} > /dev/null
+      bx wsk action update ${PIPELINE_NAME}postsequence --sequence ${postSequence}
 
-      bx wsk action update ${PIPELINE_NAME%_} --sequence ${sequence} > /dev/null
+      bx wsk action update ${PIPELINE_NAME%_} --sequence ${sequence}
     fi
   done
   IFS=$' \t\n'
