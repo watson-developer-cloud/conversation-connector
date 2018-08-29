@@ -128,7 +128,7 @@ describe('Facebook channel integration tests', () => {
   const expectedBatchedResult = {
     failedActionInvocations: [
       {
-        errorMessage: `Recipient id: ${process.env.__TEST_FACEBOOK_RECIPIENT_ID} , Sender id: undefined -- POST https://openwhisk.ng.bluemix.net:443/api/v1/namespaces/${process.env.__OW_NAMESPACE}/actions/${pipelineName}_postsequence?blocking=true Returned HTTP 502 (Bad Gateway) --> "Recepient id not provided."`,
+        errorMessage: `Recipient id: ${process.env.__TEST_FACEBOOK_RECIPIENT_ID} , Sender id: undefined -- POST https://us-south.functions.cloud.ibm.com:443/api/v1/namespaces/${process.env.__OW_NAMESPACE}/actions/${pipelineName}_postsequence?blocking=true Returned HTTP 502 (Bad Gateway) --> "Recepient id not provided."`,
         activationId: ''
       }
     ],
