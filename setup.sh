@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-
-export WSK="bx wsk"
-export CF="bx cf"
-
 PROVIDERS_FILE='providers.json'
 
 CLOUDANT_URL=''
@@ -103,15 +99,15 @@ createCloudantInstanceDatabases() {
   CLOUDANT_INSTANCE_NAME='conversation-connector'
   CLOUDANT_INSTANCE_KEY='conversation-connector-key'
 
-  ${CF} service ${CLOUDANT_INSTANCE_NAME} > /dev/null
+  bx cf service ${CLOUDANT_INSTANCE_NAME} > /dev/null
   if [ "$?" != "0" ]; then
-    ${CF} create-service cloudantNoSQLDB Lite ${CLOUDANT_INSTANCE_NAME}
+    bx cf create-service cloudantNoSQLDB Lite ${CLOUDANT_INSTANCE_NAME}
   fi
-  ${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} > /dev/null
+  bx cf service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} > /dev/null
   if [ "$?" != "0" ]; then
-    ${CF} create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
+    bx cf create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
   fi
-  CLOUDANT_URL=`${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +4 | jq -r .url`
+  CLOUDANT_URL=`bx cf service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +4 | jq -r .url`
 
   for i in {1..10}; do
     e=`curl -s -XPUT ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME} | jq -r .error`
@@ -205,7 +201,7 @@ createPipelines() {
         resource=`echo $line | awk '{print $1}'`
         package=${resource##*/}
 
-        ${WSK} package update $package \
+        bx wsk package update $package \
           -a cloudant_auth_key "${PIPELINE_AUTH_KEY}" \
           -a cloudant_url "${CLOUDANT_URL}" \
           -a cloudant_auth_dbname "${CLOUDANT_AUTH_DBNAME}" \

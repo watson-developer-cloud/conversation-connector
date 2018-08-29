@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-export WSK="bx wsk"
-export CF="bx cf"
-
 echo "Running conversation-connector test suite."
 
 CLOUDANT_URL=''
@@ -78,7 +75,7 @@ changeWhiskKey() {
   echo 'Syncing wsk namespace with CF namespace...'
   WSK_NAMESPACE=`bx target | grep 'org:\|Org:' | awk '{print $2}'`_`bx target | grep 'space:\|Space:' | awk '{print $2}'`
 
-  WSK_CURRENT_NAMESPACE=`${WSK} namespace list | tail -n +2 | head -n 1 2> /dev/null`
+  WSK_CURRENT_NAMESPACE=`bx wsk namespace list | tail -n +2 | head -n 1 2> /dev/null`
   if [ "${WSK_NAMESPACE}" == "${WSK_CURRENT_NAMESPACE}" ]; then
     return
   fi
@@ -91,7 +88,7 @@ changeWhiskKey() {
   WSK_CREDENTIALS=`curl -s -X POST -H 'Content-Type: application/json' -d '{"accessToken": "'$ACCESS_TOKEN'", "refreshToken": "'$REFRESH_TOKEN'"}' https://${__OW_API_HOST}/bluemix/v2/authenticate`
   WSK_API_KEY=`echo ${WSK_CREDENTIALS} | jq -r ".namespaces[] | select(.name==\"${WSK_NAMESPACE}\") | [.uuid, .key] | join(\":\")"`
 
-  ${WSK} property set --apihost ${WSK_API_HOST} --auth "${WSK_API_KEY}" --namespace ${WSK_NAMESPACE} > /dev/null
+  bx wsk property set --apihost ${WSK_API_HOST} --auth "${WSK_API_KEY}" --namespace ${WSK_NAMESPACE} > /dev/null
 }
 
 ### CHECK OR CREATE CLOUDANT-LITE DATABASE INSTANCE, CREATE AUTH DATABASE
@@ -100,15 +97,15 @@ createCloudantInstanceDatabases() {
   CLOUDANT_INSTANCE_NAME='conversation-connector'
   CLOUDANT_INSTANCE_KEY='conversation-connector-key'
 
-  ${CF} service ${CLOUDANT_INSTANCE_NAME} > /dev/null
+  bx cf service ${CLOUDANT_INSTANCE_NAME} > /dev/null
   if [ "$?" != "0" ]; then
-    ${CF} create-service cloudantNoSQLDB Lite ${CLOUDANT_INSTANCE_NAME}
+    bx cf create-service cloudantNoSQLDB Lite ${CLOUDANT_INSTANCE_NAME}
   fi
-  ${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} > /dev/null
+  bx cf service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} > /dev/null
   if [ "$?" != "0" ]; then
-    ${CF} create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
+    bx cf create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
   fi
-  CLOUDANT_URL=`${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +4 | jq -r .url`
+  CLOUDANT_URL=`$bx service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +4 | jq -r .url`
 
   for i in {1..10}; do
     e=`curl -s -XPUT ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME} | jq -r .error`
@@ -218,7 +215,7 @@ createWhiskArtifacts() {
     resource=`echo $line | awk '{print $1}'`
     package=${resource##*/}
 
-    ${WSK} package update $package \
+    bx wsk package update $package \
       -a cloudant_auth_key "${PIPELINE_AUTH_KEY}" \
       -a cloudant_url "${CLOUDANT_URL}" \
       -a cloudant_auth_dbname "${CLOUDANT_AUTH_DBNAME}" \
@@ -256,8 +253,8 @@ setupTestArtifacts() {
   fi
 
   # Export the Cloud Functions credentials for tests
-  export __OW_API_KEY=`${WSK} property get --auth | tr "\t" "\n" | tail -n 1`
-  export __OW_NAMESPACE=`${WSK} namespace list | tail -n +2 | head -n 1`
+  export __OW_API_KEY=`bx wsk property get --auth | tr "\t" "\n" | tail -n 1`
+  export __OW_NAMESPACE=`bx wsk namespace list | tail -n +2 | head -n 1`
 }
 
 destroyTestArtifacts() {
