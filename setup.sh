@@ -56,12 +56,6 @@ checkDependencies() {
     exit 1
   fi
 
-  ${CF} &> /dev/null
-  if [ "$?" != "0" ]; then
-    echo 'cf is required to run setup. Please install cf before trying again.'
-    exit 1
-  fi
-
   bx &> /dev/null
   if [ "$?" != "0" ]; then
     echo 'bx is required to run setup. Please install bx along with the cloud-functions plugin before trying again.'
@@ -117,7 +111,7 @@ createCloudantInstanceDatabases() {
   if [ "$?" != "0" ]; then
     ${CF} create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
   fi
-  CLOUDANT_URL=`${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +2 | jq -r .url`
+  CLOUDANT_URL=`${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +4 | jq -r .url`
 
   for i in {1..10}; do
     e=`curl -s -XPUT ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME} | jq -r .error`
