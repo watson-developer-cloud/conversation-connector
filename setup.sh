@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 export WSK="bx wsk"
-export CF=${CF-cf}
+export CF="bx cf"
 
 PROVIDERS_FILE='providers.json'
 
@@ -224,9 +224,9 @@ createPipelines() {
       # There is support for a single Conversation response to be sent in multiple posts to circumvent some channel limitations.
       # multiple_post will invoke the postsequence sequence for each part of the overall response.
       postSequence="${PIPELINE_NAME}starter-code/post-normalize,${PIPELINE_NAME}${CHANNEL}/post"
-      ${WSK} action update ${PIPELINE_NAME}postsequence --sequence ${postSequence} > /dev/null
+      bx wsk action update ${PIPELINE_NAME}postsequence --sequence ${postSequence} > /dev/null
 
-      ${WSK} action update ${PIPELINE_NAME%_} --sequence ${sequence} > /dev/null
+      bx wsk action update ${PIPELINE_NAME%_} --sequence ${sequence} > /dev/null
     fi
   done
   IFS=$' \t\n'
