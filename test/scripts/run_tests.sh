@@ -105,7 +105,7 @@ createCloudantInstanceDatabases() {
   if [ "$?" != "0" ]; then
     bx cf create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
   fi
-  CLOUDANT_URL=`bx service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +4 | jq -r .url`
+  CLOUDANT_URL=`bx cf service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +4 | jq -r .url`
 
   for i in {1..10}; do
     e=`curl -s -XPUT ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME} | jq -r .error`
