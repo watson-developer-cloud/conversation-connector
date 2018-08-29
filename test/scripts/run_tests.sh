@@ -54,7 +54,7 @@ processCfLogin() {
   echo 'Logging into Bluemix using cf...'
   #Login to Bluemix
   if [ -n ${__TEST_BX_CF_KEY} ]; then
-    bx login -a ${__TEST_BX_API_HOST} -u apikey -p ${__TEST_BX_CF_KEY} -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE} > /dev/null
+    bx login -a ${__TEST_BX_API_HOST} --apikey ${__TEST_BX_CF_KEY} -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE} > /dev/null
   else
     echo 'CF not logged in, and missing ${__TEST_BX_CF_KEY}'
     exit 1
