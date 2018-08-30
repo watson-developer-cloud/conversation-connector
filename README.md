@@ -103,7 +103,7 @@ If you are having trouble with the deployment process or with a deployed bot, th
 
 ### Deployment troubleshooting
 
-Errors may occur during the deployment process (either UI-based or manual) for various reasons. The following are some of the most common:
+Errors may occur during the deployment process for various reasons. The following are some of the most common:
 
 - Unsupported IBM Cloud regions
 
@@ -125,9 +125,8 @@ During the deployment process, you specify credentials and keys used to access t
 
 If you are running the deployment manually using command-line tools, make sure you have installed the most current versions of the prerequisite software:
 
-- The [Cloud Foundry command-line interface](https://docs.cloudfoundry.org/cf-cli/install-go-cli.html)
 - The [Node.js runtime](https://nodejs.org/), including the npm package manager
-- The IBM Cloud Functions [wsk tool](https://console.ng.bluemix.net/openwhisk/learn/cli) (scroll down to **Looking for the wsk CLI?**)
+- The IBM [Cloud Functions CLI](https://console.ng.bluemix.net/openwhisk/learn/cli)
 
 ### Dependency Troubleshooting
 

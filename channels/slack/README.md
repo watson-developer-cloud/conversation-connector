@@ -16,26 +16,26 @@ You can use either of two methods to deploy your workspace to a Slack app:
 
 1.  If you have not done so already, install the following prerequisite software:
 
-    - The [Cloud Foundry command-line interface](https://docs.cloudfoundry.org/cf-cli/install-go-cli.html)
+    - The IBM [Cloud Functions CLI](https://console.ng.bluemix.net/openwhisk/learn/cli)
     - The [Node.js runtime](https://nodejs.org/), including the npm package manager
 
 1.  Log in using the following command:
 
-    `cf login -a https://api.ng.bluemix.net/`
+    `bx login`
 
-    Select the IBM Cloud organization and space where you want to deploy.
+    Select the IBM Cloud organization where you want to deploy.
 
     **Note:** Currently, only the US South region is supported.
+
+1.  Target your desired space by running `bx target --cf`
 
 1.  Go to https://console.ng.bluemix.net/openwhisk/learn/cli and then do the following:
 
     1.  Click the account information in the upper right corner, and confirm that the organization and space shown are correct.
 
-    1.  Scroll down and click on **Looking for the wsk CLI?**?
+    1.  If you have not done so already, follow the instructions to install the CLI.
 
-    1.  If you have not done so already, follow the instructions to install the wsk CLI.
-
-    1.  Copy the command in step 2 ("Target a Region and Namespace"), and run it in your CLI.
+    1.  Copy the command in step 3 ("Log in to IBM Cloud"), and run it in your CLI.
 
 1.  Go to [https://slack.com](https://slack.com) and make sure you are signed in to the Slack workspace where you want to deploy your bot.
 
