@@ -23,10 +23,10 @@ let Cloudant;
 
 try {
   // For local usage and future if Cloud Functions updates
-  Cloudant = require('@cloudant/cloudant');
+  Cloudant = require('@cloudant/cloudant'); // eslint-disable-line global-require
 } catch (error) {
   // For Cloud Functions
-  Cloudant = require('cloudant');
+  Cloudant = require('cloudant'); // eslint-disable-line global-require, import/no-unresolved
 }
 
 const CLOUDANT_URL = 'cloudant_url';
