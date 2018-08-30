@@ -23,10 +23,11 @@
     "nock": "^9.0.13",
     "prettier": "^0.22.0",
     "proxyquire": "^1.8.0",
-    "sinon": "^3.2.1"
+    "sinon": "^3.2.1",
+    "underscore": "^1.8.3"
   },
   "dependencies": {
-    "cloudant": "^1.8.0",
+    "@cloudant/cloudant": "^1.8.0",
     "merge": "^1.2.0",
     "object.omit": "^2.0.1",
     "object.pick": "^1.2.0",

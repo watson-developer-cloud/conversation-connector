@@ -28,6 +28,8 @@ const buttonMessageInputText = 'Buy me a shirt please.';
 const buttonMessageResponse = 'What shirt size would you like?';
 const buttonMessageUpdate = 'Sorry, the store is out of medium shirts.';
 
+const msgShowMultimedia = 'Display multimedia response';
+
 const envParams = process.env;
 
 const cloudantUrl = process.env.__TEST_CLOUDANT_URL;
@@ -43,6 +45,7 @@ describe('End-to-End tests: Slack prerequisites', () => {
 
   const requiredActions = [
     `${pipelineName}_slack/post`,
+    `${pipelineName}_slack/multiple_post`,
     `${pipelineName}_slack/receive`,
     `${pipelineName}_slack/deploy`,
     `${pipelineName}_starter-code/normalize-conversation-for-slack`,
@@ -70,6 +73,7 @@ describe('End-to-End tests: with Slack package', () => {
   let params;
   let expectedResult;
   let expectedPipelineResult;
+  let expectedMultiPostResult;
   let attachmentData;
   let attachmentPayload;
 
@@ -139,12 +143,91 @@ describe('End-to-End tests: with Slack package', () => {
       auth
     };
 
+    expectedMultiPostResult = {
+      postResponses: {
+        successfulPosts: [
+          {
+            successResponse: {
+              channel: 'DXXXXXXXX',
+              ts: 'XXXXXXXXX.XXXXXX',
+              text: 'Here is your multi-modal response.',
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
+              as_user: 'true'
+            },
+            activationId: ''
+          },
+          {
+            successResponse: {
+              channel: 'DXXXXXXXX',
+              ts: 'XXXXXXXXX.XXXXXX',
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
+              as_user: 'true',
+              attachments: [
+                {
+                  title: 'Image title',
+                  pretext: 'Image description',
+                  image_url: 'https://s.w-x.co/240x180_twc_default.png'
+                }
+              ]
+            },
+            activationId: ''
+          },
+          {
+            successResponse: {
+              channel: 'DXXXXXXXX',
+              ts: 'XXXXXXXXX.XXXXXX',
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
+              as_user: 'true',
+              attachments: [
+                {
+                  text: 'Choose your location',
+                  callback_id: 'Choose your location',
+                  actions: [
+                    {
+                      name: 'Location 1',
+                      type: 'button',
+                      text: 'Location 1',
+                      value: 'Location 1'
+                    },
+                    {
+                      name: 'Location 2',
+                      type: 'button',
+                      text: 'Location 2',
+                      value: 'Location 2'
+                    },
+                    {
+                      name: 'Location 3',
+                      type: 'button',
+                      text: 'Location 3',
+                      value: 'Location 3'
+                    }
+                  ]
+                }
+              ]
+            },
+            activationId: ''
+          }
+        ],
+        failedPosts: []
+      }
+    };
+
     expectedPipelineResult = {
-      channel: envParams.__TEST_SLACK_CHANNEL,
-      text: carDashboardReplyWelcome,
-      as_user: 'true',
-      token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
-      ts: 'XXXXXXXXX.XXXXXX'
+      postResponses: {
+        successfulPosts: [
+          {
+            successResponse: {
+              channel: envParams.__TEST_SLACK_CHANNEL,
+              text: carDashboardReplyWelcome,
+              as_user: 'true',
+              token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
+              ts: 'XXXXXXXXX.XXXXXX'
+            },
+            activationId: ''
+          }
+        ],
+        failedPosts: []
+      }
     };
 
     attachmentData = [
@@ -239,7 +322,7 @@ describe('End-to-End tests: with Slack package', () => {
   });
 
   it('validate when conversation is text input to text output', () => {
-    const deploymentName = 'testflex-endtoend-slack-nocontext';
+    const deploymentName = `${pipelineName}-endtoend-slack-nocontext`;
 
     return clearContextDb(cloudantUrl, 'contextdb')
       .then(() => {
@@ -286,6 +369,11 @@ describe('End-to-End tests: with Slack package', () => {
         return response;
       })
       .then(res => {
+        // Update the expectedPipelineResult's activationId, since this is dynamically generated
+        // we can't predict it
+        expectedPipelineResult.postResponses.successfulPosts[
+          0
+        ].activationId = res.postResponses.successfulPosts[0].activationId;
         assert.deepEqual(res, expectedPipelineResult);
       })
       .catch(error => {
@@ -296,7 +384,7 @@ describe('End-to-End tests: with Slack package', () => {
     .retries(10);
 
   it('validate context pipeline works for a single Conversation turn', () => {
-    const deploymentName = 'testflex-endtoend-slack-withcontext';
+    const deploymentName = `${pipelineName}-endtoend-slack-withcontext`;
 
     return clearContextDb(cloudantUrl, 'contextdb')
       .then(() => {
@@ -343,6 +431,11 @@ describe('End-to-End tests: with Slack package', () => {
         return response;
       })
       .then(res => {
+        // Update the expectedPipelineResult's activationId, since this is dynamically generated
+        // we can't predict it
+        expectedPipelineResult.postResponses.successfulPosts[
+          0
+        ].activationId = res.postResponses.successfulPosts[0].activationId;
         assert.deepEqual(res, expectedPipelineResult);
       })
       .catch(error => {
@@ -353,7 +446,7 @@ describe('End-to-End tests: with Slack package', () => {
     .retries(10);
 
   it('validate context pipeline works for multiple Conversation turns', () => {
-    const deploymentName = 'testflex-endtoend-slack-withcontext';
+    const deploymentName = `${pipelineName}-endtoend-slack-withcontext`;
 
     return (
       clearContextDb(cloudantUrl, 'contextdb')
@@ -402,6 +495,11 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -449,6 +547,11 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -460,7 +563,7 @@ describe('End-to-End tests: with Slack package', () => {
     .retries(10);
 
   it('validate when conversation is text to attached message', () => {
-    const deploymentName = 'testflex-endtoend-slack-withcontext';
+    const deploymentName = `${pipelineName}-endtoend-slack-withcontext`;
 
     return (
       clearContextDb(cloudantUrl, 'contextdb')
@@ -514,6 +617,11 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -567,9 +675,20 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
-          expectedPipelineResult.text = buttonMessageResponse;
-          expectedPipelineResult.attachments = attachmentData;
-          delete expectedPipelineResult.ts;
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].successResponse.text = buttonMessageResponse;
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].successResponse.attachments = attachmentData;
+          delete expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].successResponse.ts;
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -581,7 +700,7 @@ describe('End-to-End tests: with Slack package', () => {
     .retries(10);
 
   it('validate when conversation is attached message to message update', () => {
-    const deploymentName = 'testflex-endtoend-slack-withcontext';
+    const deploymentName = `${pipelineName}-endtoend-slack-withcontext`;
 
     return (
       clearContextDb(cloudantUrl, 'contextdb')
@@ -635,6 +754,11 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -688,9 +812,20 @@ describe('End-to-End tests: with Slack package', () => {
           return response;
         })
         .then(res => {
-          expectedPipelineResult.text = buttonMessageResponse;
-          expectedPipelineResult.attachments = attachmentData;
-          delete expectedPipelineResult.ts;
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].successResponse.text = buttonMessageResponse;
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].successResponse.attachments = attachmentData;
+          delete expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].successResponse.ts;
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -742,16 +877,28 @@ describe('End-to-End tests: with Slack package', () => {
         })
         .then(res => {
           expectedPipelineResult = {
-            channel: envParams.__TEST_SLACK_CHANNEL,
-            text: buttonMessageResponse,
-            as_user: 'true',
-            token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
-            attachments: [
-              {
-                text: buttonMessageUpdate
-              }
-            ]
+            postResponses: {
+              successfulPosts: [
+                {
+                  successResponse: {
+                    channel: envParams.__TEST_SLACK_CHANNEL,
+                    text: buttonMessageUpdate,
+                    as_user: 'true',
+                    token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
+                  },
+                  activationId: ''
+                }
+              ],
+              failedPosts: []
+            }
           };
+
+          // Update the expectedPipelineResult's activationId, since this is dynamically generated
+          // we can't predict it
+          expectedPipelineResult.postResponses.successfulPosts[
+            0
+          ].activationId = res.postResponses.successfulPosts[0].activationId;
+
           assert.deepEqual(res, expectedPipelineResult);
         })
         .catch(error => {
@@ -759,6 +906,148 @@ describe('End-to-End tests: with Slack package', () => {
         })
     );
   })
+    .timeout(30000)
+    .retries(10);
+
+  it(
+    'validate when conversation is text input to generic multi-modal output - with multipost',
+    () => {
+      const deploymentName = `${pipelineName}-endtoend-slack-withcontext`;
+
+      return (
+        clearContextDb(cloudantUrl, 'contextdb')
+          .then(() => {
+            // cloudant clear context calls are synchronous,
+            //  so a wait period is added to allow for the context database to be cleared
+            return sleep(SLEEP_TIME);
+          })
+          // first conversation turn
+          .then(() => {
+            return ow.actions.invoke({
+              name: `${deploymentName}_slack/receive`,
+              blocking: true,
+              result: true,
+              params
+            });
+          })
+          .then(result => {
+            expectedResult.slack.event.text = params.event.text;
+            // assert slack/receive result is correct
+            const filteredResult = result;
+            delete filteredResult.auth._id;
+            delete filteredResult.auth._rev;
+            delete filteredResult.auth._revs_info;
+            assert.deepEqual(filteredResult, expectedResult);
+          })
+          .then(() => {
+            // cloudant clear context calls are synchronous,
+            //  so a wait period is added to allow for the context database to be cleared
+            return sleep(SLEEP_TIME);
+          })
+          .then(() => {
+            // assert pipeline result is correct
+            return ow.activations.list();
+          })
+          .then(activations => {
+            for (let i = 0; i < activations.length; i += 1) {
+              if (activations[i].name === deploymentName) {
+                return activations[i].activationId;
+              }
+            }
+            throw new Error('No activations found.');
+          })
+          .then(activationId => {
+            return ow.activations.get(activationId);
+          })
+          .then(res => {
+            const response = res.response.result;
+            if (response.error) {
+              throw new Error(JSON.stringify(response.error));
+            }
+            return response;
+          })
+          .then(res => {
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated
+            // we can't predict it
+            expectedPipelineResult.postResponses.successfulPosts[
+              0
+            ].activationId = res.postResponses.successfulPosts[0].activationId;
+            assert.deepEqual(res, expectedPipelineResult);
+          })
+          .catch(error => {
+            assert(false, error);
+          })
+          // second conversation turn
+          .then(() => {
+            params.event.text = msgShowMultimedia;
+
+            expectedResult.slack.event.text = params.event.text;
+
+            return ow.actions.invoke({
+              name: `${deploymentName}_slack/receive`,
+              blocking: true,
+              result: true,
+              params
+            });
+          })
+          .then(result => {
+            // assert slack/receive is correct
+            const filteredResult = result;
+            delete filteredResult.auth._id;
+            delete filteredResult.auth._rev;
+            delete filteredResult.auth._revs_info;
+            assert.deepEqual(filteredResult, expectedResult);
+          })
+          .then(() => {
+            // cloudant clear context calls are synchronous,
+            //  so a wait period is added to allow for the context database to be cleared
+            return sleep(SLEEP_TIME);
+          })
+          .then(() => {
+            // assert pipeline result is correct
+            return ow.activations.list();
+          })
+          .then(activations => {
+            for (let i = 0; i < activations.length; i += 1) {
+              if (activations[i].name === deploymentName) {
+                return activations[i].activationId;
+              }
+            }
+            throw new Error('No activations found.');
+          })
+          .then(activationId => {
+            return ow.activations.get(activationId);
+          })
+          .then(res => {
+            const response = res.response.result;
+            if (response.error) {
+              throw new Error(JSON.stringify(response.error));
+            }
+            return response;
+          })
+          .then(res => {
+            // Update the expectedPipelineResult's activationId, since this is dynamically generated
+            // we can't predict it
+            for (
+              let i = 0;
+              i < expectedMultiPostResult.postResponses.successfulPosts.length;
+              i += 1
+            ) {
+              expectedMultiPostResult.postResponses.successfulPosts[
+                i
+              ].activationId = res.postResponses.successfulPosts[
+                i
+              ].activationId;
+            }
+
+            assert.deepEqual(res, expectedMultiPostResult);
+          })
+          .catch(error => {
+            assert(false, error);
+          })
+      );
+    }
+  )
     .timeout(30000)
     .retries(10);
 

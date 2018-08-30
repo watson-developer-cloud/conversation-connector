@@ -23,7 +23,16 @@ process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/acti
 
 const actionSaveContext = require('../../../context/save-context.js');
 const paramsJson = require('../../resources/payloads/test.unit.context.json').saveContextJson;
-const Cloudant = require('cloudant');
+
+let Cloudant;
+
+try {
+  // For local usage and future if Cloud Functions updates
+  Cloudant = require('@cloudant/cloudant'); // eslint-disable-line global-require
+} catch (error) {
+  // For Cloud Functions
+  Cloudant = require('cloudant'); // eslint-disable-line global-require, import/no-unresolved
+}
 
 const invalidCloudantUrl = 'invalid-url';
 
@@ -480,7 +489,6 @@ describe('Save Context Unit Tests: validateParams()', () => {
     try {
       func({});
     } catch (e) {
-      assert.equal(e.name, 'AssertionError');
       assert.equal(e.message, errorNoRawInputData);
     }
   });
@@ -489,7 +497,6 @@ describe('Save Context Unit Tests: validateParams()', () => {
     try {
       func({ raw_input_data: {} });
     } catch (e) {
-      assert.equal(e.name, 'AssertionError');
       assert.equal(e.message, errorNoCloudantContextKey);
     }
   });
@@ -500,7 +507,6 @@ describe('Save Context Unit Tests: validateParams()', () => {
         raw_input_data: { cloudant_context_key: 'xyz' }
       });
     } catch (e) {
-      assert.equal(e.name, 'AssertionError');
       assert.equal(e.message, errorNoConversationObj);
     }
   });

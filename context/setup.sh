@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-export WSK=${WSK-wsk}
-
 PIPELINE_NAME=$1
 CLOUDANT_URL=$2
 CLOUDANT_CONTEXT_DBNAME=$3
@@ -22,7 +20,7 @@ if [ "${CLOUDANT_URL}" != "" ]; then
   done
 fi
 
-${WSK} package update ${PIPELINE_NAME}context > /dev/null
+bx wsk package update ${PIPELINE_NAME}context
 
-${WSK} action update ${PIPELINE_NAME}context/load-context load-context.js > /dev/null
-${WSK} action update ${PIPELINE_NAME}context/save-context save-context.js > /dev/null
+bx wsk action update ${PIPELINE_NAME}context/load-context load-context.js
+bx wsk action update ${PIPELINE_NAME}context/save-context save-context.js

@@ -19,6 +19,9 @@
 const assert = require('assert');
 const crypto = require('crypto');
 const openwhisk = require('openwhisk');
+const _ = require('underscore');
+
+const apihost = 'openwhisk.ng.bluemix.net';
 
 /**
  * Deploy End-to-End tests with Slack.
@@ -80,6 +83,29 @@ describe('End-to-End tests: Slack Deploy UI', () => {
     const authUrl = `/oauth/authorize?client_id=${params.state.slack.client_id}&scope=bot+chat:write:bot&redirect_uri=${redirectUrl}&state=${state}`;
     const redirAuthUrl = `https://slack.com/signin?redir=${encodeURIComponent(authUrl)}`;
 
+    const expectedPostSequenceActions = [
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/post-normalize`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_slack/post`
+    ];
+
+    const expectedMainSequenceActions = [
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/pre-normalize`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/normalize-slack-for-conversation`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_context/load-context`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/pre-conversation`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_conversation/call-conversation`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/post-conversation`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_context/save-context`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_starter-code/normalize-conversation-for-slack`,
+      `/${process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE}/${deploymentName}_slack/multiple_post`
+    ];
+
+    const supplierWsk = openwhisk({
+      api_key: process.env.__TEST_DEPLOYUSER_WSK_API_KEY,
+      namespace: process.env.__TEST_DEPLOYUSER_WSK_NAMESPACE,
+      apihost
+    });
+
     return ow.actions
       .invoke({
         name: actionCheckDeploy,
@@ -115,6 +141,27 @@ describe('End-to-End tests: Slack Deploy UI', () => {
         expectedResult.authorize_url = redirAuthUrl;
 
         assert.deepEqual(result, expectedResult);
+      })
+      .then(() => {
+        return validateSequenceCreation(deploymentName, supplierWsk);
+      })
+      .then(action => {
+        assert(
+          _.isEqual(action.exec.components, expectedMainSequenceActions),
+          'main sequence does not contain expected actions.'
+        );
+      })
+      .then(() => {
+        return validateSequenceCreation(
+          `${deploymentName}_postsequence`,
+          supplierWsk
+        );
+      })
+      .then(action => {
+        assert(
+          _.isEqual(action.exec.components, expectedPostSequenceActions),
+          'post sequence does not contain expected actions.'
+        );
       })
       .catch(error => {
         assert(false, error);
@@ -265,5 +312,9 @@ describe('End-to-End tests: Slack Deploy UI', () => {
       .createHmac('sha256', hmacKey)
       .update('authorize')
       .digest('hex');
+  }
+
+  function validateSequenceCreation(pipelineName, supplierWsk) {
+    return supplierWsk.actions.get(pipelineName);
   }
 });

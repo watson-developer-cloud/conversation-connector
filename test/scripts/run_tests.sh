@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-export WSK=${WSK-wsk}
-export CF=${CF-cf}
-
 echo "Running conversation-connector test suite."
 
 CLOUDANT_URL=''
@@ -54,7 +51,7 @@ processCfLogin() {
   echo 'Logging into Bluemix using cf...'
   #Login to Bluemix
   if [ -n ${__TEST_BX_CF_KEY} ]; then
-    ${CF} login -a ${__TEST_BX_API_HOST} -u apikey -p ${__TEST_BX_CF_KEY} -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE} > /dev/null
+    bx login -a ${__TEST_BX_API_HOST} --apikey ${__TEST_BX_CF_KEY} -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE}
   else
     echo 'CF not logged in, and missing ${__TEST_BX_CF_KEY}'
     exit 1
@@ -64,34 +61,34 @@ processCfLogin() {
 ### GET BX ACCESS TOKENS FOR DEPLOY-USER
 processDeployUserTestTokens() {
   echo 'Grabbing test tokens for deploy user...'
-  ${CF} target -o ${__TEST_DEPLOYUSER_ORG} -s ${__TEST_DEPLOYUSER_SPACE} > /dev/null
-  export __TEST_DEPLOYUSER_ACCESS_TOKEN=$(cat ~/.cf/config.json | jq -r .AccessToken | awk '{print $2}')
-  export __TEST_DEPLOYUSER_REFRESH_TOKEN=$(cat ~/.cf/config.json | jq -r .RefreshToken)
+  bx target -o ${__TEST_DEPLOYUSER_ORG} -s ${__TEST_DEPLOYUSER_SPACE}
+  export __TEST_DEPLOYUSER_ACCESS_TOKEN=$(cat ~/.bluemix/.cf/config.json | jq -r .AccessToken | awk '{print $2}')
+  export __TEST_DEPLOYUSER_REFRESH_TOKEN=$(cat ~/.bluemix/.cf/config.json | jq -r .RefreshToken)
 
   # revert back to main test workspace
-  ${CF} target -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE} > /dev/null
+  bx target -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE}
 }
 
 # Switches the Cloud Functions namespace based on the current Bluemix org/space
 # where user has logged in.
 changeWhiskKey() {
   echo 'Syncing wsk namespace with CF namespace...'
-  WSK_NAMESPACE=`${CF} target | grep 'org:\|Org:' | awk '{print $2}'`_`${CF} target | grep 'space:\|Space:' | awk '{print $2}'`
+  WSK_NAMESPACE=`bx target | grep 'org:\|Org:' | awk '{print $2}'`_`bx target | grep 'space:\|Space:' | awk '{print $2}'`
 
-  WSK_CURRENT_NAMESPACE=`${WSK} namespace list | tail -n +2 | head -n 1 2> /dev/null`
+  WSK_CURRENT_NAMESPACE=`bx wsk namespace list | tail -n +2 | head -n 1`
   if [ "${WSK_NAMESPACE}" == "${WSK_CURRENT_NAMESPACE}" ]; then
     return
   fi
-  TARGET=`${CF} target | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
+  TARGET=`bx target | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
   WSK_API_HOST="https://openwhisk.${TARGET#*.}"
 
-  ACCESS_TOKEN=`cat ~/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`
-  REFRESH_TOKEN=`cat ~/.cf/config.json | jq -r .RefreshToken`
+  ACCESS_TOKEN=`cat ~/.bluemix/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`
+  REFRESH_TOKEN=`cat ~/.bluemix/.cf/config.json | jq -r .RefreshToken`
 
   WSK_CREDENTIALS=`curl -s -X POST -H 'Content-Type: application/json' -d '{"accessToken": "'$ACCESS_TOKEN'", "refreshToken": "'$REFRESH_TOKEN'"}' https://${__OW_API_HOST}/bluemix/v2/authenticate`
   WSK_API_KEY=`echo ${WSK_CREDENTIALS} | jq -r ".namespaces[] | select(.name==\"${WSK_NAMESPACE}\") | [.uuid, .key] | join(\":\")"`
 
-  ${WSK} property set --apihost ${WSK_API_HOST} --auth "${WSK_API_KEY}" --namespace ${WSK_NAMESPACE} > /dev/null
+  bx wsk property set --apihost ${WSK_API_HOST} --auth "${WSK_API_KEY}" --namespace ${WSK_NAMESPACE}
 }
 
 ### CHECK OR CREATE CLOUDANT-LITE DATABASE INSTANCE, CREATE AUTH DATABASE
@@ -100,15 +97,15 @@ createCloudantInstanceDatabases() {
   CLOUDANT_INSTANCE_NAME='conversation-connector'
   CLOUDANT_INSTANCE_KEY='conversation-connector-key'
 
-  ${CF} service ${CLOUDANT_INSTANCE_NAME} > /dev/null
+  bx cf service ${CLOUDANT_INSTANCE_NAME}
   if [ "$?" != "0" ]; then
-    ${CF} create-service cloudantNoSQLDB Lite ${CLOUDANT_INSTANCE_NAME}
+    bx cf create-service cloudantNoSQLDB Lite ${CLOUDANT_INSTANCE_NAME}
   fi
-  ${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} > /dev/null
+  bx cf service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
   if [ "$?" != "0" ]; then
-    ${CF} create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
+    bx cf create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
   fi
-  CLOUDANT_URL=`${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +2 | jq -r .url`
+  CLOUDANT_URL=`bx cf service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +4 | jq -r .url`
 
   for i in {1..10}; do
     e=`curl -s -XPUT ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME} | jq -r .error`
@@ -172,7 +169,7 @@ createWhiskArtifacts() {
   echo 'Creating Whisk packages and actions...'
 
   # Generate the pipeline auth key
-  PIPELINE_AUTH_KEY=`uuidgen`
+  PIPELINE_AUTH_KEY=`node -e "{x=require('uuid'); console.log(x.v1())}"`
 
   ## UPDATE ALL RELEVANT RESOURCES
   cd starter-code; ./setup.sh "${__TEST_PIPELINE_NAME}_"; cd ..
@@ -213,16 +210,16 @@ createWhiskArtifacts() {
   echo "Your Cloudant Auth DB URL is: ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME}/${PIPELINE_AUTH_KEY}"
 
   ## INJECT ANNOTATIONS INTO ALL PACKAGES
-  for line in `wsk package list | grep "/${__TEST_PIPELINE_NAME}_"`; do
+  for line in `bx wsk package list | grep "/${__TEST_PIPELINE_NAME}_"`; do
     # this creates issues if the package name contains spaces
     resource=`echo $line | awk '{print $1}'`
     package=${resource##*/}
 
-    ${WSK} package update $package \
+    bx wsk package update $package \
       -a cloudant_auth_key "${PIPELINE_AUTH_KEY}" \
       -a cloudant_url "${CLOUDANT_URL}" \
       -a cloudant_auth_dbname "${CLOUDANT_AUTH_DBNAME}" \
-      -a cloudant_context_dbname "${CLOUDANT_CONTEXT_DBNAME}" &> /dev/null
+      -a cloudant_context_dbname "${CLOUDANT_CONTEXT_DBNAME}"
   done
 }
 
@@ -256,8 +253,8 @@ setupTestArtifacts() {
   fi
 
   # Export the Cloud Functions credentials for tests
-  export __OW_API_KEY=`${WSK} property get --auth | tr "\t" "\n" | tail -n 1`
-  export __OW_NAMESPACE=`${WSK} namespace list | tail -n +2 | head -n 1`
+  export __OW_API_KEY=`bx wsk property get --auth | tr "\t" "\n" | tail -n 1`
+  export __OW_NAMESPACE=`bx wsk namespace list | tail -n +2 | head -n 1`
 }
 
 destroyTestArtifacts() {
@@ -302,7 +299,7 @@ runTestSuite() {
   echo "Running tests: $1"
 
   # Run tests with coverage
-  istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive $1 -s 5000 -t 20000 -R spec
+  ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive $1 -s 5000 -t 20000 -R spec
 
   RETCODE=$?
 }
@@ -312,7 +309,7 @@ runTestSuite() {
 # $2 - database_name
 deleteCloudantDb() {
   echo "Deleting cloudant database $2"
-  curl -s -XDELETE "$1/$2" | grep -v "error" > /dev/null
+  curl -s -XDELETE "$1/$2" | grep -v "error"
 }
 
 main

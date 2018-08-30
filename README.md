@@ -15,9 +15,9 @@ The Conversation connector consists of a set of Node.js functions deployed as Cl
 
 This diagram illustrates the default configuration of a Conversation connector deployment.
 
-![Default Pipeline Architecture](readme_images/connector_pipeline.png)
+![Default Pipeline Architecture](readme_images/conv-connector-arch-with-multipost.jpg)
 
-The most basic function of the pipeline is to transfer text-based messages from a channel user to the Conversation workspace and then back again. This basic function is implemented by the following core actions:
+The most basic function of the pipeline is to transfer messages from a channel user to the Conversation workspace and then back again. This basic function is implemented by the following core actions:
 
 - **`receive`**: Receives user input from the channel app.
 - **`normalize-<channel>-for-conversation`**: Converts the user input to the Conversation service format.
@@ -42,93 +42,10 @@ The following list provides a detailed description of all of the actions that ma
 - **`call-conversation`** uses the Conversation Node.js SDK to send the message to the Conversation workspace and receive the Conversation response.
 - **`post-conversation`** performs any custom processing of the Conversation response JSON. This is an opportunity to modify the received context before it is saved in the database. By default, this action is empty.
 - **`save-context`** saves the Conversation context in the Cloudant `contextdb` database.
-- **`normalize-conversation-for-<channel>`** converts the JSON response from the Conversation format to the format expected by the channel. This includes extracting the Conversation response text from the `output.text` field of the Conversation JSON, and storing it in the appropriate location in the channel JSON (`message.text` for Facebook Messenger or `text` for Slack).
+- **`normalize-conversation-for-<channel>`** converts the JSON response from the Conversation format to the format expected by the channel. This includes extracting the Conversation response, in text and/or multimedia, and storing it in the appropriate location in the channel JSON. Facebook Messenger and Slack expect different payloads so there's a need to translate the Conversation response to channel-specific format.
+- **`multiple_post`** splits an interactive multimedia response into multiple responses, as needed. This is necessary because certain response types cannot be combined in a single message. If the output from `normalize-conversation-for-<channel>` contains multiple media types, it is split into separate messages and then sent to `post-normalization` in series.
 - **`post-normalization`** performs any final processing of the channel JSON before it is posted to the channel.
 - **`post`** posts the output to the channel app.
-
-## Interactive messages
-
-In addition to basic text responses, both Facebook Messenger and Slack support responses that include interactive controls such as buttons and menus. The connector pipeline provides basic passthrough support for any channel-specific JSON, which you can use to implement interactive responses:
-
-1.  If you are using Slack, make sure you have enabled the interactive message support. For more information, see the Slack deployment [README](channels/slack/README.md#interactive-messages).
-
-1.  In the Conversation tool, edit the dialog node that you want to return an interactive response. Insert the channel-specific JSON into the `output.<channel>` field.
-
-For example, for Slack, you might use the following JSON to display buttons for selecting a T-shirt size:
-
-```json
-{
-  "output": {
-    "text": {
-      "values": [
-        "What shirt size would you like?"
-      ],
-      "selection_policy": "sequential"
-    },
-    "slack": {
-      "text": "What shirt size would you like?",
-      "attachments": [
-        {
-          "actions": [
-            {
-              "name": "shirt_size_small",
-              "text": "Small",
-              "type": "button",
-              "value": "small"
-            },
-            {
-              "name": "shirt_size_medium",
-              "text": "Medium",
-              "type": "button",
-              "value": "medium"
-            },
-            {
-              "name": "shirt_size_large",
-              "text": "Large",
-              "type": "button",
-              "value": "large"
-            }
-          ],
-          "fallback": "Sorry! We cannot support buttons at the moment. Please type in: small, medium, or large.",
-          "callback_id": "shirt_size"
-        }
-      ]
-    }
-  }
-}
-```
-The connector will include this data in the `attachment` property of the Slack JSON, and Slack will show the user the buttons they can click on in the client. (For more information, see Slack's [message attachment's documentation](https://api.slack.com/docs/message-attachments).)
-
-For Facebook Messenger, the approach is the same, but the JSON details differ:
-
-```json
-  "output": {
-    "facebook": {
-      "message": {
-        "text": "Which size would you like?",
-        "quick_replies": [
-          {
-            "title": "Small",
-            "payload": "small",
-            "content_type": "text"
-          },
-          {
-            "title": "Medium",
-            "payload": "medium",
-            "content_type": "text"
-          },
-          {
-            "title": "Large",
-            "payload": "large",
-            "content_type": "text"
-          }
-        ]
-      }
-    }
-  }
-```
-
-For more information, see [Facebook's message template pages](https://developers.facebook.com/docs/messenger-platform/send-messages/templates).
 
 ## Customizing the pipeline
 
@@ -139,26 +56,28 @@ For more extensive customization, you might want to add, remove, or change code 
 To browse and edit the deployed actions, use the [Cloud Functions editor](https://console.bluemix.net/openwhisk/manage/actions?env_id=ibm:yp:us-south). The actions are deployed in several Cloud Functions packages, as follows:
 
 - `slack` package (Slack deployments only):
-    - `receive`
-    - `post`
+  - `receive`
+  - `post`
+  - `multiple_post`
 - `facebook` package (Facebook deployments only):
-    - `receive`
-    - `batched_messages`
-    - `post`
+  - `receive`
+  - `batched_messages`
+  - `post`
+  - `multiple_post`
 - `starter-code` package:
-    - `pre-normalize`
-    - `normalize-slack-for-conversation` (Slack deployments only)
-    - `normalize-facebook-for-conversation` (Facebook deployments only)
-    - `pre-conversation`
-    - `post-conversation`
-    - `normalize-conversation-for-slack` (Slack deployments only)
-    - `normalize-conversation-for-facebook` (Facebook deployments only)
-    - `post-normalization`
+  - `pre-normalize`
+  - `normalize-slack-for-conversation` (Slack deployments only)
+  - `normalize-facebook-for-conversation` (Facebook deployments only)
+  - `pre-conversation`
+  - `post-conversation`
+  - `normalize-conversation-for-slack` (Slack deployments only)
+  - `normalize-conversation-for-facebook` (Facebook deployments only)
+  - `post-normalization`
 - `context` package:
-    - `load-context`
-    - `save-context`
+  - `load-context`
+  - `save-context`
 - `conversation` package:
-    - `call-conversation`
+  - `call-conversation`
 
 The actual names of the deployed actions are as follows:
     `<deployment_name>_<package_name>/<action_name>`
