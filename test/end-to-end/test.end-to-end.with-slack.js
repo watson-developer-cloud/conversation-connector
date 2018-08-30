@@ -882,14 +882,9 @@ describe('End-to-End tests: with Slack package', () => {
                 {
                   successResponse: {
                     channel: envParams.__TEST_SLACK_CHANNEL,
-                    text: buttonMessageResponse,
+                    text: buttonMessageUpdate,
                     as_user: 'true',
-                    token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN,
-                    attachments: [
-                      {
-                        text: buttonMessageUpdate
-                      }
-                    ]
+                    token: envParams.__TEST_SLACK_BOT_ACCESS_TOKEN
                   },
                   activationId: ''
                 }

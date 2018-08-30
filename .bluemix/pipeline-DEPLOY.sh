@@ -1,7 +1,7 @@
 #!/bin/bash
 echo 'Installing nvm (Node.js Version Manager)...'
 npm config delete prefix
-curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.31.2/install.sh | bash > /dev/null 2>&1
+curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.31.2/install.sh | bash  2>&1
 . ~/.nvm/nvm.sh
 
 echo 'Installing Node.js 7.9.0...'
@@ -23,6 +23,6 @@ SPACE_UUID=`echo $CLOUDFUNCTIONS_KEYS | jq -r '.namespaces[] | select(.name == "
 CLOUDFUNCTIONS_AUTH=$SPACE_UUID:$SPACE_KEY
 
 # Configure the Cloud Functions CLI
-wsk property set --apihost $CLOUDFUNCTIONS_API_HOST --auth "${CLOUDFUNCTIONS_AUTH}"
+bx wsk property set --apihost $CLOUDFUNCTIONS_API_HOST --auth "${CLOUDFUNCTIONS_AUTH}"
 
 ./setup.sh -s

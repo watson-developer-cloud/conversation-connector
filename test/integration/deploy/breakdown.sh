@@ -1,34 +1,36 @@
 #!/usr/bin/env bash
 
-${WSK} property set --apihost ${__OW_API_HOST} --auth ${__TEST_DEPLOYUSER_WSK_API_KEY} --namespace ${__TEST_DEPLOYUSER_WSK_NAMESPACE} > /dev/null
+bx target -o ${__TEST_DEPLOYUSER_ORG} -s ${__TEST_DEPLOYUSER_SPACE}
+bx wsk property set --apihost ${__OW_API_HOST} --auth ${__TEST_DEPLOYUSER_WSK_API_KEY} --namespace ${__TEST_DEPLOYUSER_WSK_NAMESPACE}
 
 # Clean all artifacts created in the user-deploy namespace
 IFS=$'\n'
-while [ $(${WSK} action list | tail -n +2 | wc -l | awk '{print $1}') -gt 0 ]; do
-  for line in `${WSK} action list | tail -n +2`; do
+while [ $(bx wsk action list | tail -n +2 | wc -l | awk '{print $1}') -gt 0 ]; do
+  for line in `bx wsk action list | tail -n +2`; do
     actionName=${line%% *}
     execution=${line##* }
-    ${WSK} action delete $actionName > /dev/null
+    bx wsk action delete $actionName
   done
 done
 
-for line in `${WSK} package list | tail -n +2`; do
+for line in `bx wsk package list | tail -n +2`; do
   packageName=${line%% *}
   execution=${line##* }
-  ${WSK} package delete $packageName > /dev/null
+  bx wsk package delete $packageName
 done
 
-for line in `${WSK} trigger list | tail -n +2`; do
+for line in `bx wsk trigger list | tail -n +2`; do
   triggerName=${line%% *}
   execution=${line##* }
-  ${WSK} trigger delete $triggerName > /dev/null
+  bx wsk trigger delete $triggerName
 done
 
-for line in `${WSK} rule list | tail -n +2`; do
+for line in `bx wsk rule list | tail -n +2`; do
   ruleName=${line%% *}
   execution=${line##* }
-  ${WSK} rule delete $ruleName > /dev/null
+  bx wsk rule delete $ruleName
 done
 IFS=$' \t\n'
 
-${WSK} property set --apihost ${__OW_API_HOST} --auth ${__OW_API_KEY} --namespace ${__OW_NAMESPACE} > /dev/null
+bx target -o ${__TEST_BX_USER_ORG} -s ${__TEST_BX_USER_SPACE}
+bx wsk property set --apihost ${__OW_API_HOST} --auth ${__OW_API_KEY} --namespace ${__OW_NAMESPACE}

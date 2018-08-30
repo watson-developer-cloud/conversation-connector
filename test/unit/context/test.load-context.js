@@ -23,7 +23,16 @@ process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/acti
 
 const actionLoadContext = require('../../../context/load-context.js');
 const paramsJson = require('../../resources/payloads/test.unit.context.json').loadContextJson;
-const Cloudant = require('cloudant');
+
+let Cloudant;
+
+try {
+  // For local usage and future if Cloud Functions updates
+  Cloudant = require('@cloudant/cloudant'); // eslint-disable-line global-require
+} catch (error) {
+  // For Cloud Functions
+  Cloudant = require('cloudant'); // eslint-disable-line global-require, import/no-unresolved
+}
 
 const invalidCloudantUrl = 'invalid-url';
 

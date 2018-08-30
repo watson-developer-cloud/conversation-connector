@@ -22,7 +22,16 @@
 
 const assert = require('assert');
 const nock = require('nock');
-const Cloudant = require('cloudant');
+
+let Cloudant;
+
+try {
+  // For local usage and future if Cloud Functions updates
+  Cloudant = require('@cloudant/cloudant'); // eslint-disable-line global-require
+} catch (error) {
+  // For Cloud Functions
+  Cloudant = require('cloudant'); // eslint-disable-line global-require, import/no-unresolved
+}
 
 process.env.__OW_ACTION_NAME = `/${process.env.__OW_NAMESPACE}/pipeline_pkg/action-to-test`;
 

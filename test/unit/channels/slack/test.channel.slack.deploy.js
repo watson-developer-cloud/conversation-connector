@@ -17,9 +17,18 @@
 'use strict';
 
 const assert = require('assert');
-const cloudant = require('cloudant');
 const crypto = require('crypto');
 const nock = require('nock');
+
+let cloudant;
+
+try {
+  // For local usage and future if Cloud Functions updates
+  cloudant = require('@cloudant/cloudant'); // eslint-disable-line global-require
+} catch (error) {
+  // For Cloud Functions
+  cloudant = require('cloudant'); // eslint-disable-line global-require, import/no-unresolved
+}
 
 const actionSlackDeploy = require('./../../../../channels/slack/deploy/index.js');
 

@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-
-export WSK=${WSK-wsk}
-export CF=${CF-cf}
-
 PROVIDERS_FILE='providers.json'
 
 CLOUDANT_URL=''
@@ -39,8 +35,7 @@ main() {
     # pipeline-DEPLOY.sh
     checkDependencies
     checkProvidersExist
-    processCfLogin
-    changeWhiskKey
+    processLogin
   fi
   if [ "${NO_NAME}" == "0" ]; then createCloudantInstanceDatabases
   else createSupplierResources; fi
@@ -51,21 +46,15 @@ main() {
 
 ### CHECK IF THE USER HAS INSTALLED ALL REQUIRED PROGRAMS
 checkDependencies() {
-  jq --help &> /dev/null
+  jq --help
   if [ "$?" != "0" ]; then
     echo 'jq is required to run setup. Please install jq before trying again.'
     exit 1
   fi
 
-  ${CF} &> /dev/null
+  bx
   if [ "$?" != "0" ]; then
-    echo 'cf is required to run setup. Please install cf before trying again.'
-    exit 1
-  fi
-
-  ${WSK} &> /dev/null
-  if [ "$?" != "0" ]; then
-    echo 'wsk is required to run setup. Please install wsk before trying again.'
+    echo 'bx is required to run setup. Please install bx along with the cloud-functions plugin before trying again.'
     exit 1
   fi
 }
@@ -78,44 +67,30 @@ checkProvidersExist() {
   fi
 }
 
-### CHECK OR PROCESS CF LOGIN
-processCfLogin() {
-  echo 'Checking for CF login credentials...'
-  ${CF} target &> /dev/null
+### CHECK OR PROCESS BX LOGIN
+processLogin() {
+  echo 'Checking for BX login credentials...'
+  bx target
   if [ "$?" != "0" ]; then
-    __BX_CF_KEY=`jq -r .bluemix.api_key ${PROVIDERS_FILE}`
-    # here, __BX_CF_KEY could have come from providers.json OR from env vars
-    if [ -n ${__BX_CF_KEY} ]; then
-      BX_API_HOST=`jq -r '.bluemix.apihost' ${PROVIDERS_FILE}`
-      BX_API_HOST=${BX_API_HOST-api.ng.bluemix.net}
-      BX_ORG=`jq -r '.bluemix.org' ${PROVIDERS_FILE}`
-      BX_SPACE=`jq -r '.bluemix.space' ${PROVIDERS_FILE}`
-      ${CF} login -a ${BX_API_HOST} -u apikey -p ${__BX_CF_KEY} -o ${BX_ORG} -s ${BX_SPACE}
-    else
-      echo 'CF not logged in, and no CF API keys provided.'
-      exit 1
-    fi
+    echo 'CF not logged in, and no CF API keys provided.'
+    exit 1
   fi
-}
 
-# Switches the Cloud Functions namespace based on the current Bluemix org/space
-# where user has logged in.
-changeWhiskKey() {
   echo 'Syncing wsk namespace with CF namespace...'
-  WSK_NAMESPACE="`${CF} target | grep 'org:\|Org:' | awk '{print $2}'`_`${CF} target | grep 'space:\|Space:' | awk '{print $2}'`"
-  if [ "${WSK_NAMESPACE}" == `${WSK} namespace list | tail -n +2 | head -n 1` ]; then
+  WSK_NAMESPACE="`bx target | grep 'org:\|Org:' | awk '{print $2}'`_`bx target | grep 'space:\|Space:' | awk '{print $2}'`"
+  if [ "${WSK_NAMESPACE}" == `bx wsk namespace list | tail -n +2 | head -n 1` ]; then
     return
   fi
-  TARGET=`${CF} target | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
+  TARGET=`bx target | grep 'api endpoint:\|API endpoint:' | awk '{print $3}'`
   WSK_API_HOST="https://openwhisk.${TARGET#*.}"
 
-  ACCESS_TOKEN=`cat ~/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`
-  REFRESH_TOKEN=`cat ~/.cf/config.json | jq -r .RefreshToken`
+  ACCESS_TOKEN=`cat ~/.bluemix/.cf/config.json | jq -r .AccessToken | awk '{print $2}'`
+  REFRESH_TOKEN=`cat ~/.bluemix/.cf/config.json | jq -r .RefreshToken`
 
   WSK_CREDENTIALS=`curl -s -X POST -H 'Content-Type: application/json' -d '{"accessToken": "'$ACCESS_TOKEN'", "refreshToken": "'$REFRESH_TOKEN'"}' ${WSK_API_HOST}/bluemix/v2/authenticate`
   WSK_API_KEY=`echo ${WSK_CREDENTIALS} | jq -r ".namespaces[] | select(.name==\"${WSK_NAMESPACE}\") | [.uuid, .key] | join(\":\")"`
 
-  ${WSK} property set --apihost ${WSK_API_HOST} --auth "${WSK_API_KEY}" --namespace ${WSK_NAMESPACE}
+  bx wsk property set --apihost ${WSK_API_HOST} --auth "${WSK_API_KEY}" --namespace ${WSK_NAMESPACE}
 }
 
 ### CHECK OR CREATE CLOUDANT-LITE DATABASE INSTANCE, CREATE AUTH+CONTEXT DATABASES
@@ -124,15 +99,15 @@ createCloudantInstanceDatabases() {
   CLOUDANT_INSTANCE_NAME='conversation-connector'
   CLOUDANT_INSTANCE_KEY='conversation-connector-key'
 
-  ${CF} service ${CLOUDANT_INSTANCE_NAME} > /dev/null
+  bx cf service ${CLOUDANT_INSTANCE_NAME}
   if [ "$?" != "0" ]; then
-    ${CF} create-service cloudantNoSQLDB Lite ${CLOUDANT_INSTANCE_NAME}
+    bx cf create-service cloudantNoSQLDB Lite ${CLOUDANT_INSTANCE_NAME}
   fi
-  ${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} > /dev/null
+  bx cf service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
   if [ "$?" != "0" ]; then
-    ${CF} create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
+    bx cf create-service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY}
   fi
-  CLOUDANT_URL=`${CF} service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +2 | jq -r .url`
+  CLOUDANT_URL=`bx cf service-key ${CLOUDANT_INSTANCE_NAME} ${CLOUDANT_INSTANCE_KEY} | tail -n +4 | jq -r .url`
 
   for i in {1..10}; do
     e=`curl -s -XPUT ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME} | jq -r .error`
@@ -161,7 +136,7 @@ createPipelines() {
   PIPELINES=''
 
   if [ -z "$BUTTON_DEPLOY" ]; then
-    jq -r '.pipeline[]' ${PROVIDERS_FILE} &> /dev/null
+    jq -r '.pipeline[]' ${PROVIDERS_FILE}
     if [ "$?" != "0" ]; then
       echo 'ERROR: Providers/credentials file missing pipeline JSON key.'
       exit 1
@@ -221,33 +196,33 @@ createPipelines() {
       echo "Your Cloudant Auth DB URL is: ${CLOUDANT_URL}/${CLOUDANT_AUTH_DBNAME}/${PIPELINE_AUTH_KEY}"
 
       ## INJECT ANNOTATIONS INTO ALL PACKAGES
-      for line in `wsk package list | grep "/${PIPELINE_NAME}"`; do
+      for line in `bx wsk package list | grep "/${PIPELINE_NAME}"`; do
         # this creates issues if the package name contains spaces
         resource=`echo $line | awk '{print $1}'`
         package=${resource##*/}
 
-        ${WSK} package update $package \
+        bx wsk package update $package \
           -a cloudant_auth_key "${PIPELINE_AUTH_KEY}" \
           -a cloudant_url "${CLOUDANT_URL}" \
           -a cloudant_auth_dbname "${CLOUDANT_AUTH_DBNAME}" \
-          -a cloudant_context_dbname "${CLOUDANT_CONTEXT_DBNAME}" &> /dev/null
+          -a cloudant_context_dbname "${CLOUDANT_CONTEXT_DBNAME}"
       done
 
       ## CREATE SEQUENCE ACTION
       if [ "$CHANNEL" == "facebook" ]; then
         sequence="${PIPELINE_NAME}starter-code/pre-normalize,${PIPELINE_NAME}starter-code/normalize-${CHANNEL}-for-conversation,${PIPELINE_NAME}context/load-context,${PIPELINE_NAME}starter-code/pre-conversation,${PIPELINE_NAME}conversation/call-conversation,${PIPELINE_NAME}starter-code/post-conversation,${PIPELINE_NAME}context/save-context,${PIPELINE_NAME}starter-code/normalize-conversation-for-${CHANNEL},${PIPELINE_NAME}${CHANNEL}/multiple_post"
-        echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(wsk namespace list | tail -n +2 | head -n 1)/${PIPELINE_NAME}facebook/receive.text"
+        echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(bx wsk namespace list | tail -n +2 | head -n 1)/${PIPELINE_NAME}facebook/receive.text"
       else
         sequence="${PIPELINE_NAME}starter-code/pre-normalize,${PIPELINE_NAME}starter-code/normalize-${CHANNEL}-for-conversation,${PIPELINE_NAME}context/load-context,${PIPELINE_NAME}starter-code/pre-conversation,${PIPELINE_NAME}conversation/call-conversation,${PIPELINE_NAME}starter-code/post-conversation,${PIPELINE_NAME}context/save-context,${PIPELINE_NAME}starter-code/normalize-conversation-for-${CHANNEL},${PIPELINE_NAME}${CHANNEL}/multiple_post"
-        echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(wsk namespace list | tail -n +2 | head -n 1)/${PIPELINE_NAME}slack/receive.json"
+        echo "Your Request URL is: https://openwhisk.ng.bluemix.net/api/v1/web/$(bx wsk namespace list | tail -n +2 | head -n 1)/${PIPELINE_NAME}slack/receive.json"
       fi
 
       # There is support for a single Conversation response to be sent in multiple posts to circumvent some channel limitations.
       # multiple_post will invoke the postsequence sequence for each part of the overall response.
       postSequence="${PIPELINE_NAME}starter-code/post-normalize,${PIPELINE_NAME}${CHANNEL}/post"
-      ${WSK} action update ${PIPELINE_NAME}postsequence --sequence ${postSequence} > /dev/null
+      bx wsk action update ${PIPELINE_NAME}postsequence --sequence ${postSequence}
 
-      ${WSK} action update ${PIPELINE_NAME%_} --sequence ${sequence} > /dev/null
+      bx wsk action update ${PIPELINE_NAME%_} --sequence ${sequence}
     fi
   done
   IFS=$' \t\n'
