@@ -14,7 +14,7 @@ You can use either of two methods to deploy your workspace to a Facebook Messeng
 
 1.  Click this button to launch the deployment. (Open the link in a new tab or window, so you can leave this page open.)
 
-    [![Deploy to IBM Cloud](https://bluemix.net/deploy/button.png)](https://console.bluemix.net/devops/setup/deploy/?repository=https://github.com/watson-developer-cloud/conversation-connector)
+    [![Deploy to IBM Cloud](https://bluemix.net/deploy/button.png)](https://console.bluemix.net/devops/setup/deploy/?repository=https://github.com/watson-developer-cloud/conversation-connector&branch=fbtoolchain)
 
 1.  Under **Tool Integrations**, click the GitHub tile, and then click **Authorize** to grant IBM Cloud access to your GitHub account. Log in with your GitHub credentials and complete the authorization process.
 
@@ -46,9 +46,9 @@ You can use either of two methods to deploy your workspace to a Facebook Messeng
 
 1.  In the Facebook app page, go to the bottom of the navigation pane and click the plus sign (**`+`**) next to **PRODUCTS**.
 
-1. Under **Add a Product**, go to the **Messenger** tile and click **Set Up**. 
+1. Under **Add a Product**, go to the **Messenger** tile and click **Set Up**.
 
-1.  In the Messenger settings, scroll down to **Token Generation**. Click **Select a Page** and choose the Facebook page you want to use for your app. 
+1.  In the Messenger settings, scroll down to **Token Generation**. Click **Select a Page** and choose the Facebook page you want to use for your app.
 
     **Note:** If you don't already have a page for your app, click **Create a new page**. After you finish creating the page, return to the [Facebook apps page](https://developers.facebook.com/apps/) and navigate back to the Messenger settings for your app. You can then select the page you created.
 
@@ -119,7 +119,7 @@ That's it. You're all set. You can now go to Facebook Messenger, search for your
 
 1.  In the Facebook app page, go to the bottom of the navigation pane and click the plus sign (**`+`**) next to **PRODUCTS**.
 
-1. Under **Add a Product**, go to the **Messenger** tile and click **Set Up**. 
+1. Under **Add a Product**, go to the **Messenger** tile and click **Set Up**.
 
 1.  In the Messenger settings, scroll down to **Token Generation**. Click **Select a Page** and choose the Facebook page you want to use for your app.
 
