@@ -27,13 +27,13 @@ You can use either of two methods to deploy your workspace to a Slack app:
 
     **Note:** Currently, only the US South region is supported.
 
-1.  Target your desired space by running `bx target --cf`
+1.  Target the space where you want to deploy by running the following command:
+
+    `bx target --cf`
 
 1.  Go to https://console.ng.bluemix.net/openwhisk/learn/cli and then do the following:
 
     1.  Click the account information in the upper right corner, and confirm that the organization and space shown are correct.
-
-    1.  If you have not done so already, follow the instructions to install the CLI.
 
     1.  Copy the command in step 3 ("Log in to IBM Cloud"), and run it in your CLI.
 
