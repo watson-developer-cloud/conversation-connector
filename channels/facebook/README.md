@@ -1,5 +1,7 @@
 # Deploying a Facebook Messenger app
 
+Deploying your workspace to a Facebook Messenger app requires modifying several configuration files and running scripts.
+
 **Note:** This process is intended to connect an existing Watson Conversation workspace to a Facebook app. If you have not yet built a workspace, you must do so first. For more information, see the [Conversation documentation](https://console.bluemix.net/docs/services/conversation/index.html#about).
 
 **Note:** The manual deployment process is supported only on Linux/UNIX and macOS systems.
@@ -19,13 +21,13 @@
 
     **Note:** Currently, only the US South region is supported.
 
-1.  Target your desired space by running `bx target --cf`
+1.  Target the space where you want to deploy by running the following command:
+
+    `bx target --cf`
 
 1.  Go to https://console.ng.bluemix.net/openwhisk/learn/cli and then do the following:
 
     1.  Click the account information in the upper right corner, and confirm that the organization and space shown are correct.
-
-    1.  If you have not done so already, follow the instructions to install the CLI.
 
     1.  Copy the command in step 3 ("Log in to IBM Cloud"), and run it in your CLI.
 
