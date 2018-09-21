@@ -47,6 +47,7 @@ function main(params) {
       validateParameters(params);
     } catch (error) {
       reject(error);
+      return;
     }
 
     let cloudantCreds;
@@ -58,12 +59,15 @@ function main(params) {
         code: 200,
         challenge
       });
+      return;
     }
     if (isBotMessage(params)) {
       reject({ bot_id: isBotMessage(params) });
+      return;
     }
     if (isDuplicateMessage(params)) {
       reject(params);
+      return;
     }
 
     const ow = openwhisk();
