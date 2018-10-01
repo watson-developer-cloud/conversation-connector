@@ -67,13 +67,13 @@ Deploying your workspace to a Facebook Messenger app requires modifying several 
 
 1.  Copy the generated request URL. You can copy this directly from the terminal window after the script completes (look for a message that begins `Your Request URL is:`). If you need to find the endpoint URL later, follow these steps:
 
-    1.  Go to https://console.ng.bluemix.net/openwhisk/editor.
+    1.  Go to https://console.ng.bluemix.net/openwhisk/actions.
 
-    1.  Under **My Actions**,  click <pipeline_name>_facebook/receive>.
+    1.  In the list of actions, click on <pipeline_name>_facebook/receive>.
 
-    1.  Click **View Action Details**.
+    1.  In the left-hand pane, click **Endpoints**.
 
-    1.  Confirm that **Enable as Web Action** is selected. Copy the URL from the **Web Action URL** You will need to replace `.json` with `.text` when you paste this value into the Facebook webhook settings.
+    1.  Confirm that **Enable as Web Action** is selected. Copy the provided URL to the clipboard. **Note**: You will need to replace `.json` with `.text` when you paste this value into the Facebook webhook settings.
 
 1.  In the Facebook app settings, go to the Messenger settings and scroll to the **Webhooks** section. Click **Setup Webhooks**.
 
